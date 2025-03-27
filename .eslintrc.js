@@ -1,0 +1,38 @@
+module.exports = {
+  env: {
+    browser: true,
+    es2021: true,
+    node: true,
+  },
+  extends: ['plugin:react/recommended', 'airbnb', 'prettier'],
+  parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  },
+  plugins: ['react'],
+  rules: {
+    'react/jsx-filename-extension': [1, { extensions: ['.js', '.jsx'] }],
+    'import/no-cycle': 'off',
+    'no-console': 'off',
+    'react/jsx-no-useless-fragment': 'off',
+    'no-nested-ternary': 'off',
+    'react/prop-types': 'off',
+    'react/jsx-props-no-spreading': 'off',
+    'jsx-a11y/anchor-is-valid': 'off',
+    'jsx-a11y/click-events-have-key-events': 'off',
+    'jsx-a11y/no-static-element-interactions': 'off',
+    'import/no-import-module-exports': 'off',
+    'no-unused-expressions': 'off',
+    'no-case-declarations': 'off',
+    'no-restricted-syntax': 'off',
+    'prefer-promise-reject-errors': 'off',
+    'guard-for-in': 'off',
+    'func-names': 'off',
+    'no-undef': 'off',
+    'react/function-component-definition': 'off',
+    'no-plusplus': 'off',
+  },
+};
