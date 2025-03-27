@@ -66,6 +66,14 @@ class Mailbox extends Server {
       console.log(URLs.updateEmail.error, e);
     }
   }
+
+  async getMetaData() {
+    try {
+      return (await this.req.get(URLs.fetchMetaData.path())).data;
+    } catch (e) {
+      console.log(URLs.fetchMetaData.error, e);
+    }
+  }
 }
 
 const mailboxInstance = new Mailbox();

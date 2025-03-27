@@ -12,7 +12,6 @@ import * as InboxSDK from '@inboxsdk/core';
 import linkifyHtml from 'linkify-html';
 import mailboxInstance from '../../config/server/tracker/mailbox';
 
-console.log('Inside Gmail');
 const extensionId = chrome.runtime.id;
 
 // Regex for fetching links from the email content.

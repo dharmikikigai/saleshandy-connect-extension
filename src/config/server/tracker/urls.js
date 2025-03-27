@@ -25,6 +25,12 @@ export default {
     error: 'Error in fetching the notification setting',
   },
 
+  fetchMetaData: {
+    type: REQUEST_TYPES.GET,
+    path: () => 'chrome-extension/meta',
+    error: 'Error in fetching the metadata',
+  },
+
   deleteEmail: {
     type: REQUEST_TYPES.DELETE,
     path: (emailId) => `mailboxes/emails/${emailId}`,

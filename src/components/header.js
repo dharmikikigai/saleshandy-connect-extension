@@ -7,6 +7,13 @@ const handleClose = () => {
   }
 };
 
+const handleClick = () => {
+  window.open(
+    'https://my.saleshandy.com/settings/billing/subscriptions/lead-finder',
+    '_blank',
+  );
+};
+
 const Header = () => (
   <>
     <div
@@ -105,8 +112,10 @@ const Header = () => (
       </div>
 
       <div
+        onClick={handleClick} // Adding onClick event handler
         style={{
           backgroundColor: '#EFF6FF',
+          cursor: 'pointer',
           position: 'absolute',
           left: '200px',
           border: '2px solid #BFDBFE',

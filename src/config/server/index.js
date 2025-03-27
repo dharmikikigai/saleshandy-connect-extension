@@ -13,9 +13,12 @@ class Server {
 
   setRequestInterceptors() {
     this.req.interceptors.request.use(async (config) => {
-      const storage = await chrome.storage.local.get(['authToken']);
+      const element = document.getElementById('react-root');
+
+      const authenticationToken = element?.getAttribute('authToken');
+
       // eslint-disable-next-line no-param-reassign
-      config.headers.authorization = `Bearer ${storage.authToken}`;
+      config.headers.authorization = `Bearer ${authenticationToken}`;
 
       // eslint-disable-next-line no-param-reassign
       config.headers.Source = 'open-api';

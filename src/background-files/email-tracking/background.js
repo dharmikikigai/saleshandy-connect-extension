@@ -69,6 +69,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
         },
         () => {
           chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+          console.log('onActivation Beacon');
         },
       );
     }
@@ -113,6 +114,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       },
       () => {
         chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+        console.log('onUpdated Beacon');
       },
     );
   }
@@ -395,6 +397,7 @@ async function openLinkedinOnInstall() {
     async (newTab) => {
       // Now call your onClickActivity function
       await onBeaconClickActivity(newTab);
+      console.log('On Install Beacon');
 
       chrome.scripting.executeScript(
         {

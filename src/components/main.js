@@ -7,10 +7,11 @@ import CommonSearch from './common-search';
 import CommonSearchPeople from './common-search-people';
 import NoResult from './no-result';
 import NotAvailableFeature from './feature-na';
+import prospectsInstance from '../config/server/finder/prospects';
 
 const Main = () => {
   const [isSaleshandyLoggedIn, setIsSaleshandyLoggedIn] = useState(false);
-  const [authToken, setAuthToken] = useState('');
+  // const [authToken, setAuthToken] = useState('');
   const [isSingleViewActive, setIsSingleViewActive] = useState(false);
   const [isBulkPagViewActive, setIsBulkPagViewActive] = useState(false);
   const [isBulkViewActive, setIsBulkViewActive] = useState(false);
@@ -34,10 +35,16 @@ const Main = () => {
       authenticationToken !== ''
     ) {
       setIsSaleshandyLoggedIn(true);
-      setAuthToken(authenticationToken);
+      // setAuthToken(authenticationToken);
     } else {
       setIsSaleshandyLoggedIn(false);
     }
+  };
+
+  const fetchMetaData = async () => {
+    const prospectFields = (await prospectsInstance.getProspectsFields())
+      .payload;
+    console.log(prospectFields, 'prospectFields');
   };
 
   const pageCheck = () => {
@@ -95,6 +102,8 @@ const Main = () => {
   useEffect(() => {
     authCheck();
     pageCheck();
+    console.log('Inside React App');
+    // fetchMetaData();
   }, []);
 
   if (!isSaleshandyLoggedIn) {
@@ -113,7 +122,7 @@ const Main = () => {
 
   return (
     <>
-      <CommonSearch />
+      <Profile />
     </>
   );
 };
