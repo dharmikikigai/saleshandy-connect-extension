@@ -24,8 +24,19 @@
 
   "content_scripts": [
     {
+      "matches": ["*://*.linkedin.com/*", "*://linkedin.com/*"],
+      "js": ["background-files/linkedin/bg.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["background-files/gmail/content.js"],
+      "css": ["background-files/gmail/content.css"],
+      "run_at": "document_end"
+    },
+    {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["content.js", "background-files/email-tracking/content.js"],
       "run_at": "document_end"
     }
   ],
@@ -47,6 +58,7 @@
     {
       "resources": [
         "index.js",
+        "content.js",
         "app.js",
         "assets/icons/beacon.png",
         "index.html",

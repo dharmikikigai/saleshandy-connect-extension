@@ -5,7 +5,7 @@ import Header from './header';
 const CommonSearchPeople = () => (
   <>
     <Header />
-    <div>
+    <div id="common-screen-id">
       <div
         style={{
           position: 'absolute',

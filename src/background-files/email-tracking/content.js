@@ -1,6 +1,6 @@
 function loadReactApp() {
   const script = document.createElement('script');
-  script.src = chrome.runtime.getURL('app.js');
+  script.src = chrome.runtime.getURL('content.js');
   script.onload = () => {
     const rootElement = document.getElementById('react-root');
     if (rootElement) {
@@ -18,6 +18,7 @@ async function injectFloatingWindow() {
 
   const existingModal = document.getElementById('react-root');
   if (existingModal) {
+    existingModal.style.display = 'flex';
     console.log('Modal already exists, skipping creation.');
     return;
   }

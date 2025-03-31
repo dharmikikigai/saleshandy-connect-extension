@@ -37,6 +37,7 @@ const Main = () => {
 
   const authCheck = () => {
     console.log(chrome?.runtime, 'Runtime checking');
+
     const element = document.getElementById('react-root');
 
     const authenticationToken = element?.getAttribute('authToken');
@@ -125,15 +126,18 @@ const Main = () => {
   }, []);
 
   if (!isSaleshandyLoggedIn) {
+    console.log('Rendered -> Login');
     return <Login />;
   }
 
   if (showProfilePage) {
+    console.log('Rendered -> Profile');
     return <Profile />;
   }
 
   if (isSingleViewActive) {
     // return 'Hare Krishna';
+    console.log('Rendered -> isSingleViewActive');
     return <CommonSearchPeople />;
   }
 

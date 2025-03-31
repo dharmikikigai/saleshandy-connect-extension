@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button, Card, Container } from 'react-bootstrap';
 import Main from './main';
 
 const handleClose = () => {
   const element = document.getElementById('react-root');
   if (element) {
-    element.remove();
+    element.style.display = 'none';
   }
 };
 
@@ -29,13 +29,7 @@ const Login = () => {
     } else {
       window.open('https://pyxis.lifeisgoodforlearner.com/login', '_blank');
     }
-
-    console.log(showMainPage, 'showMainPage Hare Krishna');
   };
-
-  useEffect(() => {
-    console.log(showMainPage, 'showMainPage Updated');
-  }, [showMainPage]);
 
   return (
     <>
@@ -44,6 +38,7 @@ const Login = () => {
       ) : (
         <>
           <div
+            id="login-id"
             style={{
               backgroundColor: '#DCE1FE',
               height: '686px',
