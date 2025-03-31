@@ -170,7 +170,7 @@ async function openIframe() {
 function closeDiv() {
   const element = document.getElementById('react-root');
   if (element) {
-    element.remove();
+    element.style.display = 'none';
   }
 }
 

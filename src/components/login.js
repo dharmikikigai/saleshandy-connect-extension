@@ -25,7 +25,6 @@ const Login = () => {
       authenticationToken !== ''
     ) {
       setShowMainPage(true);
-      console.log('Show main page');
     } else {
       window.open('https://pyxis.lifeisgoodforlearner.com/login', '_blank');
     }

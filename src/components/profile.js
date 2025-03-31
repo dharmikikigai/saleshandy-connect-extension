@@ -1,10 +1,16 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Main from './main';
 
 const Profile = () => {
   const [logout, setLogout] = useState(false);
   const [isBackClicked, setIsClicked] = useState(false);
+  const [nameInitials, setNameInitials] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [trackingSetting, setTrackingSetting] = useState('false');
+  const [notificationSetting, setNotificationSetting] = useState('false');
 
   const handledLogout = () => {
     localStorage.setItem('logoutTriggered', 'true');
@@ -14,6 +20,55 @@ const Profile = () => {
   const handledBack = () => {
     setIsClicked(true);
   };
+
+  const getNameInitials = () => {
+    const nameInitial = localStorage.getItem('nameInitials');
+    if (nameInitial && nameInitial !== '') {
+      setNameInitials(nameInitial);
+    } else {
+      setNameInitials('NA');
+    }
+  };
+
+  const getName = () => {
+    const firstName = localStorage.getItem('firstName');
+    const lastName = localStorage.getItem('lastName');
+
+    setName(`${firstName} ${lastName}`);
+  };
+
+  const getEmail = () => {
+    const userEmail = localStorage.getItem('userEmail');
+
+    setEmail(userEmail);
+  };
+
+  const getTrackingSetting = () => {
+    const setting = localStorage.getItem('isEmailTrackerEnabled');
+
+    setTrackingSetting(setting);
+  };
+
+  const getNotificationSetting = () => {
+    const setting = localStorage.getItem('isTrackingNotificationEnabled');
+
+    setNotificationSetting(setting);
+  };
+
+  const newOne = () => {
+    console.log('Removing Commi');
+    const findOne = document.getElementById('common-screen-id');
+    findOne.style.display = 'none';
+  };
+
+  useEffect(() => {
+    newOne();
+    getNameInitials();
+    getName();
+    getEmail();
+    getTrackingSetting();
+    getNotificationSetting;
+  }, []);
 
   return (
     <>
@@ -87,7 +142,7 @@ const Profile = () => {
                     color: '#1D4ED8',
                   }}
                 >
-                  DP
+                  {nameInitials}
                 </span>
               </div>
               <h2
@@ -98,7 +153,7 @@ const Profile = () => {
                   marginTop: '8px',
                 }}
               >
-                Dharmik Patel
+                {name}
               </h2>
               <p
                 style={{
@@ -107,7 +162,7 @@ const Profile = () => {
                   color: '#6B7280',
                 }}
               >
-                dharmik@saleshandy.com
+                {email}
               </p>
             </div>
           </div>

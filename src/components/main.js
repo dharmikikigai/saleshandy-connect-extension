@@ -30,9 +30,39 @@ const Main = () => {
     profilePageState,
   );
 
+  function getInitials(firstName, lastName) {
+    const firstInitial = firstName ? firstName.charAt(0).toUpperCase() : '';
+    const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
+
+    return firstInitial + lastInitial;
+  }
+
   const getMetaData = async () => {
     const metaData = (await mailboxInstance.getMetaData()).payload;
-    console.log(metaData, '----------MetaData');
+
+    if (metaData) {
+      localStorage.setItem(
+        'isEmailTrackerEnabled',
+        metaData?.isEmailTrackerEnabled,
+      );
+      localStorage.setItem(
+        'isTrackingNotificationEnabled',
+        metaData?.isTrackingNotificationEnabled,
+      );
+      localStorage.setItem('leadFinderCredits', metaData?.leadFinderCredits);
+
+      localStorage.setItem('userEmail', metaData?.user?.email);
+
+      localStorage.setItem(
+        'nameInitials',
+        getInitials(metaData?.user?.firstName, metaData?.user?.lastName),
+      );
+
+      localStorage.setItem('firstName', metaData?.user?.firstName);
+      localStorage.setItem('lastName', metaData?.user?.lastName);
+
+      console.log(metaData, '----------MetaData');
+    }
   };
 
   const authCheck = () => {
