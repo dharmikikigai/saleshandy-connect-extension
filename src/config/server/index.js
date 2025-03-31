@@ -15,7 +15,9 @@ class Server {
     this.req.interceptors.request.use(async (config) => {
       const element = document.getElementById('react-root');
 
-      const authenticationToken = element?.getAttribute('authToken');
+      let authenticationToken = element?.getAttribute('authToken');
+
+      authenticationToken = authenticationToken?.replace(/"/g, '');
 
       // eslint-disable-next-line no-param-reassign
       config.headers.authorization = `Bearer ${authenticationToken}`;

@@ -1,50 +1,69 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
+import { useRecoilState } from 'recoil';
 import Login from './login';
-import Header from './header';
 import Profile from './profile';
 import CommonSearch from './common-search';
 import CommonSearchPeople from './common-search-people';
 import NoResult from './no-result';
 import NotAvailableFeature from './feature-na';
 import prospectsInstance from '../config/server/finder/prospects';
+import { profilePageState } from './state';
+import mailboxInstance from '../config/server/tracker/mailbox';
 
+// eslint-disable-next-line consistent-return
 const Main = () => {
   const [isSaleshandyLoggedIn, setIsSaleshandyLoggedIn] = useState(false);
-  // const [authToken, setAuthToken] = useState('');
   const [isSingleViewActive, setIsSingleViewActive] = useState(false);
   const [isBulkPagViewActive, setIsBulkPagViewActive] = useState(false);
   const [isBulkViewActive, setIsBulkViewActive] = useState(false);
   const [isNoResultFound, setIsNoResultFound] = useState(false);
   const [isFeatureAvailable, setIsFeatureAvailable] = useState(false);
+  const [showProfilePage, setShowProfilePage] = useState(false);
   const [isCommonSearchScreenActive, setIsCommonSearchScreenActive] = useState(
     false,
   );
   const [isCommonPeopleScreenActive, setIsCommonPeopleScreenActive] = useState(
     false,
   );
+  const [showProfilePageState, setShowProfilePageState] = useRecoilState(
+    profilePageState,
+  );
+
+  const getMetaData = async () => {
+    const metaData = (await mailboxInstance.getMetaData()).payload;
+    console.log(metaData, '----------MetaData');
+  };
 
   const authCheck = () => {
+    console.log(chrome?.runtime, 'Runtime checking');
     const element = document.getElementById('react-root');
 
     const authenticationToken = element?.getAttribute('authToken');
 
-    if (
-      authenticationToken !== undefined &&
-      authenticationToken !== null &&
-      authenticationToken !== ''
-    ) {
-      setIsSaleshandyLoggedIn(true);
-      // setAuthToken(authenticationToken);
-    } else {
-      setIsSaleshandyLoggedIn(false);
-    }
-  };
+    let checkFurther = true;
 
-  const fetchMetaData = async () => {
-    const prospectFields = (await prospectsInstance.getProspectsFields())
-      .payload;
-    console.log(prospectFields, 'prospectFields');
+    setShowProfilePage(showProfilePageState);
+    setShowProfilePageState(false);
+
+    const logoutTriggered = localStorage.getItem('logoutTriggered');
+
+    if (logoutTriggered && logoutTriggered === 'true') {
+      setIsSaleshandyLoggedIn(false);
+      checkFurther = false;
+    }
+
+    if (checkFurther) {
+      if (
+        authenticationToken !== undefined &&
+        authenticationToken !== null &&
+        authenticationToken !== ''
+      ) {
+        setIsSaleshandyLoggedIn(true);
+      } else {
+        setIsSaleshandyLoggedIn(false);
+      }
+    }
   };
 
   const pageCheck = () => {
@@ -102,29 +121,45 @@ const Main = () => {
   useEffect(() => {
     authCheck();
     pageCheck();
-    console.log('Inside React App');
-    // fetchMetaData();
+    getMetaData();
   }, []);
 
   if (!isSaleshandyLoggedIn) {
-    return (
-      <div
-        style={{
-          backgroundColor: '#DCE1FE',
-          height: '686px',
-          width: '332px',
-        }}
-      >
-        <Login />
-      </div>
-    );
+    return <Login />;
   }
 
-  return (
-    <>
-      <Profile />
-    </>
-  );
+  if (showProfilePage) {
+    return <Profile />;
+  }
+
+  if (isSingleViewActive) {
+    // return 'Hare Krishna';
+    return <CommonSearchPeople />;
+  }
+
+  if (isBulkPagViewActive) {
+    return 'Hare Ramma';
+  }
+
+  if (isBulkViewActive) {
+    return 'Hanuman';
+  }
+
+  if (isNoResultFound) {
+    return <NoResult />;
+  }
+
+  if (isFeatureAvailable) {
+    return <NotAvailableFeature />;
+  }
+
+  if (isCommonPeopleScreenActive) {
+    return <CommonSearchPeople />;
+  }
+
+  if (isCommonSearchScreenActive) {
+    return <CommonSearch />;
+  }
 };
 
 export default Main;

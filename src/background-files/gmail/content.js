@@ -610,7 +610,6 @@ InboxSDK.load(2, 'sdk_sh_connect_3d6289d8a5').then(async (sdk) => {
             )?.payload;
 
             normal = false;
-            console.log(requestPayload, 'requestPayload');
 
             if (trackingData) {
               links = trackingData.links;

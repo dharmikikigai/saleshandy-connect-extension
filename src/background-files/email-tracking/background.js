@@ -6,7 +6,6 @@ async function getAndSetAuthToken() {
   chrome.cookies.get(
     { url: 'https://pyxis.lifeisgoodforlearner.com', name: 'token' },
     (cookie) => {
-      console.log('Cookie:', cookie);
       if (cookie) {
         chrome.storage.local.set({ authToken: cookie.value });
       } else {
@@ -24,8 +23,6 @@ async function fetchAndSetActiveUrl(url) {
 }
 
 async function onBeaconClickActivity(tab) {
-  console.log('Beacon clicked!!!', tab);
-
   await getAndSetAuthToken();
 
   await fetchAndSetActiveUrl(tab?.url);
@@ -69,7 +66,6 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
         },
         () => {
           chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
-          console.log('onActivation Beacon');
         },
       );
     }
@@ -114,7 +110,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       },
       () => {
         chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
-        console.log('onUpdated Beacon');
       },
     );
   }
@@ -353,6 +348,10 @@ chrome.runtime.onMessage.addListener((message) => {
     }
   }
 
+  if (message.method === 'store-data') {
+    console.log('Storing the data', message?.value);
+  }
+
   return true;
 });
 
@@ -397,7 +396,6 @@ async function openLinkedinOnInstall() {
     async (newTab) => {
       // Now call your onClickActivity function
       await onBeaconClickActivity(newTab);
-      console.log('On Install Beacon');
 
       chrome.scripting.executeScript(
         {
@@ -427,3 +425,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.setUninstallURL(
   'https://docs.google.com/forms/d/e/1FAIpQLScQKIzS-dmruh9lu0KkgnnV6-__rdaSMDafzqdEIsb7AXdC8w/viewform',
 );
+
+chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
+  // Fired when the History API was used to change the URL
+  console.log('History state updated', details.url);
+  chrome.tabs.sendMessage(details.tabId, { method: 'closeDiv' });
+});

@@ -48,6 +48,8 @@ const options = {
     content: [
       './src/background-files/gmail/content.js',
       './src/background-files/email-tracking/content.js',
+      './src/background-files/linkedin/bg.js',
+      './src/components/app.js',
     ],
   },
   output: {

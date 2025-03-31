@@ -24,19 +24,9 @@
 
   "content_scripts": [
     {
-      "matches": ["*://*.linkedin.com/*", "*://linkedin.com/*"],
-      "js": ["background-files/linkedin/bg.js"],
-      "run_at": "document_end"
-    },
-    {
-      "matches": ["https://mail.google.com/*"],
-      "js": ["background-files/gmail/content.js"],
-      "css": ["background-files/gmail/content.css"],
-      "run_at": "document_end"
-    },
-    {
       "matches": ["<all_urls>"],
-      "js": ["background-files/email-tracking/content.js"]
+      "js": ["content.js"],
+      "run_at": "document_end"
     }
   ],
 
@@ -47,10 +37,11 @@
     "scripting",
     "notifications",
     "activeTab",
-    "cookies"
+    "cookies",
+    "webNavigation"
   ],
 
-  "host_permissions": ["http://*/*", "https://*/*"],
+  "host_permissions": ["<all_urls>"],
 
   "web_accessible_resources": [
     {
@@ -65,5 +56,8 @@
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://pyxis-edge.lifeisgoodforlearner.com/* wss://*;"
+  }
 }

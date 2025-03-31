@@ -1,10 +1,14 @@
 function loadReactApp() {
-  // Dynamically load the React app (index.js) into the floating modal
   const script = document.createElement('script');
-  script.src = chrome.runtime.getURL('app.js'); // Path to your bundled React app
+  script.src = chrome.runtime.getURL('app.js');
   script.onload = () => {
-    // After the script is loaded, React app will be mounted automatically
-    console.log('React app loaded!');
+    const rootElement = document.getElementById('react-root');
+    if (rootElement) {
+      console.log('React app loaded!');
+      // Ensure the app is mounted here
+    } else {
+      console.error('React root element not found!');
+    }
   };
   document.head.appendChild(script);
 }
@@ -12,51 +16,40 @@ function loadReactApp() {
 async function injectFloatingWindow() {
   console.log('Creating React div...');
 
-  // Check if the modal already exists
   const existingModal = document.getElementById('react-root');
   if (existingModal) {
     console.log('Modal already exists, skipping creation.');
-    return; // Don't create another modal if one already exists
+    return;
   }
 
-  // Create a floating modal-like div
   const modalDiv = document.createElement('div');
   modalDiv.id = 'react-root';
   modalDiv.style.position = 'fixed';
-  modalDiv.style.top = '50%'; // Vertically center the modal
-  modalDiv.style.right = '15px'; // Right margin of 15px
-  modalDiv.style.transform = 'translateY(-50%)'; // Adjust for perfect vertical centering
-  modalDiv.style.width = '332px'; // Width of the modal
-  modalDiv.style.height = '686px'; // Height of the modal
+  modalDiv.style.top = '50%';
+  modalDiv.style.right = '15px';
+  modalDiv.style.transform = 'translateY(-50%)';
+  modalDiv.style.width = '332px';
+  modalDiv.style.height = '686px';
   modalDiv.style.backgroundColor = 'white';
-  modalDiv.style.borderRadius = '10px'; // Border radius of 15px
+  modalDiv.style.borderRadius = '10px';
   modalDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-  modalDiv.style.zIndex = '9999'; // Ensure the modal is above other content
+  modalDiv.style.zIndex = '9999';
   modalDiv.style.display = 'flex';
   modalDiv.style.flexDirection = 'column';
   modalDiv.style.alignItems = 'center';
   modalDiv.style.justifyContent = 'flex-start';
 
+  // Store authToken and activeUrl
   chrome.storage.local.get(['authToken'], (request1) => {
-    if (request1?.authToken) {
-      modalDiv.setAttribute('authToken', request1.authToken);
-    } else {
-      modalDiv.setAttribute('authToken', '');
-    }
+    modalDiv.setAttribute('authToken', request1?.authToken || '');
   });
 
   chrome.storage.local.get(['activeUrl'], (request1) => {
-    if (request1?.activeUrl) {
-      modalDiv.setAttribute('activeUrl', request1.activeUrl);
-    } else {
-      modalDiv.setAttribute('activeUrl', '');
-    }
+    modalDiv.setAttribute('activeUrl', request1?.activeUrl || '');
   });
 
-  // Add the modal to the page
   document.body.appendChild(modalDiv);
 
-  // Dynamically load the React app
   loadReactApp();
 }
 
@@ -118,9 +111,7 @@ async function injectBeaconOnLinkedInUrl() {
 
   // Event delegation: Attach click event listener to the document body
   document.body.addEventListener('click', (event) => {
-    console.log(event, 'Event from onclick'); // Log the event to see if it's firing
     if (event.target && event.target.id === 'saleshandy-beacon') {
-      console.log('Beacon clicked!');
       injectFloatingWindow();
     }
   });
@@ -171,7 +162,14 @@ async function openIframe() {
     videoContainer.appendChild(closeButton);
 
     // Add the video container to the page
-    document.body.appendChild(videoContainer);
+    // document.body.appendChild(videoContainer);
+  }
+}
+
+function closeDiv() {
+  const element = document.getElementById('react-root');
+  if (element) {
+    element.remove();
   }
 }
 
@@ -189,5 +187,10 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.method === 'open-iframe') {
     await openIframe();
     sendResponse({ status: 'success', message: 'Iframe created' });
+  }
+
+  if (request.method === 'closeDiv') {
+    await closeDiv();
+    sendResponse({ status: 'success', message: 'div closed' });
   }
 });
