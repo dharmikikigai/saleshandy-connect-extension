@@ -34,5 +34,6 @@ module.exports = {
     'no-undef': 'off',
     'react/function-component-definition': 'off',
     'no-plusplus': 'off',
+    'consistent-return': 'off',
   },
 };

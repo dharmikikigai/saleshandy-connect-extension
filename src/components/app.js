@@ -14,6 +14,4 @@ if (rootElement) {
     </RecoilRoot>,
     rootElement,
   );
-} else {
-  console.log('React Root not found');
 }

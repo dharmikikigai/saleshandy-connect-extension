@@ -1,23 +1,18 @@
-/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import Login from './login';
 import Profile from './profile';
 import CommonSearch from './common-search';
 import CommonSearchPeople from './common-search-people';
-import NoResult from './no-result';
 import NotAvailableFeature from './feature-na';
-import prospectsInstance from '../config/server/finder/prospects';
 import { profilePageState } from './state';
 import mailboxInstance from '../config/server/tracker/mailbox';
 
-// eslint-disable-next-line consistent-return
 const Main = () => {
   const [isSaleshandyLoggedIn, setIsSaleshandyLoggedIn] = useState(false);
   const [isSingleViewActive, setIsSingleViewActive] = useState(false);
   const [isBulkPagViewActive, setIsBulkPagViewActive] = useState(false);
   const [isBulkViewActive, setIsBulkViewActive] = useState(false);
-  const [isNoResultFound, setIsNoResultFound] = useState(false);
   const [isFeatureAvailable, setIsFeatureAvailable] = useState(false);
   const [showProfilePage, setShowProfilePage] = useState(false);
   const [isCommonSearchScreenActive, setIsCommonSearchScreenActive] = useState(
@@ -38,6 +33,15 @@ const Main = () => {
   }
 
   const getMetaData = async () => {
+    const element = document.getElementById('react-root');
+
+    if (element && element.style.display === 'none') {
+      return;
+    }
+
+    if (!chrome?.storage?.local) {
+      return;
+    }
     const metaData = (await mailboxInstance.getMetaData()).payload;
 
     if (metaData) {
@@ -60,14 +64,10 @@ const Main = () => {
 
       localStorage.setItem('firstName', metaData?.user?.firstName);
       localStorage.setItem('lastName', metaData?.user?.lastName);
-
-      console.log(metaData, '----------MetaData');
     }
   };
 
   const authCheck = () => {
-    console.log(chrome?.runtime, 'Runtime checking');
-
     const element = document.getElementById('react-root');
 
     const authenticationToken = element?.getAttribute('authToken');
@@ -156,18 +156,15 @@ const Main = () => {
   }, []);
 
   if (!isSaleshandyLoggedIn) {
-    console.log('Rendered -> Login');
     return <Login />;
   }
 
   if (showProfilePage) {
-    console.log('Rendered -> Profile');
     return <Profile />;
   }
 
   if (isSingleViewActive) {
     // return 'Hare Krishna';
-    console.log('Rendered -> isSingleViewActive');
     return <CommonSearchPeople />;
   }
 
@@ -177,10 +174,6 @@ const Main = () => {
 
   if (isBulkViewActive) {
     return 'Hanuman';
-  }
-
-  if (isNoResultFound) {
-    return <NoResult />;
   }
 
   if (isFeatureAvailable) {

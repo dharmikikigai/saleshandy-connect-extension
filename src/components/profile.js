@@ -56,7 +56,6 @@ const Profile = () => {
   };
 
   const newOne = () => {
-    console.log('Removing Commi');
     const findOne = document.getElementById('common-screen-id');
     findOne.style.display = 'none';
   };

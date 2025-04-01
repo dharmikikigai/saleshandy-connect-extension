@@ -1,26 +1,20 @@
 function loadReactApp() {
   const script = document.createElement('script');
-  script.src = chrome.runtime.getURL('content.js');
-  script.onload = () => {
-    const rootElement = document.getElementById('react-root');
-    if (rootElement) {
-      console.log('React app loaded!');
-      // Ensure the app is mounted here
-    } else {
-      console.error('React root element not found!');
-    }
-  };
+  script.src = chrome.runtime.getURL('app.js');
   document.head.appendChild(script);
 }
 
-async function injectFloatingWindow() {
-  console.log('Creating React div...');
-
+function injectFloatingWindow(type) {
   const existingModal = document.getElementById('react-root');
   if (existingModal) {
     existingModal.style.display = 'flex';
-    console.log('Modal already exists, skipping creation.');
     return;
+  }
+
+  let displayType = 'flex';
+
+  if (type === 'none') {
+    displayType = 'none';
   }
 
   const modalDiv = document.createElement('div');
@@ -35,7 +29,7 @@ async function injectFloatingWindow() {
   modalDiv.style.borderRadius = '10px';
   modalDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
   modalDiv.style.zIndex = '9999';
-  modalDiv.style.display = 'flex';
+  modalDiv.style.display = displayType;
   modalDiv.style.flexDirection = 'column';
   modalDiv.style.alignItems = 'center';
   modalDiv.style.justifyContent = 'flex-start';
@@ -54,16 +48,20 @@ async function injectFloatingWindow() {
   loadReactApp();
 }
 
-async function injectBeaconOnLinkedInUrl() {
-  // Check if the modal already exists
+function injectScriptAndFloatingWindow(type) {
+  chrome.runtime.sendMessage({ action: 'loadScript' }, () => {
+    injectFloatingWindow(type);
+  });
+}
+
+injectScriptAndFloatingWindow('none');
+
+function injectBeaconOnLinkedInUrl() {
   const existingModal = document.getElementById('saleshandy-beacon');
   if (existingModal) {
-    console.log('Beacon already exists, skipping creation.');
-    return; // Don't create another modal if one already exists
+    return;
   }
 
-  console.log('Injecting the beacon');
-  // This script will create and append the beacon to the LinkedIn page
   const beacon = document.createElement('div');
   beacon.id = 'saleshandy-beacon';
   beacon.style.position = 'fixed';
@@ -77,58 +75,54 @@ async function injectBeaconOnLinkedInUrl() {
   beacon.style.borderRadius = '7px 0 0 7px';
   beacon.style.zIndex = '9999';
 
-  // Append the beacon to the body of the LinkedIn page
   document.body.appendChild(beacon);
 
   let isDragging = false;
   let offsetY = 0;
 
-  // Mouse down event to start dragging
   beacon.addEventListener('mousedown', (event) => {
     isDragging = true;
     offsetY = event.clientY - beacon.getBoundingClientRect().top;
 
-    // Change cursor style to indicate dragging
     beacon.style.cursor = 'grabbing';
   });
 
-  // Mouse move event to drag the beacon
   document.addEventListener('mousemove', (event) => {
     if (isDragging) {
       const y = event.clientY - offsetY;
 
-      // Update the beacon's position
       beacon.style.top = `${y}px`;
     }
   });
 
-  // Mouse up event to stop dragging
   document.addEventListener('mouseup', () => {
     if (isDragging) {
       isDragging = false;
-      beacon.style.cursor = 'pointer'; // Reset cursor to pointer when not dragging
+      beacon.style.cursor = 'pointer';
     }
   });
 
-  // Event delegation: Attach click event listener to the document body
   document.body.addEventListener('click', (event) => {
     if (event.target && event.target.id === 'saleshandy-beacon') {
-      injectFloatingWindow();
+      const element = document.getElementById('react-root');
+
+      if (element && element.style.display === 'flex') {
+        return;
+      }
+
+      injectScriptAndFloatingWindow();
     }
   });
 }
 
-async function openIframe() {
-  // Check if the video player is already injected
+function openIframe() {
   if (!document.querySelector('.video-container')) {
-    // Create the iframe element for the video
     const iframe = document.createElement('iframe');
     iframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
 
-    // Create the video container with styling
     const videoContainer = document.createElement('div');
     videoContainer.classList.add('video-container');
     videoContainer.style.position = 'fixed';
@@ -142,7 +136,6 @@ async function openIframe() {
     videoContainer.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.1)';
     videoContainer.appendChild(iframe);
 
-    // Create the close button
     const closeButton = document.createElement('button');
     closeButton.classList.add('close-button');
     closeButton.innerHTML = 'X';
@@ -162,7 +155,6 @@ async function openIframe() {
 
     videoContainer.appendChild(closeButton);
 
-    // Add the video container to the page
     // document.body.appendChild(videoContainer);
   }
 }
@@ -174,24 +166,24 @@ function closeDiv() {
   }
 }
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.method === 'createDiv') {
-    await injectFloatingWindow(sendResponse);
+    injectFloatingWindow();
     sendResponse({ status: 'success', message: 'Div Modal created' });
   }
 
   if (request.method === 'injectBeacon') {
-    await injectBeaconOnLinkedInUrl();
+    injectBeaconOnLinkedInUrl();
     sendResponse({ status: 'success', message: 'Beacon Modal created' });
   }
 
   if (request.method === 'open-iframe') {
-    await openIframe();
+    openIframe();
     sendResponse({ status: 'success', message: 'Iframe created' });
   }
 
   if (request.method === 'closeDiv') {
-    await closeDiv();
+    closeDiv();
     sendResponse({ status: 'success', message: 'div closed' });
   }
 });
