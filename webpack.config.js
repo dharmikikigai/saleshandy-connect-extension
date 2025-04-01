@@ -38,17 +38,13 @@ const options = {
   entry: {
     pageWorld: '@inboxsdk/core/pageWorld.js',
     index: path.join(__dirname, 'src', 'components', 'index.js'),
-    app: './src/components/app.js',
     worker_wrapper: [
       './src/background-files/linkedin/popup.js',
       './src/background-files/linkedin/logic.js',
       './src/background-files/email-tracking/background.js',
       '@inboxsdk/core/background.js',
     ],
-    content: [
-      // './src/background-files/email-tracking/content.js',
-      './src/components/app.js',
-    ],
+    content: './src/components/app.js',
   },
   output: {
     filename: '[name].js',
