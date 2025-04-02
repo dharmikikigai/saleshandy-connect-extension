@@ -73,7 +73,7 @@ function injectBeaconOnLinkedInUrl() {
   beacon.style.backgroundSize = 'cover';
   beacon.style.cursor = 'pointer';
   beacon.style.borderRadius = '7px 0 0 7px';
-  beacon.style.zIndex = '9999';
+  beacon.style.zIndex = '8888';
 
   document.body.appendChild(beacon);
 
@@ -116,7 +116,9 @@ function injectBeaconOnLinkedInUrl() {
 }
 
 function openIframe() {
-  if (!document.querySelector('.video-container')) {
+  console.log('Inside Ram Ram');
+  if (!document.getElementById('saleshandy-welcome-video')) {
+    console.log('Inside Ram Ram');
     const iframe = document.createElement('iframe');
     iframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
     iframe.style.width = '100%';
@@ -124,12 +126,13 @@ function openIframe() {
     iframe.style.border = 'none';
 
     const videoContainer = document.createElement('div');
+    videoContainer.id = 'saleshandy-welcome-video';
     videoContainer.classList.add('video-container');
     videoContainer.style.position = 'fixed';
     videoContainer.style.bottom = '20px';
     videoContainer.style.left = '20px';
-    videoContainer.style.width = '640px';
-    videoContainer.style.height = '360px';
+    videoContainer.style.width = '480px';
+    videoContainer.style.height = '258px';
     videoContainer.style.borderRadius = '12px';
     videoContainer.style.overflow = 'hidden';
     videoContainer.style.zIndex = '9999';
@@ -155,7 +158,7 @@ function openIframe() {
 
     videoContainer.appendChild(closeButton);
 
-    // document.body.appendChild(videoContainer);
+    document.body.appendChild(videoContainer);
   }
 }
 
@@ -167,6 +170,7 @@ function closeDiv() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log(request, 'request');
   if (request.method === 'createDiv') {
     injectFloatingWindow();
     sendResponse({ status: 'success', message: 'Div Modal created' });
@@ -177,8 +181,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ status: 'success', message: 'Beacon Modal created' });
   }
 
-  if (request.method === 'open-iframe') {
+  if (request.method === 'injectYTVideo') {
+    console.log('Message Revived');
     openIframe();
+
     sendResponse({ status: 'success', message: 'Iframe created' });
   }
 

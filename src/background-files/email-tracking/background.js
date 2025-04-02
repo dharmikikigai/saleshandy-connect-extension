@@ -22,6 +22,8 @@ async function onBeaconClickActivity(tab) {
 
   await fetchAndSetActiveUrl(tab?.url);
 
+  console.log('On Install Updates');
+  chrome.tabs.sendMessage(tab.id, { method: 'injectYTVideo' });
   chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
 }
 
@@ -82,9 +84,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 async function openLinkedinOnInstall() {
   chrome.tabs.create(
     { url: 'https://www.linkedin.com/in/piyushnp/' },
-    async (newTab) => {
-      await onBeaconClickActivity(newTab);
-      chrome.tabs.sendMessage(newTab.id, { method: 'open-iframe' });
+    (newTab) => {
+      onBeaconClickActivity(newTab);
     },
   );
 }
