@@ -22,15 +22,12 @@ const Popup = () => {
 
   const fetchSetting = () => {
     chrome.storage.local.get(['mailboxEmail'], async (request) => {
-      console.log('request.mailboxEmail', request.mailboxEmail);
       if (request.mailboxEmail) {
         const { mailboxId, isTrackingEnabled, userId } = (
           await mailboxInstance.fetchingMailboxSetting({
             email: request.mailboxEmail,
           })
         ).payload;
-
-        console.log(mailboxId, isTrackingEnabled, userId, 'Data------');
 
         chrome.storage.local.set({
           [request.mailboxEmail]: { mailboxId, isTrackingEnabled, userId },
@@ -45,7 +42,6 @@ const Popup = () => {
   };
 
   const handleTrackingSetting = async () => {
-    console.log('Data');
     const trackingSetting = (
       await mailboxInstance.updateMailboxSetting(
         {
@@ -54,8 +50,6 @@ const Popup = () => {
         newMailboxId,
       )
     ).payload;
-
-    console.log(trackingSetting, 'trackingSetting');
 
     chrome.storage.local.get(['mailboxEmail'], (request) => {
       setMailboxEmail(request.mailboxEmail);
@@ -77,31 +71,29 @@ const Popup = () => {
   };
 
   const fetchNotificationSetting = async () => {
-    // const notificationSetting = (
-    //   await mailboxInstance.fetchNotificationSetting()
-    // ).payload;
-    // if (notificationSetting) {
-    //   if (notificationSetting.settings[0].value === '1') {
-    //     setDesktopNotification(true);
-    //     setRender(true);
-    //   } else {
-    //     setDesktopNotification(false);
-    //     setRender(true);
-    //   }
-    // }
+    const notificationSetting = (
+      await mailboxInstance.fetchNotificationSetting()
+    ).payload;
+    if (notificationSetting) {
+      if (notificationSetting.settings[0].value === '1') {
+        setDesktopNotification(true);
+      } else {
+        setDesktopNotification(false);
+      }
+    }
   };
 
   const handleNotificationSetting = async () => {
-    // let code;
-    // if (desktopNotification) {
-    //   code = '0';
-    // } else {
-    //   code = '1';
-    // }
+    let code;
+    if (desktopNotification) {
+      code = '0';
+    } else {
+      code = '1';
+    }
 
-    // await mailboxInstance.updateNotificationSetting({
-    //   settings: [{ code: 'desktop_notification', value: code }],
-    // });
+    await mailboxInstance.updateNotificationSetting({
+      settings: [{ code: 'desktop_notification', value: code }],
+    });
 
     setDesktopNotification(!desktopNotification);
   };
