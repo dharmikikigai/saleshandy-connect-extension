@@ -25,24 +25,24 @@ const Main = () => {
     profilePageState,
   );
 
-  function getInitials(firstName, lastName) {
+  const FLOATING_WINDOW_ID = 'saleshandy-window';
+
+  const getInitials = (firstName, lastName) => {
     const firstInitial = firstName ? firstName.charAt(0).toUpperCase() : '';
     const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
 
     return firstInitial + lastInitial;
-  }
+  };
 
   const getMetaData = async () => {
-    const element = document.getElementById('react-root');
+    const element = document.getElementById(FLOATING_WINDOW_ID);
 
     if (element && element.style.display === 'none') {
       return;
     }
 
-    if (!chrome?.storage?.local) {
-      return;
-    }
     const metaData = (await mailboxInstance.getMetaData()).payload;
+    console.log(metaData, 'MetaDATA');
 
     if (metaData) {
       localStorage.setItem(
@@ -68,9 +68,12 @@ const Main = () => {
   };
 
   const authCheck = () => {
-    const element = document.getElementById('react-root');
+    let authenticationToken;
 
-    const authenticationToken = element?.getAttribute('authToken');
+    chrome.storage.local.get(['authToken'], (response) => {
+      authenticationToken = response?.authToken;
+      console.log(response?.authToken, 'AuthToken');
+    });
 
     let checkFurther = true;
 
@@ -98,8 +101,11 @@ const Main = () => {
   };
 
   const pageCheck = () => {
-    const element = document.getElementById('react-root');
-    const activeUrl = element?.getAttribute('activeUrl');
+    let activeUrl;
+
+    chrome.storage.local.get(['activeUrl'], (response) => {
+      activeUrl = response?.activeUrl;
+    });
 
     if (!activeUrl || activeUrl === '') {
       setIsCommonSearchScreenActive(true);
@@ -149,10 +155,20 @@ const Main = () => {
     }
   };
 
-  useEffect(() => {
+  const useEffectFunctions = () => {
+    // if (!chrome?.storage?.local) {
+    //   console.log(chrome?.storage, 'Storage');
+    //   return;
+    // }
+
     authCheck();
     pageCheck();
     getMetaData();
+  };
+
+  useEffect(() => {
+    useEffectFunctions();
+    console.log();
   }, []);
 
   if (!isSaleshandyLoggedIn) {

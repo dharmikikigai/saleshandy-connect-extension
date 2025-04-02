@@ -1,7 +1,7 @@
 import React from 'react';
 
 const handleClose = () => {
-  const element = document.getElementById('react-root');
+  const element = document.getElementById('saleshandy-window');
   if (element) {
     element.style.display = 'none';
   }
