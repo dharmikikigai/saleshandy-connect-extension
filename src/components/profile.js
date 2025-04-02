@@ -1,7 +1,9 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
 import React, { useEffect, useState } from 'react';
+import { Switch } from '@saleshandy/designs';
 import Main from './main';
+import mailboxInstance from '../config/server/tracker/mailbox';
 
 const Profile = () => {
   const [logout, setLogout] = useState(false);
@@ -9,8 +11,11 @@ const Profile = () => {
   const [nameInitials, setNameInitials] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [trackingSetting, setTrackingSetting] = useState('false');
-  const [notificationSetting, setNotificationSetting] = useState('false');
+  const [mailboxSetting, setMailboxSetting] = useState(false);
+  const [desktopNotification, setDesktopNotification] = useState(false);
+  const [newMailboxId, setMailboxId] = useState();
+  const [mailboxEmail, setMailboxEmail] = useState('');
+  const [newUserId, setUserId] = useState();
 
   const handledLogout = () => {
     localStorage.setItem('logoutTriggered', 'true');
@@ -43,21 +48,87 @@ const Profile = () => {
     setEmail(userEmail);
   };
 
-  const getTrackingSetting = () => {
-    const setting = localStorage.getItem('isEmailTrackerEnabled');
-
-    setTrackingSetting(setting);
-  };
-
-  const getNotificationSetting = () => {
-    const setting = localStorage.getItem('isTrackingNotificationEnabled');
-
-    setNotificationSetting(setting);
-  };
-
   const newOne = () => {
     const findOne = document.getElementById('common-screen-id');
     findOne.style.display = 'none';
+  };
+
+  const fetchSetting = () => {
+    chrome.storage.local.get(['mailboxEmail'], async (request) => {
+      if (request.mailboxEmail) {
+        const { mailboxId, isTrackingEnabled, userId } = (
+          await mailboxInstance.fetchingMailboxSetting({
+            email: request.mailboxEmail,
+          })
+        ).payload;
+
+        chrome.storage.local.set({
+          [request.mailboxEmail]: { mailboxId, isTrackingEnabled, userId },
+        });
+
+        setMailboxSetting(isTrackingEnabled);
+        setMailboxId(mailboxId);
+        setMailboxEmail(request.mailboxEmail);
+        setUserId(userId);
+      }
+    });
+  };
+
+  const handleTrackingSetting = async () => {
+    const trackingSetting = (
+      await mailboxInstance.updateMailboxSetting(
+        {
+          isTrackingEnabled: !mailboxSetting,
+        },
+        newMailboxId,
+      )
+    ).payload;
+
+    chrome.storage.local.get(['mailboxEmail'], (request) => {
+      setMailboxEmail(request.mailboxEmail);
+    });
+
+    const trackingData = trackingSetting.isTrackingEnabled;
+
+    chrome.storage.local.set({
+      [mailboxEmail]: {
+        mailboxId: newMailboxId,
+        isTrackingEnabled: trackingData,
+        userId: newUserId,
+      },
+    });
+
+    if (trackingSetting) {
+      setMailboxSetting(trackingData);
+    }
+  };
+
+  const fetchNotificationSetting = async () => {
+    const notificationSetting = (
+      await mailboxInstance.fetchNotificationSetting()
+    ).payload;
+    if (notificationSetting) {
+      if (notificationSetting.settings[0].value === '1') {
+        setDesktopNotification(true);
+      } else {
+        setDesktopNotification(false);
+      }
+    }
+  };
+
+  const handleNotificationSetting = async () => {
+    let code;
+    if (desktopNotification) {
+      code = '0';
+    } else {
+      code = '1';
+    }
+
+    await mailboxInstance.updateNotificationSetting({
+      settings: [{ code: 'desktop_notification', value: code }],
+    });
+
+    setDesktopNotification(!desktopNotification);
   };
 
   useEffect(() => {
@@ -65,8 +136,8 @@ const Profile = () => {
     getNameInitials();
     getName();
     getEmail();
-    getTrackingSetting();
-    getNotificationSetting;
+    fetchSetting();
+    fetchNotificationSetting();
   }, []);
 
   return (
@@ -635,6 +706,15 @@ const Profile = () => {
               >
                 Enable Email Tracker
               </div>
+              <div
+                style={{ position: 'absolute', top: '510px', right: '15px' }}
+              >
+                <Switch
+                  checked={mailboxSetting}
+                  onChange={handleTrackingSetting}
+                  size={Switch.Size.Small}
+                />
+              </div>
             </div>
             <div style={{ width: '300px', height: '16px', marginTop: '14px' }}>
               <div style={{ position: 'absolute', top: '580px', left: '14px' }}>
@@ -671,6 +751,15 @@ const Profile = () => {
                 }}
               >
                 Enable Tracking Notification
+              </div>
+              <div
+                style={{ position: 'absolute', top: '550px', right: '15px' }}
+              >
+                <Switch
+                  checked={desktopNotification}
+                  onChange={handleNotificationSetting}
+                  size={Switch.Size.Small}
+                />
               </div>
             </div>
           </div>
