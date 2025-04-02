@@ -5,7 +5,7 @@ import { profilePageState } from './state';
 import Main from './main';
 
 const handleClose = () => {
-  const element = document.getElementById('react-root');
+  const element = document.getElementById('saleshandy-window');
   if (element) {
     element.style.display = 'none';
   }

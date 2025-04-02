@@ -13,18 +13,26 @@ class Server {
 
   setRequestInterceptors() {
     this.req.interceptors.request.use(async (config) => {
-      const element = document.getElementById('react-root');
-
-      let authenticationToken = element?.getAttribute('authToken');
-
-      authenticationToken = authenticationToken?.replace(/"/g, '');
+      const authenticationToken = await Server.getAuthToken(); // Use static method
 
       // eslint-disable-next-line no-param-reassign
       config.headers.authorization = `Bearer ${authenticationToken}`;
-
       // eslint-disable-next-line no-param-reassign
       config.headers.Source = 'open-api';
       return config;
+    });
+  }
+
+  // Static method to avoid ESLint error
+  static getAuthToken() {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get(['authToken'], (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error('Failed to retrieve authToken'));
+        } else {
+          resolve(response?.authToken);
+        }
+      });
     });
   }
 }

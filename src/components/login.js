@@ -3,7 +3,7 @@ import { Button, Card, Container } from 'react-bootstrap';
 import Main from './main';
 
 const handleClose = () => {
-  const element = document.getElementById('react-root');
+  const element = document.getElementById('saleshandy-window');
   if (element) {
     element.style.display = 'none';
   }
@@ -15,9 +15,11 @@ const Login = () => {
   const handleClick = () => {
     localStorage.setItem('logoutTriggered', 'false');
 
-    const element = document.getElementById('react-root');
+    let authenticationToken;
 
-    const authenticationToken = element?.getAttribute('authToken');
+    chrome.storage.local.get(['authToken'], (response) => {
+      authenticationToken = response?.authToken;
+    });
 
     if (
       authenticationToken !== undefined &&
