@@ -33,7 +33,7 @@ const Main = () => {
   }
 
   const getMetaData = async () => {
-    const element = document.getElementById('react-root');
+    const element = document.getElementById('saleshandy-window');
 
     if (element && element.style.display === 'none') {
       return;
@@ -68,7 +68,7 @@ const Main = () => {
   };
 
   const authCheck = () => {
-    const element = document.getElementById('react-root');
+    const element = document.getElementById('saleshandy-window');
 
     const authenticationToken = element?.getAttribute('authToken');
 
@@ -98,7 +98,7 @@ const Main = () => {
   };
 
   const pageCheck = () => {
-    const element = document.getElementById('react-root');
+    const element = document.getElementById('saleshandy-window');
     const activeUrl = element?.getAttribute('activeUrl');
 
     if (!activeUrl || activeUrl === '') {

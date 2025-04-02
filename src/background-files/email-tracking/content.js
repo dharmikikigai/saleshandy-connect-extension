@@ -1,3 +1,5 @@
+const FLOATING_WINDOW_ID = 'saleshandy-window';
+
 function loadReactApp() {
   const script = document.createElement('script');
   script.src = chrome.runtime.getURL('app.js');
@@ -5,7 +7,7 @@ function loadReactApp() {
 }
 
 function injectFloatingWindow(type) {
-  const existingModal = document.getElementById('react-root');
+  const existingModal = document.getElementById(FLOATING_WINDOW_ID);
   if (existingModal) {
     existingModal.style.display = 'flex';
     return;
@@ -18,7 +20,7 @@ function injectFloatingWindow(type) {
   }
 
   const modalDiv = document.createElement('div');
-  modalDiv.id = 'react-root';
+  modalDiv.id = FLOATING_WINDOW_ID;
   modalDiv.style.position = 'fixed';
   modalDiv.style.top = '50%';
   modalDiv.style.right = '15px';
@@ -104,7 +106,7 @@ function injectBeaconOnLinkedInUrl() {
 
   document.body.addEventListener('click', (event) => {
     if (event.target && event.target.id === 'saleshandy-beacon') {
-      const element = document.getElementById('react-root');
+      const element = document.getElementById(FLOATING_WINDOW_ID);
 
       if (element && element.style.display === 'flex') {
         return;
@@ -163,7 +165,7 @@ function openIframe() {
 }
 
 function closeDiv() {
-  const element = document.getElementById('react-root');
+  const element = document.getElementById(FLOATING_WINDOW_ID);
   if (element) {
     element.style.display = 'none';
   }

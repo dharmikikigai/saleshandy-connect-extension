@@ -5,7 +5,7 @@ import 'bootstrap/dist/css/bootstrap.css';
 import '@saleshandy/designs/lib/assets/css/design-system.scss';
 import Main from './main';
 
-const rootElement = document.getElementById('react-root');
+const rootElement = document.getElementById('saleshandy-window');
 
 if (rootElement) {
   ReactDOM.render(
