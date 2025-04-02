@@ -13,18 +13,16 @@ class Server {
 
   setRequestInterceptors() {
     this.req.interceptors.request.use(async (config) => {
-      const element = document.getElementById('react-root');
+      chrome.storage.local.get(['authToken'], async (res) => {
+        const authenticationToken = res.authToken;
+        // eslint-disable-next-line no-param-reassign
+        config.headers.authorization = `Bearer ${authenticationToken}`;
 
-      let authenticationToken = element?.getAttribute('authToken');
-
-      authenticationToken = authenticationToken?.replace(/"/g, '');
-
-      // eslint-disable-next-line no-param-reassign
-      config.headers.authorization = `Bearer ${authenticationToken}`;
-
-      // eslint-disable-next-line no-param-reassign
-      config.headers.Source = 'open-api';
-      return config;
+        // eslint-disable-next-line no-param-reassign
+        config.headers.Source = 'open-api';
+        console.log('token fetched');
+        return config;
+      });
     });
   }
 }

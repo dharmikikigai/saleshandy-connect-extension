@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Switch } from '@saleshandy/designs';
+import mailboxInstance from '../config/server/tracker/mailbox';
 
 const handleClose = () => {
   window.close();
@@ -12,6 +14,102 @@ const Popup = () => {
   const [refreshTooltip, setRefreshTooltip] = useState(false);
   const [emailInsightTooltip, setEmailInsightTooltip] = useState(false);
   const [emailReportTooltip, setEmailReportTooltip] = useState(false);
+  const [mailboxSetting, setMailboxSetting] = useState(false);
+  const [desktopNotification, setDesktopNotification] = useState(false);
+  const [newMailboxId, setMailboxId] = useState();
+  const [mailboxEmail, setMailboxEmail] = useState('');
+  const [newUserId, setUserId] = useState();
+
+  const fetchSetting = () => {
+    chrome.storage.local.get(['mailboxEmail'], async (request) => {
+      console.log('request.mailboxEmail', request.mailboxEmail);
+      if (request.mailboxEmail) {
+        const { mailboxId, isTrackingEnabled, userId } = (
+          await mailboxInstance.fetchingMailboxSetting({
+            email: request.mailboxEmail,
+          })
+        ).payload;
+
+        console.log(mailboxId, isTrackingEnabled, userId, 'Data------');
+
+        chrome.storage.local.set({
+          [request.mailboxEmail]: { mailboxId, isTrackingEnabled, userId },
+        });
+
+        setMailboxSetting(isTrackingEnabled);
+        setMailboxId(mailboxId);
+        setMailboxEmail(request.mailboxEmail);
+        setUserId(userId);
+      }
+    });
+  };
+
+  const handleTrackingSetting = async () => {
+    console.log('Data');
+    const trackingSetting = (
+      await mailboxInstance.updateMailboxSetting(
+        {
+          isTrackingEnabled: !mailboxSetting,
+        },
+        newMailboxId,
+      )
+    ).payload;
+
+    console.log(trackingSetting, 'trackingSetting');
+
+    chrome.storage.local.get(['mailboxEmail'], (request) => {
+      setMailboxEmail(request.mailboxEmail);
+    });
+
+    const trackingData = trackingSetting.isTrackingEnabled;
+
+    chrome.storage.local.set({
+      [mailboxEmail]: {
+        mailboxId: newMailboxId,
+        isTrackingEnabled: trackingData,
+        userId: newUserId,
+      },
+    });
+
+    if (trackingSetting) {
+      setMailboxSetting(trackingData);
+    }
+  };
+
+  const fetchNotificationSetting = async () => {
+    // const notificationSetting = (
+    //   await mailboxInstance.fetchNotificationSetting()
+    // ).payload;
+    // if (notificationSetting) {
+    //   if (notificationSetting.settings[0].value === '1') {
+    //     setDesktopNotification(true);
+    //     setRender(true);
+    //   } else {
+    //     setDesktopNotification(false);
+    //     setRender(true);
+    //   }
+    // }
+  };
+
+  const handleNotificationSetting = async () => {
+    // let code;
+    // if (desktopNotification) {
+    //   code = '0';
+    // } else {
+    //   code = '1';
+    // }
+
+    // await mailboxInstance.updateNotificationSetting({
+    //   settings: [{ code: 'desktop_notification', value: code }],
+    // });
+
+    setDesktopNotification(!desktopNotification);
+  };
+
+  useEffect(() => {
+    fetchSetting();
+    fetchNotificationSetting();
+  }, []);
 
   return (
     <>
@@ -698,6 +796,13 @@ const Popup = () => {
             >
               Enable Email Tracker
             </div>
+            <div style={{ position: 'absolute', top: '263px', right: '15px' }}>
+              <Switch
+                checked={mailboxSetting}
+                onChange={handleTrackingSetting}
+                size={Switch.Size.Small}
+              />
+            </div>
           </div>
           {/* Notification on/off */}
           <div style={{ width: '300px', height: '16px', marginTop: '1px' }}>
@@ -735,6 +840,13 @@ const Popup = () => {
               }}
             >
               Enable Tracking Notification
+            </div>
+            <div style={{ position: 'absolute', top: '290px', right: '15px' }}>
+              <Switch
+                checked={desktopNotification}
+                onChange={handleNotificationSetting}
+                size={Switch.Size.Small}
+              />
             </div>
           </div>
         </div>

@@ -193,3 +193,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ status: 'success', message: 'div closed' });
   }
 });
+
+chrome.storage.local.set({ mailboxEmail: 'haesh@ikigai.co.in' });
