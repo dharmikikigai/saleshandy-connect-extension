@@ -184,9 +184,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.method === 'injectYTVideo') {
-    console.log('Message Revived');
     openIframe();
-
     sendResponse({ status: 'success', message: 'Iframe created' });
   }
 
