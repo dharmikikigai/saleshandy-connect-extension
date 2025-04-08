@@ -169,11 +169,13 @@ const Main = () => {
   }
 
   if (isBulkPagViewActive) {
-    return 'Hare Ramma';
+    // return 'Hare Ramma';
+    return <CommonSearchPeople />;
   }
 
   if (isBulkViewActive) {
-    return 'Hanuman';
+    // return 'Hanuman';
+    return <CommonSearchPeople />;
   }
 
   if (isFeatureAvailable) {

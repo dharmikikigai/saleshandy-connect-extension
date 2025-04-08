@@ -17,12 +17,16 @@ const REG_JSON_BLOCKS_P = /<code.+?>([\s\S]+?)<\/code>/gi;
 const REG_JSON_BLOCKS = /<code.+?>([\s\S]+?)<\/code>/gi;
 const COMPANIES_IDENT = 'com.linkedin.voyager.organization.Company';
 let csrfToken = false;
+const regGooglePersonSourceId2 = /in\/(.+)/i;
+const regPersonId2Parse = /(.+)\?miniProfileUrn*/i;
 
 const REG_EMAILS = /\b[a-z\d-][_a-z\d-+]*(?:\.[_a-z\d-+]*)*@[a-z\d]+[a-z\d-]*(?:\.[a-z\d-]+)*(?:\.[a-z]{2,63})\b/gi;
 const isRecruterIntP = false;
 const isSalesNavIntP = false;
 let person = {};
 let currentTabUrl = null;
+let isPre = false;
+let isGraph = false;
 
 function getAll(field, data, type) {
   for (key in data) {
@@ -347,6 +351,19 @@ function getAllP(field, data, type) {
   }
 
   return this.data;
+}
+
+function findDescr(source, reg) {
+  let sTemp = '';
+  const fnd = source.match(reg);
+
+  if (fnd && fnd.length > 1) {
+    sTemp = fnd[1];
+    sTemp = sTemp.trim();
+    sTemp = convertHtmlToText(sTemp);
+    return sTemp;
+  }
+  return '';
 }
 
 function searchEmails(input, emailsOld) {
@@ -767,60 +784,266 @@ function getUserInfo(source) {
 
   return user;
 }
-
-function BGActionDo(tab, tabId) {
-  console.log('BGActionDo: ', tab.url);
-  chrome.storage.local.get(['csrfToken'], (request) => {
-    console.log(request?.csrfToken, 'csrfToken');
-    if (request.csrfToken) {
-      const sourceId2 = findDescrP(tab.url, /in\/(.+?)(\/|$)/i);
-      const apiUrl = `https://www.linkedin.com/voyager/api/identity/dash/profiles?q=memberIdentity&memberIdentity=${sourceId2}&decorationId=com.linkedin.voyager.dash.deco.identity.profile.FullProfileWithEntities-91`;
-      chrome.tabs.sendMessage(
-        tab.id,
-        { method: 'getPersonData', tk: request.csrfToken, url: apiUrl },
-        (response) => {
-          if (!chrome.runtime.lastError) {
-            chrome.storage.local.set({ newData: true }, () => {});
-            if (response && response.data) {
-              person = getUserInfo(JSON.parse(response.data));
+function getPeopleGraph(source) {
+  const minidata = [];
+  if (typeof source === 'object') {
+    let miniProfile = [];
+    if (
+      source.data &&
+      source.data.searchDashClustersByAll &&
+      source.data.searchDashClustersByAll.elements &&
+      source.data.searchDashClustersByAll.elements.length > 0
+    ) {
+      const elements = source.data.searchDashClustersByAll.elements;
+      elements.forEach((elem) => {
+        if (elem.results && elem.results.length > 0) {
+          const results = elem.results;
+          results.forEach((res) => {
+            miniProfile.push(res);
+          });
+        }
+      });
+    } else {
+      miniProfile = source.included;
+    }
+    if (miniProfile) {
+      miniProfile.forEach((ii) => {
+        if (ii.template && ii.navigationUrl) {
+          if (
+            ii.navigationUrl.indexOf('/in/') !== -1 &&
+            ii.title.text &&
+            ii.title.text !== 'LinkedIn Member'
+          ) {
+            mp = {};
+            mp.name = ii.title.text;
+            const arrName = mp.name.split(' ');
+            if (arrName.length === 1) {
+              mp.firstname = arrName[0];
+              mp.lastname = '';
+            } else if (arrName.length === 2) {
+              mp.firstname = arrName[0];
+              mp.lastname = arrName[1];
+            } else if (arrName.length > 2) {
+              mp.firstname = arrName[0];
+              mp.lastname = arrName[1];
+              for (let i = 2; i < arrName.length; i++) {
+                mp.lastname += ` ${arrName[i]}`;
+              }
             }
-            if (person) {
-              csrfToken = true;
-              if (person.name) {
-                if (person.current && person.current.length > 0) {
-                  if (person.current[0].source_id === undefined) {
-                    chrome.storage.local.set({ personInfo: person }, () => {});
-                    console.log('Person Info 1: ', person);
-                    chrome.storage.local.set(
-                      { companyLink: 'link is undefined' },
-                      () => {},
-                    );
-                  } else {
-                    currentCompany(person.current[0], tabId);
-                    retriveContactdata(sourceId2, tabId);
-                    chrome.storage.local.set({ personInfo: person }, () => {});
-                    console.log('Person Info 2: ', person);
+            if (ii.primarySubtitle && ii.primarySubtitle.text) {
+              mp.description = ii.primarySubtitle.text;
+            }
+            mp.source_id = ii.trackingUrn.replace('urn:li:member:', '');
+            mp.source_id_2 = findDescr(
+              ii.navigationUrl,
+              regGooglePersonSourceId2,
+            );
+            if (
+              mp.source_id_2 &&
+              mp.source_id_2.indexOf('?miniProfileUrn') !== -1
+            ) {
+              mp.source_id_2 = decodeURIComponent(
+                findDescr(mp.source_id_2, regPersonId2Parse),
+              );
+            }
+            if (
+              ii.image &&
+              ii.image.attributes &&
+              ii.image.attributes.length > 0
+            ) {
+              const profileImageAttribute = ii.image.attributes[0];
+              if (
+                profileImageAttribute &&
+                profileImageAttribute.detailData &&
+                profileImageAttribute.detailData.nonEntityProfilePicture
+              ) {
+                const profileImageReference =
+                  profileImageAttribute.detailData.nonEntityProfilePicture;
+                if (
+                  profileImageReference &&
+                  profileImageReference.vectorImage &&
+                  profileImageReference.vectorImage.artifacts &&
+                  profileImageReference.vectorImage.artifacts.length > 0
+                ) {
+                  const profileVectors = profileImageReference.vectorImage;
+                  for (
+                    let iNo = 0;
+                    iNo < profileVectors.artifacts.length;
+                    iNo++
+                  ) {
+                    if ((profileVectors.artifacts[iNo].width = 100)) {
+                      mp.logo =
+                        profileVectors.artifacts[
+                          iNo
+                        ].fileIdentifyingUrlPathSegment;
+                    }
                   }
-                } else {
-                  chrome.storage.local.set({ personInfo: person }, () => {});
-                  console.log('Person Info 3: ', person);
-
-                  chrome.storage.local.set({ companyLink: 'NA' }, () => {});
+                  if (mp.logo && profileVectors.rootUrl) {
+                    mp.logo = profileVectors.rootUrl + mp.logo;
+                  }
                 }
               }
             }
-          } else {
-            chrome.storage.local.set({ newData: false }, () => {});
+            minidata.push(mp);
           }
-        },
-      );
+        }
+      });
     }
-  });
+
+    return minidata;
+  }
+}
+
+function BGActionDo(tab, tabId) {
+  console.log('BGActionDo: ', tab.url);
+  if (tab.url.indexOf('/in/') !== -1) {
+    chrome.storage.local.get(['csrfToken'], (request) => {
+      console.log(request?.csrfToken, 'csrfToken');
+      if (request.csrfToken) {
+        const sourceId2 = findDescrP(tab.url, /in\/(.+?)(\/|$)/i);
+        const apiUrl = `https://www.linkedin.com/voyager/api/identity/dash/profiles?q=memberIdentity&memberIdentity=${sourceId2}&decorationId=com.linkedin.voyager.dash.deco.identity.profile.FullProfileWithEntities-91`;
+        chrome.tabs.sendMessage(
+          tab.id,
+          { method: 'getPersonData', tk: request.csrfToken, url: apiUrl },
+          (response) => {
+            if (!chrome.runtime.lastError) {
+              chrome.storage.local.set({ newData: true }, () => {});
+              if (response && response.data) {
+                person = getUserInfo(JSON.parse(response.data));
+              }
+              if (person) {
+                csrfToken = true;
+                if (person.name) {
+                  if (person.current && person.current.length > 0) {
+                    if (person.current[0].source_id === undefined) {
+                      chrome.storage.local.set(
+                        { personInfo: person },
+                        () => {},
+                      );
+                      console.log('Person Info 1: ', person);
+                      chrome.storage.local.set(
+                        { companyLink: 'link is undefined' },
+                        () => {},
+                      );
+                    } else {
+                      currentCompany(person.current[0], tabId);
+                      retriveContactdata(sourceId2, tabId);
+                      chrome.storage.local.set(
+                        { personInfo: person },
+                        () => {},
+                      );
+                      console.log('Person Info 2: ', person);
+                    }
+                  } else {
+                    chrome.storage.local.set({ personInfo: person }, () => {});
+                    console.log('Person Info 3: ', person);
+
+                    chrome.storage.local.set({ companyLink: 'NA' }, () => {});
+                  }
+                }
+              }
+            } else {
+              chrome.storage.local.set({ newData: false }, () => {});
+            }
+          },
+        );
+      }
+    });
+  } else if (tab.url.toLowerCase().indexOf('/search/results/people') !== -1) {
+    let tabUrl = tab.url;
+    let urls = {};
+    console.log('Inside Result People');
+    chrome.storage.local.get(
+      [
+        'csrfToken',
+        'defaultApiPeopleSearch_url',
+        'premiumApiPeopleSearch_url',
+        'graphApiPeopleSearch_url',
+      ],
+      (request) => {
+        console.log(
+          request.csrfToken,
+          request.defaultApiPeopleSearch_url,
+          request.premiumApiPeopleSearch_url,
+          request.graphApiPeopleSearch_url,
+          '----------------------------------',
+        );
+        if (request.graphApiPeopleSearch_url) {
+          urls = JSON.parse(request.graphApiPeopleSearch_url);
+          isGraph = true;
+          isPre = false;
+        }
+        if (urls[tab.id]) {
+          tabUrl = urls[tab.id];
+        } else if (request.premiumApiPeopleSearch_url) {
+          urls = JSON.parse(request.premiumApiPeopleSearch_url);
+          isPre = true;
+          if (urls[tab.id]) {
+            tabUrl = urls[tab.id];
+          }
+        } else if (request.defaultApiPeopleSearch_url) {
+          urls = JSON.parse(request.defaultApiPeopleSearch_url);
+          if (urls[tab.id]) {
+            tabUrl = urls[tab.id];
+          }
+        }
+        if (request.csrfToken) {
+          chrome.tabs.sendMessage(
+            tabId,
+            {
+              method: 'getPersonData',
+              origin: 'ns',
+              tk: request.csrfToken,
+              url: tabUrl,
+            },
+            (response) => {
+              if (!chrome.runtime.lastError) {
+                if (response) {
+                  if (response && response.data) {
+                    if (isPre) {
+                      try {
+                        people = getPeople_pre(JSON.parse(response.data));
+                        console.log(people, 'People500');
+                      } catch (err) {
+                        people = getPeople(response.data, false);
+                        console.log(people, 'People600');
+                      }
+                    } else if (isGraph) {
+                      people = getPeopleGraph(JSON.parse(response.data));
+                      console.log(people, 'People700');
+                    } else {
+                      try {
+                        people = getPeople_a(JSON.parse(response.data));
+                        console.log(people, 'People800');
+                      } catch (err) {
+                        console.log(err);
+                      }
+                    }
+                  }
+                } else {
+                  people = undefined;
+                }
+                if (people && people.length > 0) {
+                  const peopleInfo = {};
+                  peopleInfo.oldurl = tab.url;
+                  peopleInfo.people = people;
+                  chrome.storage.local.set(
+                    { personInfo: peopleInfo },
+                    () => {},
+                  );
+                }
+              }
+            },
+          );
+        }
+      },
+    );
+  }
 }
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
-    if (tab.status === 'complete' && tab.url.includes('linkedin.com/in/')) {
+    if (tab.status === 'complete' && tab.url.includes('linkedin.com')) {
       BGActionDo(tab, activeInfo.tabId);
     }
   });
@@ -829,7 +1052,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     currentTabUrl = tab.url;
-    if (currentTabUrl.includes('linkedin.com/in/')) {
+    if (currentTabUrl.includes('linkedin.com')) {
       BGActionDo(tab, tabId);
     }
   }

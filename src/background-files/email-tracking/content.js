@@ -191,18 +191,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.method === 'getPersonData') {
+    if (request.request_method === 'POST') {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', request.url);
+      if (request.tk) {
+        xhr.setRequestHeader('csrf-token', request.tk);
+      }
+      xhr.setRequestHeader('X-RestLi-Protocol-Version', '2.0.0');
+      xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+      xhr.setRequestHeader('x-http-method-override', 'GET');
+      if (['ns'].includes(request.origin)) {
+        xhr.setRequestHeader(
+          'accept',
+          'application/vnd.linkedin.normalized+json+2.1',
+        );
+      }
+      xhr.onload = function () {
+        sendResponse({ data: xhr.responseText, method: 'getpersondata' });
+      };
+      xhr.send(request.params);
+      return true;
+    }
+
     const xhr = new XMLHttpRequest();
     xhr.open('GET', request.url);
     if (request.tk) {
       xhr.setRequestHeader('csrf-token', request.tk);
     }
-    xhr.setRequestHeader('x-restli-protocol-version', '2.0.0');
+    xhr.setRequestHeader('X-RestLi-Protocol-Version', '2.0.0');
+    if (['ns'].includes(request.origin)) {
+      xhr.setRequestHeader(
+        'accept',
+        'application/vnd.linkedin.normalized+json+2.1',
+      );
+    }
     xhr.onload = function () {
-      sendResponse({ data: xhr.responseText, method: 'getPersonData' });
+      sendResponse({ data: xhr.responseText, method: 'getpersondata' });
     };
     xhr.send(null);
     return true;
   }
 });
-
-chrome.storage.local.set({ mailboxEmail: 'haesh@ikigai.co.in' });
