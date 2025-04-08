@@ -26,7 +26,10 @@ const Login = () => {
     ) {
       setShowMainPage(true);
     } else {
-      window.open('https://pyxis.lifeisgoodforlearner.com/login', '_blank');
+      chrome.runtime.sendMessage({
+        method: 'openNewPage',
+        link: 'https://pyxis.lifeisgoodforlearner.com/login',
+      });
     }
   };
 

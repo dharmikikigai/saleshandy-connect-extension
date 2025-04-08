@@ -131,6 +131,13 @@ const Profile = () => {
     setDesktopNotification(!desktopNotification);
   };
 
+  const handleClick = (link) => {
+    chrome.runtime.sendMessage({
+      method: 'openNewPage',
+      link,
+    });
+  };
+
   useEffect(() => {
     newOne();
     getNameInitials();
@@ -394,6 +401,9 @@ const Profile = () => {
               </div>
               <div
                 style={{ position: 'absolute', top: '408px', right: '20px' }}
+                onClick={() =>
+                  handleClick('https://my.saleshandy.com/leads#people')
+                }
               >
                 <svg
                   width="17"
@@ -473,6 +483,9 @@ const Profile = () => {
               </div>
               <div
                 style={{ position: 'absolute', top: '438px', right: '20px' }}
+                onClick={() =>
+                  handleClick('https://my.saleshandy.com/prospects')
+                }
               >
                 <svg
                   width="17"
@@ -540,6 +553,9 @@ const Profile = () => {
               </div>
               <div
                 style={{ position: 'absolute', top: '468px', right: '20px' }}
+                onClick={() =>
+                  handleClick('https://my.saleshandy.com/sequence')
+                }
               >
                 <svg
                   width="17"
@@ -593,7 +609,12 @@ const Profile = () => {
             >
               Email Tracking Insights
             </div>
-            <div style={{ position: 'absolute', top: '516px', left: '153px' }}>
+            <div
+              style={{ position: 'absolute', top: '516px', left: '153px' }}
+              onClick={() =>
+                handleClick('https://my.saleshandy.com/email-insights')
+              }
+            >
               <svg
                 width="15"
                 height="15"

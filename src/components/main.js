@@ -91,6 +91,7 @@ const Main = () => {
         authenticationToken !== ''
       ) {
         setIsSaleshandyLoggedIn(true);
+        getMetaData();
       } else {
         setIsSaleshandyLoggedIn(false);
       }
@@ -152,7 +153,6 @@ const Main = () => {
   useEffect(() => {
     authCheck();
     pageCheck();
-    getMetaData();
   }, []);
 
   if (!isSaleshandyLoggedIn) {

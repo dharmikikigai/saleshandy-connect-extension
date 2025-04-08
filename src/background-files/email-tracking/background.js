@@ -22,9 +22,9 @@ async function onBeaconClickActivity(tab) {
 
   await fetchAndSetActiveUrl(tab?.url);
 
-  console.log('On Install Updates');
   chrome.tabs.sendMessage(tab.id, { method: 'injectYTVideo' });
   chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+  chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
 }
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
@@ -85,7 +85,14 @@ async function openLinkedinOnInstall() {
   chrome.tabs.create(
     { url: 'https://www.linkedin.com/in/piyushnp/' },
     (newTab) => {
-      onBeaconClickActivity(newTab);
+      // Wait for the tab to finish loading before sending a message
+      chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
+        if (tabId === newTab.id && changeInfo.status === 'complete') {
+          onBeaconClickActivity(newTab);
+          // Remove the listener after sending the message
+          chrome.tabs.onUpdated.removeListener(listener);
+        }
+      });
     },
   );
 }
@@ -122,5 +129,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Returning true here indicates that you will send the response asynchronously
     return true;
+  }
+
+  if (message.method === 'openNewPage') {
+    chrome.tabs.create({ url: message.link });
   }
 });

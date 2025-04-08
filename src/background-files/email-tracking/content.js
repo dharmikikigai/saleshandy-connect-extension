@@ -118,9 +118,7 @@ function injectBeaconOnLinkedInUrl() {
 }
 
 function openIframe() {
-  console.log('Inside Ram Ram');
   if (!document.getElementById('saleshandy-welcome-video')) {
-    console.log('Inside Ram Ram');
     const iframe = document.createElement('iframe');
     iframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
     iframe.style.width = '100%';
@@ -172,7 +170,6 @@ function closeDiv() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log(request, 'request');
   if (request.method === 'createDiv') {
     injectFloatingWindow();
     sendResponse({ status: 'success', message: 'Div Modal created' });
