@@ -41,6 +41,7 @@ const options = {
     worker_wrapper: [
       './src/background-files/email-tracking/background.js',
       '@inboxsdk/core/background.js',
+      './src/background-files/email-tracking/logic.js',
     ],
     app: './src/components/app.js',
     gmailContent: './src/background-files/gmail/content.js',

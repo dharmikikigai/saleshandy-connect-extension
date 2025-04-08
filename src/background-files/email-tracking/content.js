@@ -189,6 +189,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     closeDiv();
     sendResponse({ status: 'success', message: 'div closed' });
   }
+
+  if (request.method === 'getPersonData') {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', request.url);
+    if (request.tk) {
+      xhr.setRequestHeader('csrf-token', request.tk);
+    }
+    xhr.setRequestHeader('x-restli-protocol-version', '2.0.0');
+    xhr.onload = function () {
+      sendResponse({ data: xhr.responseText, method: 'getPersonData' });
+    };
+    xhr.send(null);
+    return true;
+  }
 });
 
 chrome.storage.local.set({ mailboxEmail: 'haesh@ikigai.co.in' });
