@@ -27,6 +27,12 @@
       "matches": ["*://*.linkedin.com/*", "*://linkedin.com/*"],
       "js": ["app.js", "background-files/email-tracking/content.js"],
       "run_at": "document_end"
+    },
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["gmailContent.js"],
+      "css": ["content.css"],
+      "run_at": "document_end"
     }
   ],
 
@@ -51,6 +57,8 @@
         "assets/icons/beacon.png",
         "index.html",
         "assets/icons/shLogo.svg",
+        "assets/images/circle.svg",
+        "assets/images/header.svg",
         "assets/images/circle.svg",
         "assets/images/header.svg"
       ],
