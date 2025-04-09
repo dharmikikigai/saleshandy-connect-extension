@@ -26,10 +26,15 @@ const Profile = () => {
     setIsClicked(true);
   };
 
-  const newOne = () => {
+  const removeUnwantedIds = () => {
     const findOne = document.getElementById('common-screen-id');
     if (findOne) {
       findOne.style.display = 'none';
+    } else {
+      const findTwo = document.getElementById('common-search-id');
+      if (findTwo) {
+        findTwo.style.display = 'none';
+      }
     }
   };
 
@@ -132,7 +137,7 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    newOne();
+    removeUnwantedIds();
     handleMetaData();
     fetchSetting();
     fetchNotificationSetting();

@@ -40,6 +40,11 @@ const Main = () => {
 
     if (metaData) {
       chrome.storage.local.set({ saleshandyMetaData: metaData });
+
+      if (metaData.user?.isAgency) {
+        console.log('isAgency');
+        setIsFeatureAvailable(true);
+      }
     }
   };
 
@@ -141,6 +146,10 @@ const Main = () => {
     return <Profile />;
   }
 
+  if (isFeatureAvailable) {
+    return <NotAvailableFeature />;
+  }
+
   if (isSingleViewActive) {
     // return 'Hare Krishna';
     return <CommonSearchPeople />;
@@ -154,10 +163,6 @@ const Main = () => {
   if (isBulkViewActive) {
     // return 'Hanuman';
     return <CommonSearchPeople />;
-  }
-
-  if (isFeatureAvailable) {
-    return <NotAvailableFeature />;
   }
 
   if (isCommonPeopleScreenActive) {

@@ -5,7 +5,7 @@ import Header from './header';
 const CommonSearch = () => (
   <>
     <Header />
-    <div>
+    <div id="common-search-id">
       <div
         style={{
           position: 'absolute',
