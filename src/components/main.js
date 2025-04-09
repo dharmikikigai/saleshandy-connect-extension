@@ -25,13 +25,6 @@ const Main = () => {
     profilePageState,
   );
 
-  function getInitials(firstName, lastName) {
-    const firstInitial = firstName ? firstName.charAt(0).toUpperCase() : '';
-    const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
-
-    return firstInitial + lastInitial;
-  }
-
   const getMetaData = async () => {
     const element = document.getElementById('saleshandy-window');
 
@@ -42,28 +35,11 @@ const Main = () => {
     if (!chrome?.storage?.local) {
       return;
     }
-    const metaData = (await mailboxInstance.getMetaData()).payload;
+
+    const metaData = (await mailboxInstance.getMetaData())?.payload;
 
     if (metaData) {
-      localStorage.setItem(
-        'isEmailTrackerEnabled',
-        metaData?.isEmailTrackerEnabled,
-      );
-      localStorage.setItem(
-        'isTrackingNotificationEnabled',
-        metaData?.isTrackingNotificationEnabled,
-      );
-      localStorage.setItem('leadFinderCredits', metaData?.leadFinderCredits);
-
-      localStorage.setItem('userEmail', metaData?.user?.email);
-
-      localStorage.setItem(
-        'nameInitials',
-        getInitials(metaData?.user?.firstName, metaData?.user?.lastName),
-      );
-
-      localStorage.setItem('firstName', metaData?.user?.firstName);
-      localStorage.setItem('lastName', metaData?.user?.lastName);
+      chrome.storage.local.set({ saleshandyMetaData: metaData });
     }
   };
 
@@ -77,25 +53,27 @@ const Main = () => {
     setShowProfilePage(showProfilePageState);
     setShowProfilePageState(false);
 
-    const logoutTriggered = localStorage.getItem('logoutTriggered');
+    chrome.storage.local.get(['logoutTriggered'], (result) => {
+      const logoutTriggered = result?.logoutTriggered;
 
-    if (logoutTriggered && logoutTriggered === 'true') {
-      setIsSaleshandyLoggedIn(false);
-      checkFurther = false;
-    }
-
-    if (checkFurther) {
-      if (
-        authenticationToken !== undefined &&
-        authenticationToken !== null &&
-        authenticationToken !== ''
-      ) {
-        setIsSaleshandyLoggedIn(true);
-        getMetaData();
-      } else {
+      if (logoutTriggered && logoutTriggered === 'true') {
         setIsSaleshandyLoggedIn(false);
+        checkFurther = false;
       }
-    }
+
+      if (checkFurther) {
+        if (
+          authenticationToken !== undefined &&
+          authenticationToken !== null &&
+          authenticationToken !== ''
+        ) {
+          setIsSaleshandyLoggedIn(true);
+          getMetaData();
+        } else {
+          setIsSaleshandyLoggedIn(false);
+        }
+      }
+    });
   };
 
   const pageCheck = () => {

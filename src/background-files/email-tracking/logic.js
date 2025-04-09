@@ -1038,6 +1038,7 @@ function BGActionDo(tab, tabId) {
   } else if (tab.url.includes('/company/') && tab.url.includes('/people')) {
     let tabUrl = tab.url;
     let urls = {};
+    console.log(tabUrl, 'TabURl');
     chrome.storage.local.get(
       [
         'csrfToken',
@@ -1122,6 +1123,8 @@ function BGActionDo(tab, tabId) {
                       );
                     }
                   });
+                } else {
+                  chrome.tabs.reload(tabId);
                 }
               }
             },
@@ -1143,6 +1146,13 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     currentTabUrl = tab.url;
+
+    // if (
+    //   currentTabUrl.includes('linkedin.com/company/') &&
+    //   currentTabUrl.includes('/people')
+    // ) {
+    //   chrome.tabs.reload(tabId);
+    // }
     if (currentTabUrl.includes('linkedin.com')) {
       BGActionDo(tab, tabId);
     }
