@@ -36,4 +36,10 @@ export default {
     path: () => 'auth/login',
     error: 'Error in authenticating the user',
   },
+
+  getProspects: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'chrome-extension/search',
+    error: 'Error in fetching the leads',
+  },
 };

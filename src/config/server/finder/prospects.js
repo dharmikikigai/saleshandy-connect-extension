@@ -43,6 +43,15 @@ class Prospects extends Server {
       console.log(URLs.authenticateUser.error, e);
     }
   }
+
+  // to get the leads data based on linkedin urls
+  async getProspects(payload) {
+    try {
+      return (await this.req.post(URLs.getProspects.path(), payload)).data;
+    } catch (e) {
+      console.log(URLs.getProspects.error, e);
+    }
+  }
 }
 
 const prospectsInstance = new Prospects();
