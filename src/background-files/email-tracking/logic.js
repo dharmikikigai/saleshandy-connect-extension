@@ -1027,10 +1027,7 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  chrome.storage.local.set(
-                    { personInfo: peopleInfo },
-                    () => {},
-                  );
+                  chrome.storage.local.set({ bulkInfo: peopleInfo }, () => {});
                 }
               }
             },
