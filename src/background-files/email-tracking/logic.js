@@ -1100,25 +1100,27 @@ function BGActionDo(tab, tabId) {
                 } else {
                   people = undefined;
                 }
+                console.log(people, 'People900');
                 if (people && people.length > 0) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
 
                   chrome.storage.local.get(['bulkInfo'], (request1) => {
-                    if (request1?.bulkInfo?.url === tab.url) {
+                    if (request1?.bulkInfo?.oldurl === tab.url) {
+                      peopleInfo.people = [
+                        ...request1.bulkInfo.people,
+                        ...peopleInfo.people,
+                      ];
                       chrome.storage.local.set(
                         {
-                          bulkInfo: {
-                            url: tab.url,
-                            data: [...request.bulkInfo.data, ...peopleInfo],
-                          },
+                          bulkInfo: peopleInfo,
                         },
                         () => {},
                       );
                     } else {
                       chrome.storage.local.set(
-                        { bulkInfo: { url: tab.url, data: peopleInfo } },
+                        { bulkInfo: peopleInfo },
                         () => {},
                       );
                     }
