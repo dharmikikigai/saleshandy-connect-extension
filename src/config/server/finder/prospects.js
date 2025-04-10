@@ -52,6 +52,33 @@ class Prospects extends Server {
       console.log(URLs.getProspects.error, e);
     }
   }
+
+  // to reveal the leads in bulk
+  async bulkRevealProspects(payload) {
+    try {
+      return (await this.req.post(URLs.bulkRevealProspects.path(), payload))
+        .data;
+    } catch (e) {
+      console.log(URLs.bulkRevealProspects.error, e);
+    }
+  }
+
+  // to get the lead status
+  async leadStatus(payload) {
+    try {
+      return (await this.req.post(URLs.leadStatus.path(), payload)).data;
+    } catch (e) {
+      console.log(URLs.leadStatus.error, e);
+    }
+  }
+
+  async getTags() {
+    try {
+      return (await this.req.get(URLs.getTags.path())).data;
+    } catch (e) {
+      console.log(URLs.getTags.error, e);
+    }
+  }
 }
 
 const prospectsInstance = new Prospects();

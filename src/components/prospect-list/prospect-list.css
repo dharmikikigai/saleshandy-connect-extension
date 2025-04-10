@@ -242,7 +242,7 @@ input[type='checkbox'] {
 /* Custom tooltip styles */
 .tooltip-container {
   position: relative;
-  display: inline-block;
+  display: flex;
 }
 
 .tooltip-container:hover .custom-tooltip {
@@ -340,6 +340,15 @@ input[type='checkbox'] {
   align-items: center;
 }
 
+.prospect-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
 .prospect-image img {
   display: flex;
   width: 32px;
@@ -354,6 +363,11 @@ input[type='checkbox'] {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+}
+
+.prospect-item-details-unavailable {
+  gap: 8px;
 }
 
 .prospect-name {
@@ -372,13 +386,58 @@ input[type='checkbox'] {
   line-height: 18px;
 }
 
-.prospect-bio {
+.prospect-description {
   color: #6b7280;
   font-family: Inter;
   font-size: 14px;
   font-style: normal;
   font-weight: 400;
   line-height: 18px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 36px;
+}
+
+.prospect-description-revealed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prospect-description-revealed-email {
+  color: #6b7280;
+  font-family: Inter;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 156px;
+}
+
+.prospect-email-unavailable {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prospect-email-unavailable-icon {
+  opacity: 0.4;
+}
+
+.prospect-email-unavailable-text {
+  color: #6b7280;
+  font-family: Inter;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 16px;
+  opacity: 0.4;
 }
 
 .prospect-item-expanded {
@@ -543,6 +602,11 @@ body.modal-open {
   background-color: rgba(29, 78, 216, 0.05);
 }
 
+.custom-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Custom input styles */
 .custom-input {
   width: 100%;
@@ -558,8 +622,9 @@ body.modal-open {
 }
 
 .custom-input:focus {
-  outline: none;
-  border-color: #1d4ed8;
+  outline: none !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: none !important;
 }
 
 .custom-input::placeholder {
@@ -574,4 +639,41 @@ body.modal-open {
 .custom-modal-footer .action-button {
   max-width: 100px;
   height: 32px;
+}
+
+.spinner {
+  height: 16px;
+  width: 16px;
+  border: 2px solid #1d4ed8;
+  border-bottom: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner-white {
+  border: 2px solid white;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.checkbox-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#react-select-2-input {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }

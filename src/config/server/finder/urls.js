@@ -42,4 +42,22 @@ export default {
     path: () => 'chrome-extension/search',
     error: 'Error in fetching the leads',
   },
+
+  bulkRevealProspects: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'chrome-extension/bulk-reveal',
+    error: 'Error in revealing the leads',
+  },
+
+  leadStatus: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'chrome-extension/status',
+    error: 'Error in updating the lead status',
+  },
+
+  getTags: {
+    type: REQUEST_TYPES.GET,
+    path: () => 'lead-finder/tags',
+    error: 'Error in getting the tags',
+  },
 };
