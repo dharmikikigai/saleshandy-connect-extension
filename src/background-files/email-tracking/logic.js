@@ -1,3 +1,4 @@
+/* eslint-disable no-loop-func */
 /* eslint-disable no-use-before-define */
 /* eslint-disable no-cond-assign */
 /* eslint-disable no-param-reassign */
@@ -895,7 +896,6 @@ function getPeopleGraph(source) {
 }
 
 function BGActionDo(tab, tabId) {
-  console.log('BGActionDo: ', tab.url);
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
       console.log(request?.csrfToken, 'csrfToken');
@@ -1027,10 +1027,104 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  chrome.storage.local.set(
-                    { personInfo: peopleInfo },
-                    () => {},
-                  );
+                  chrome.storage.local.set({ bulkInfo: peopleInfo }, () => {});
+                }
+              }
+            },
+          );
+        }
+      },
+    );
+  } else if (tab.url.includes('/company/') && tab.url.includes('/people')) {
+    let tabUrl = tab.url;
+    let urls = {};
+    console.log(tabUrl, 'TabURl');
+    chrome.storage.local.get(
+      [
+        'csrfToken',
+        'defaultApiPeopleSearch_url',
+        'premiumApiPeopleSearch_url',
+        'graphApiPeopleSearch_url',
+      ],
+      (request) => {
+        if (request.graphApiPeopleSearch_url) {
+          urls = JSON.parse(request.graphApiPeopleSearch_url);
+          isGraph = true;
+          isPre = false;
+        }
+        if (urls[tab.id]) {
+          tabUrl = urls[tab.id];
+        } else if (request.premiumApiPeopleSearch_url) {
+          urls = JSON.parse(request.premiumApiPeopleSearch_url);
+          isPre = true;
+          if (urls[tab.id]) {
+            tabUrl = urls[tab.id];
+          }
+        } else if (request.defaultApiPeopleSearch_url) {
+          urls = JSON.parse(request.defaultApiPeopleSearch_url);
+          if (urls[tab.id]) {
+            tabUrl = urls[tab.id];
+          }
+        }
+        if (request.csrfToken) {
+          chrome.tabs.sendMessage(
+            tabId,
+            {
+              method: 'getPersonData',
+              origin: 'ns',
+              tk: request.csrfToken,
+              url: tabUrl,
+            },
+            (response) => {
+              if (!chrome.runtime.lastError) {
+                if (response) {
+                  if (response && response.data) {
+                    if (isPre) {
+                      try {
+                        people = getPeople_pre(JSON.parse(response.data));
+                      } catch (err) {
+                        people = getPeople(response.data, false);
+                      }
+                    } else if (isGraph) {
+                      people = getPeopleGraph(JSON.parse(response.data));
+                    } else {
+                      try {
+                        people = getPeople_a(JSON.parse(response.data));
+                      } catch (err) {
+                        console.log(err);
+                      }
+                    }
+                  }
+                } else {
+                  people = undefined;
+                }
+                console.log(people, 'People900');
+                if (people && people.length > 0) {
+                  const peopleInfo = {};
+                  peopleInfo.oldurl = tab.url;
+                  peopleInfo.people = people;
+
+                  chrome.storage.local.get(['bulkInfo'], (request1) => {
+                    if (request1?.bulkInfo?.oldurl === tab.url) {
+                      peopleInfo.people = [
+                        ...request1.bulkInfo.people,
+                        ...peopleInfo.people,
+                      ];
+                      chrome.storage.local.set(
+                        {
+                          bulkInfo: peopleInfo,
+                        },
+                        () => {},
+                      );
+                    } else {
+                      chrome.storage.local.set(
+                        { bulkInfo: peopleInfo },
+                        () => {},
+                      );
+                    }
+                  });
+                } else {
+                  chrome.tabs.reload(tabId);
                 }
               }
             },
@@ -1052,8 +1146,140 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     currentTabUrl = tab.url;
+
+    // if (
+    //   currentTabUrl.includes('linkedin.com/company/') &&
+    //   currentTabUrl.includes('/people')
+    // ) {
+    //   chrome.tabs.reload(tabId);
+    // }
     if (currentTabUrl.includes('linkedin.com')) {
       BGActionDo(tab, tabId);
     }
   }
 });
+
+chrome.webRequest.onBeforeSendHeaders.addListener(
+  (details) => {
+    if (
+      details.url.indexOf('sales-api') > 0 ||
+      details.url.indexOf('voyager/api/') > 0 ||
+      details.url.indexOf('/talent/search/api/') > 0
+    ) {
+      for (let iNo = 0; iNo < details.requestHeaders.length; iNo++) {
+        if (details.requestHeaders[iNo].name.toLowerCase() === 'csrf-token') {
+          chrome.storage.local.set({
+            csrfToken: details.requestHeaders[iNo].value,
+          });
+          const localSv = [
+            'salesApiPeopleSearch_url',
+            'salesApiCompanySearch_url',
+            'defaultApiPeopleSearch_url',
+            'premiumApiPeopleSearch_url',
+            'talentApiSearchPeople_url',
+            'graphApiPeopleSearch_url',
+          ];
+          chrome.storage.local.get(localSv, (request) => {
+            if (
+              details.url.indexOf('salesApiPeopleSearch') > 0 ||
+              details.url.indexOf('salesApiLeadSearch') > 0
+            ) {
+              let urls = {};
+              if (request.salesApiPeopleSearch_url) {
+                urls = JSON.parse(request.salesApiPeopleSearch_url);
+              }
+              urls[details.tabId] = {
+                url: details.url,
+                method: details.method,
+              };
+              chrome.storage.local.set({
+                salesApiPeopleSearch_url: JSON.stringify(urls),
+              });
+            } else if (details.url.indexOf('salesApiCompanySearch') > 0) {
+              let urls = {};
+              if (request.salesApiCompanySearch_url) {
+                urls = JSON.parse(request.salesApiCompanySearch_url);
+              }
+              urls[details.tabId] = details.url;
+              chrome.storage.local.set({
+                salesApiCompanySearch_url: JSON.stringify(urls),
+              });
+            } else if (details.url.indexOf('voyager/api/search/blended') > 0) {
+              let urls = {};
+              if (request.defaultApiPeopleSearch_url) {
+                urls = JSON.parse(request.defaultApiPeopleSearch_url);
+              }
+              urls[details.tabId] = details.url;
+              chrome.storage.local.set({
+                defaultApiPeopleSearch_url: JSON.stringify(urls),
+              });
+            } else if (
+              details.url.indexOf('voyager/api/search/dash/clusters') > 0
+            ) {
+              let urls = {};
+              if (request.premiumApiPeopleSearch_url) {
+                urls = JSON.parse(request.premiumApiPeopleSearch_url);
+              }
+              urls[details.tabId] = details.url;
+              chrome.storage.local.set({
+                premiumApiPeopleSearch_url: JSON.stringify(urls),
+              });
+            } else if (
+              details.url.indexOf('/voyager/api/graphql') > 0 &&
+              details.url.indexOf('voyagerSearchDashClusters') > 0
+            ) {
+              let urls = {};
+              if (request.graphApiPeopleSearch_url) {
+                urls = JSON.parse(request.graphApiPeopleSearch_url);
+              }
+              urls[details.tabId] = details.url;
+              chrome.storage.local.set({
+                graphApiPeopleSearch_url: JSON.stringify(urls),
+              });
+            } else if (details.url.indexOf('talentRecruiterSearchHits') > 0) {
+              let urls = {};
+              if (request.talentApiSearchPeople_url) {
+                urls = JSON.parse(request.talentApiSearchPeople_url);
+              }
+              urls[details.tabId] = {
+                url: details.url,
+                method: details.method,
+              };
+              chrome.storage.local.set({
+                talentApiSearchPeople_url: JSON.stringify(urls),
+              });
+            }
+
+            if (
+              details.url.includes('voyager/api/graphql') &&
+              details.url.includes('lazyLoadedActionsUrns')
+            ) {
+              console.log();
+              chrome.tabs.query(
+                { active: true, currentWindow: true },
+                (tabs) => {
+                  if (tabs.length > 0) {
+                    const activeTab = tabs[0];
+
+                    BGActionDo(activeTab, activeTab.id);
+                    // You can access the tab details like activeTab.id, activeTab.url, activeTab.title, etc.
+                  } else {
+                    console.log('No active tab found.');
+                  }
+                },
+              );
+            }
+          });
+          break;
+        }
+      }
+    }
+    return {
+      requestHeaders: details.requestHeaders,
+    };
+  },
+  {
+    urls: ['*://*.linkedin.com/*', '*://linkedin.com/*'],
+  },
+  ['requestHeaders'],
+);
