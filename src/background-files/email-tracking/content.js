@@ -118,9 +118,7 @@ function injectBeaconOnLinkedInUrl() {
 }
 
 function openIframe() {
-  console.log('Inside Ram Ram');
   if (!document.getElementById('saleshandy-welcome-video')) {
-    console.log('Inside Ram Ram');
     const iframe = document.createElement('iframe');
     iframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
     iframe.style.width = '100%';
@@ -172,7 +170,6 @@ function closeDiv() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log(request, 'request');
   if (request.method === 'createDiv') {
     injectFloatingWindow();
     sendResponse({ status: 'success', message: 'Div Modal created' });
@@ -184,9 +181,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.method === 'injectYTVideo') {
-    console.log('Message Revived');
     openIframe();
-
     sendResponse({ status: 'success', message: 'Iframe created' });
   }
 
@@ -194,6 +189,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     closeDiv();
     sendResponse({ status: 'success', message: 'div closed' });
   }
-});
 
-chrome.storage.local.set({ mailboxEmail: 'haesh@ikigai.co.in' });
+  if (request.method === 'getPersonData') {
+    if (request.request_method === 'POST') {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', request.url);
+      if (request.tk) {
+        xhr.setRequestHeader('csrf-token', request.tk);
+      }
+      xhr.setRequestHeader('X-RestLi-Protocol-Version', '2.0.0');
+      xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+      xhr.setRequestHeader('x-http-method-override', 'GET');
+      if (['ns'].includes(request.origin)) {
+        xhr.setRequestHeader(
+          'accept',
+          'application/vnd.linkedin.normalized+json+2.1',
+        );
+      }
+      xhr.onload = function () {
+        sendResponse({ data: xhr.responseText, method: 'getpersondata' });
+      };
+      xhr.send(request.params);
+      return true;
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', request.url);
+    if (request.tk) {
+      xhr.setRequestHeader('csrf-token', request.tk);
+    }
+    xhr.setRequestHeader('X-RestLi-Protocol-Version', '2.0.0');
+    if (['ns'].includes(request.origin)) {
+      xhr.setRequestHeader(
+        'accept',
+        'application/vnd.linkedin.normalized+json+2.1',
+      );
+    }
+    xhr.onload = function () {
+      sendResponse({ data: xhr.responseText, method: 'getpersondata' });
+    };
+    xhr.send(null);
+    return true;
+  }
+});

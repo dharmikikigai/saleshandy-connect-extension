@@ -38,8 +38,13 @@ const options = {
   entry: {
     pageWorld: '@inboxsdk/core/pageWorld.js',
     index: path.join(__dirname, 'src', 'components', 'index.js'),
-    worker_wrapper: ['./src/background-files/email-tracking/background.js'],
+    worker_wrapper: [
+      './src/background-files/email-tracking/background.js',
+      '@inboxsdk/core/background.js',
+      './src/background-files/email-tracking/logic.js',
+    ],
     app: './src/components/app.js',
+    gmailContent: './src/background-files/gmail/content.js',
   },
   output: {
     filename: '[name].js',
@@ -149,6 +154,17 @@ const options = {
       patterns: [
         {
           from: 'background-files/**/**',
+          to: path.join(__dirname, 'build'),
+          force: true,
+          context: 'src',
+        },
+      ],
+    }),
+
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: 'background-files/gmail/content.css',
           to: path.join(__dirname, 'build'),
           force: true,
           context: 'src',

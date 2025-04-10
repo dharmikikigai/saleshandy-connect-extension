@@ -18,7 +18,7 @@ const Profile = () => {
   const [newUserId, setUserId] = useState();
 
   const handledLogout = () => {
-    localStorage.setItem('logoutTriggered', 'true');
+    chrome.storage.local.set({ logoutTriggered: 'true' });
     setLogout(true);
   };
 
@@ -26,31 +26,16 @@ const Profile = () => {
     setIsClicked(true);
   };
 
-  const getNameInitials = () => {
-    const nameInitial = localStorage.getItem('nameInitials');
-    if (nameInitial && nameInitial !== '') {
-      setNameInitials(nameInitial);
-    } else {
-      setNameInitials('NA');
-    }
-  };
-
-  const getName = () => {
-    const firstName = localStorage.getItem('firstName');
-    const lastName = localStorage.getItem('lastName');
-
-    setName(`${firstName} ${lastName}`);
-  };
-
-  const getEmail = () => {
-    const userEmail = localStorage.getItem('userEmail');
-
-    setEmail(userEmail);
-  };
-
-  const newOne = () => {
+  const removeUnwantedIds = () => {
     const findOne = document.getElementById('common-screen-id');
-    findOne.style.display = 'none';
+    if (findOne) {
+      findOne.style.display = 'none';
+    } else {
+      const findTwo = document.getElementById('common-search-id');
+      if (findTwo) {
+        findTwo.style.display = 'none';
+      }
+    }
   };
 
   const fetchSetting = () => {
@@ -131,11 +116,29 @@ const Profile = () => {
     setDesktopNotification(!desktopNotification);
   };
 
+  const handleClick = (link) => {
+    chrome.runtime.sendMessage({
+      method: 'openNewPage',
+      link,
+    });
+  };
+
+  const handleMetaData = () => {
+    chrome.storage.local.get(['saleshandyMetaData'], (request) => {
+      const metaData = request?.saleshandyMetaData;
+
+      if (metaData) {
+        setEmail(metaData.user.email);
+        setName(`${metaData.user?.firstName} ${metaData.user?.lastName}`);
+        const initials = `${metaData.user?.firstName[0]}${metaData.user?.lastName[0]}`;
+        setNameInitials(initials);
+      }
+    });
+  };
+
   useEffect(() => {
-    newOne();
-    getNameInitials();
-    getName();
-    getEmail();
+    removeUnwantedIds();
+    handleMetaData();
     fetchSetting();
     fetchNotificationSetting();
   }, []);
@@ -394,6 +397,9 @@ const Profile = () => {
               </div>
               <div
                 style={{ position: 'absolute', top: '408px', right: '20px' }}
+                onClick={() =>
+                  handleClick('https://my.saleshandy.com/leads#people')
+                }
               >
                 <svg
                   width="17"
@@ -473,6 +479,9 @@ const Profile = () => {
               </div>
               <div
                 style={{ position: 'absolute', top: '438px', right: '20px' }}
+                onClick={() =>
+                  handleClick('https://my.saleshandy.com/prospects')
+                }
               >
                 <svg
                   width="17"
@@ -540,6 +549,9 @@ const Profile = () => {
               </div>
               <div
                 style={{ position: 'absolute', top: '468px', right: '20px' }}
+                onClick={() =>
+                  handleClick('https://my.saleshandy.com/sequence')
+                }
               >
                 <svg
                   width="17"
@@ -593,7 +605,12 @@ const Profile = () => {
             >
               Email Tracking Insights
             </div>
-            <div style={{ position: 'absolute', top: '516px', left: '153px' }}>
+            <div
+              style={{ position: 'absolute', top: '516px', left: '153px' }}
+              onClick={() =>
+                handleClick('https://my.saleshandy.com/email-insights')
+              }
+            >
               <svg
                 width="15"
                 height="15"

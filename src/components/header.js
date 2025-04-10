@@ -29,8 +29,13 @@ const Header = () => {
   };
 
   const getLeadFinderCredits = () => {
-    const credits = localStorage.getItem('leadFinderCredits');
-    setLeadFinderCredits(credits);
+    chrome.storage.local.get('saleshandyMetaData', (result) => {
+      const saleshandyMetaData = result?.saleshandyMetaData;
+      if (saleshandyMetaData) {
+        const credits = saleshandyMetaData.leadFinderCredits;
+        setLeadFinderCredits(credits);
+      }
+    });
   };
 
   useEffect(() => {

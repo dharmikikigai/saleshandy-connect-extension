@@ -13,7 +13,7 @@ const Login = () => {
   const [showMainPage, setShowMainPage] = useState(false);
 
   const handleClick = () => {
-    localStorage.setItem('logoutTriggered', 'false');
+    chrome.storage.local.set({ logoutTriggered: 'false' });
 
     const element = document.getElementById('saleshandy-window');
 
@@ -26,7 +26,10 @@ const Login = () => {
     ) {
       setShowMainPage(true);
     } else {
-      window.open('https://pyxis.lifeisgoodforlearner.com/login', '_blank');
+      chrome.runtime.sendMessage({
+        method: 'openNewPage',
+        link: 'https://pyxis.lifeisgoodforlearner.com/login',
+      });
     }
   };
 
