@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Toast } from 'react-bootstrap';
 
 const TYPE_STYLES = {
@@ -88,16 +88,24 @@ const TYPE_STYLES = {
   },
 };
 
-const Toaster = ({ header = '', body = '', type = 'success' }) => {
+const Toaster = ({ header = '', body = '', type = 'success', onClose }) => {
   const { backgroundColor, borderColor, icon } =
     TYPE_STYLES[type] || TYPE_STYLES.success;
+  const toasterRef = React.useRef(null);
+
+  useEffect(() => {
+    toasterRef.current = setTimeout(() => {
+      onClose();
+    }, 5000);
+  }, []);
+
+  const handleClose = () => {
+    clearTimeout(toasterRef.current);
+    onClose();
+  };
 
   return (
     <Toast
-      // show={show}
-      // onClose={onClose}
-      delay={3000}
-      autohide
       style={{
         backgroundColor,
         borderRadius: '4px',
@@ -123,17 +131,41 @@ const Toaster = ({ header = '', body = '', type = 'success' }) => {
             gap: '4px',
           }}
         >
-          <span
+          <div
             style={{
               color: '#1f2937',
               fontSize: '12px',
               fontWeight: '600',
               lineHeight: '16px',
               fontFamily: 'Inter',
+              display: 'flex',
+              justifyContent: 'space-between',
             }}
           >
             {header}
-          </span>
+            <span onClick={handleClose} style={{ cursor: 'pointer' }}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="17"
+                viewBox="0 0 16 17"
+                fill="none"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M12.4716 4.02925C12.7319 4.2896 12.7319 4.71171 12.4716 4.97206L4.47157 12.9721C4.21122 13.2324 3.78911 13.2324 3.52876 12.9721C3.26841 12.7117 3.26841 12.2896 3.52876 12.0292L11.5288 4.02925C11.7891 3.7689 12.2112 3.7689 12.4716 4.02925Z"
+                  fill="#6B7280"
+                />
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M3.52876 4.02925C3.78911 3.7689 4.21122 3.7689 4.47157 4.02925L12.4716 12.0292C12.7319 12.2896 12.7319 12.7117 12.4716 12.9721C12.2112 13.2324 11.7891 13.2324 11.5288 12.9721L3.52876 4.97206C3.26841 4.71171 3.26841 4.2896 3.52876 4.02925Z"
+                  fill="#6B7280"
+                />
+              </svg>
+            </span>
+          </div>
           <div
             style={{
               color: '#1f2937',

@@ -1,11 +1,36 @@
+/* eslint-disable react/destructuring-assignment */
 import React, { useState } from 'react';
 import CreatableSelect from 'react-select/creatable';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { components } from 'react-select';
 
 const tagOptions = [
   { value: 'tag1', label: 'Tag 1' },
   { value: 'tag2', label: 'Tag 2' },
   { value: 'tag3', label: 'Tag 3' },
 ];
+
+const CustomOptionTags = (props) => {
+  // eslint-disable-next-line react/destructuring-assignment
+  const fullLabel = props.label;
+  const shouldShowTooltip = fullLabel.length > 10;
+  const truncatedLabel = shouldShowTooltip
+    ? `${fullLabel.slice(0, 10)}....`
+    : fullLabel;
+
+  return (
+    <div
+      {...(shouldShowTooltip && {
+        'data-tooltip-id': 'option-tooltip',
+        'data-tooltip-content': fullLabel,
+      })}
+    >
+      <components.Option {...props} innerProps={{ ...props.innerProps }}>
+        {truncatedLabel}
+      </components.Option>
+    </div>
+  );
+};
 
 const customStyles = {
   control: (base, state) => ({
@@ -17,6 +42,9 @@ const customStyles = {
       borderColor: 'none',
     },
     cursor: 'pointer',
+    height: '32px',
+    minHeight: '32px',
+    flexWrap: 'no-wrap',
   }),
   indicatorSeparator: (base) => ({
     ...base,
@@ -25,6 +53,15 @@ const customStyles = {
   placeholder: (base) => ({
     ...base,
     color: '#9CA3AF',
+    fontFamily: 'Inter',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: '20px',
+  }),
+  input: (base) => ({
+    ...base,
+    color: '#1F2937',
     fontFamily: 'Inter',
     fontSize: '14px',
     fontStyle: 'normal',
@@ -45,15 +82,6 @@ const customStyles = {
   }),
   multiValue: () => ({
     display: 'none',
-  }),
-
-  multiValueRemove: (base) => ({
-    ...base,
-    cursor: 'pointer',
-    ':hover': {
-      backgroundColor: '#d9534f',
-      color: 'white',
-    },
   }),
 };
 
@@ -158,23 +186,38 @@ const AddTagsSelect = () => {
       </div>
 
       {/* Tag Chips */}
-      {/* {selectedTags.length > 0 && !isExpanded && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {selectedTags.map((tag) => (
-            <div key={tag.value} style={chipStyle}>
-              {tag.label}
-            </div>
-          ))}
-        </div>
-      )} */}
-
       {selectedTags.length > 0 && !isExpanded && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {selectedTags.slice(0, 3).map((tag) => (
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '8px',
+          }}
+        >
+          {/* {selectedTags.slice(0, 3).map((tag) => (
             <div key={tag.value} style={chipStyle}>
               {tag.label}
             </div>
-          ))}
+          ))} */}
+
+          {selectedTags.slice(0, 3).map((tag) => {
+            const showTooltip = tag.label.length > 10;
+            const displayLabel = showTooltip
+              ? `${tag.label.slice(0, 10)}....`
+              : tag.label;
+            return (
+              <div
+                key={tag.value}
+                style={chipStyle}
+                {...(showTooltip && {
+                  'data-tooltip-id': 'chip-tooltip',
+                  'data-tooltip-content': tag.label,
+                })}
+              >
+                {displayLabel}
+              </div>
+            );
+          })}
           {selectedTags.length > 3 && (
             <div
               style={{
@@ -200,21 +243,71 @@ const AddTagsSelect = () => {
             value={selectedTags}
             onChange={(val) => setSelectedTags(val || [])}
             placeholder="Select"
+            components={{ Option: CustomOptionTags }}
             styles={customStyles}
           />
 
           {/* Chips Below Input */}
           {selectedTags.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {selectedTags.map((tag) => (
-                <div key={tag.value} style={chipStyle}>
-                  {tag.label}
-                </div>
-              ))}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+                maxHeight: '88px',
+                overflowY: 'auto',
+              }}
+            >
+              {selectedTags.map((tag) => {
+                const showTooltip = tag.label.length > 10;
+                const displayLabel = showTooltip
+                  ? `${tag.label.slice(0, 10)}....`
+                  : tag.label;
+                return (
+                  <div
+                    key={tag.value}
+                    style={chipStyle}
+                    {...(showTooltip && {
+                      'data-tooltip-id': 'chip-tooltip',
+                      'data-tooltip-content': tag.label,
+                    })}
+                  >
+                    {displayLabel}
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
       )}
+      <ReactTooltip
+        id="option-tooltip"
+        place="bottom"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          zIndex: '99',
+        }}
+      />
+      <ReactTooltip
+        id="chip-tooltip"
+        place="bottom"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          zIndex: '99',
+        }}
+      />
     </div>
   );
 };

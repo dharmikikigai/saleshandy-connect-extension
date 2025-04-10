@@ -1,7 +1,9 @@
+/* eslint-disable react/destructuring-assignment */
 import React, { useState } from 'react';
-import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
+import Select, { components } from 'react-select';
 import { Button } from 'react-bootstrap';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 
 const getStatusDotColor = (status) => {
   switch (status) {
@@ -16,22 +18,22 @@ const getStatusDotColor = (status) => {
   }
 };
 
-const sequenceOptions = [
-  {
-    label: 'Recent Sequences',
-    options: [
-      { value: 'sequence_2', label: 'Another Sequence', status: 1 },
-      { value: 'sequence_3', label: 'Sequence 3', status: 2 },
-      // Add more if needed
-    ],
-  },
-  {
-    value: 'abhishek_first',
-    label: "Abhishek's First Sequence 🚀 (Current Sequence)",
-    status: 3,
-  },
-  { value: 'sequence_2', label: 'Another Sequence' },
-];
+// const sequenceOptions = [
+//   {
+//     label: 'Recent Sequences',
+//     options: [
+//       { value: 'sequence_2', label: 'Another Sequence', status: 1 },
+//       { value: 'sequence_3', label: 'Sequence 3', status: 2 },
+//       // Add more if needed
+//     ],
+//   },
+//   {
+//     value: 'abhishek_first',
+//     label: "Abhishek's First Sequence 🚀 (Current Sequence)",
+//     status: 3,
+//   },
+//   { value: 'sequence_2', label: 'Another Sequence' },
+// ];
 
 const clientSequenceOptions = [
   {
@@ -50,35 +52,26 @@ const recentSequence = [
   { value: 'sequence_2', label: 'Another Sequence' },
 ];
 
-const stepOptions = [
-  { value: 'step_1', label: 'Step 1: Email' },
-  { value: 'step_2', label: 'Step 2: Follow-up' },
-];
+// const stepOptions = [
+//   { value: 'step_1', label: 'Step 1: Email' },
+//   { value: 'step_2', label: 'Step 2: Follow-up' },
+// ];
 
-const tagOptions = [
-  { value: 'tag1', label: 'Tag 1' },
-  { value: 'tag2', label: 'Tag 2' },
-  { value: 'tag3', label: 'Tag 3' },
-];
-
-// Dropdown sequence name option (To add partition between recent and current sequence)
-const processedSequenceOptions = sequenceOptions.map((group) => {
-  if (group.options) {
-    const updatedGroupOptions = group.options.map((opt, index, arr) => ({
-      ...opt,
-      isLastInGroup: index === arr.length - 1,
-    }));
-    return {
-      ...group,
-      options: updatedGroupOptions,
-    };
-  }
-  return group;
-});
+// const tagOptions = [
+//   { value: 'tag1', label: 'Tag 1' },
+//   { value: 'tag2', label: 'Tag 2' },
+//   { value: 'tag3', label: 'Tag 3' },
+// ];
 
 // Custom option render in sequence name dropdown
-const customOption = (props) => {
+const customOptionSequenceName = (props) => {
   const { data, innerRef, innerProps, isFocused } = props;
+
+  const fullLabel = data.label;
+  const shouldShowTooltip = fullLabel.length > 29;
+  const truncatedLabel = shouldShowTooltip
+    ? `${fullLabel.slice(0, 29)}....`
+    : fullLabel;
 
   return (
     <>
@@ -94,8 +87,12 @@ const customOption = (props) => {
           gap: 6,
           cursor: 'pointer',
         }}
+        {...(shouldShowTooltip && {
+          'data-tooltip-id': 'step-option-tooltip',
+          'data-tooltip-content': fullLabel,
+        })}
       >
-        {data.label}
+        {truncatedLabel}
         <span
           style={{
             height: 8,
@@ -105,6 +102,8 @@ const customOption = (props) => {
           }}
         />
       </div>
+
+      {/* Optional: render a separator if it's the last in group */}
       {data.isLastInGroup && (
         <div
           style={{
@@ -142,14 +141,86 @@ const formatGroupLabel = (data) => (
     </div>
   </div>
 );
-const AddToSequence = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
-    null,
+
+const CustomOption = (props) => {
+  // eslint-disable-next-line react/destructuring-assignment
+  const fullLabel = props.label;
+  const shouldShowTooltip = fullLabel.length > 29;
+  const truncatedLabel = shouldShowTooltip
+    ? `${fullLabel.slice(0, 29)}....`
+    : fullLabel;
+
+  return (
+    <div
+      {...(shouldShowTooltip && {
+        'data-tooltip-id': 'step-option-tooltip',
+        'data-tooltip-content': fullLabel,
+      })}
+    >
+      <components.Option {...props} innerProps={{ ...props.innerProps }}>
+        {truncatedLabel}
+      </components.Option>
+    </div>
   );
-  const [selectedSequence, setSelectedSequence] = useState(null);
-  const [selectedStep, setSelectedStep] = useState(null);
-  const [selectedTags, setSelectedTags] = useState([]);
+};
+
+const CustomOptionTags = (props) => {
+  // eslint-disable-next-line react/destructuring-assignment
+  const fullLabel = props.label;
+  const shouldShowTooltip = fullLabel.length > 10;
+  const truncatedLabel = shouldShowTooltip
+    ? `${fullLabel.slice(0, 10)}....`
+    : fullLabel;
+
+  return (
+    <div
+      {...(shouldShowTooltip && {
+        'data-tooltip-id': 'step-option-tooltip',
+        'data-tooltip-content': fullLabel,
+      })}
+    >
+      <components.Option {...props} innerProps={{ ...props.innerProps }}>
+        {truncatedLabel}
+      </components.Option>
+    </div>
+  );
+};
+
+const AddToSequence = ({
+  sequenceOptionLabels,
+  stepOptions,
+  tagOptions,
+  clientAssociatedSequenceValue,
+  ClientAssociatedSequenceOnChange,
+  selectedSequenceValue,
+  SelectedSequenceOnChange,
+  selectedStepValue,
+  SelectedStepOnChange,
+  selectedTagsValue,
+  SelectedTagsOnChange,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
+  //   null,
+  // );
+  // const [selectedSequence, setSelectedSequence] = useState(null);
+  // const [selectedStep, setSelectedStep] = useState(null);
+  // const [selectedTags, setSelectedTags] = useState([]);
+
+  // Dropdown sequence name option (To add partition between recent and current sequence)
+  const processedSequenceOptions = sequenceOptionLabels.map((group) => {
+    if (group.options) {
+      const updatedGroupOptions = group.options.map((opt, index, arr) => ({
+        ...opt,
+        isLastInGroup: index === arr.length - 1,
+      }));
+      return {
+        ...group,
+        options: updatedGroupOptions,
+      };
+    }
+    return group;
+  });
 
   return (
     <div
@@ -246,7 +317,6 @@ const AddToSequence = () => {
           </svg>
         )}
       </div>
-
       {/* Expanded Content */}
       {isExpanded && (
         <>
@@ -297,6 +367,12 @@ const AddToSequence = () => {
 
           <div
             style={{
+              border: '1.2px solid #F3F4F6',
+            }}
+          />
+
+          <div
+            style={{
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
@@ -322,14 +398,13 @@ const AddToSequence = () => {
                 </span>
                 <Select
                   options={clientSequenceOptions}
-                  value={clientAssociatedSequence}
-                  onChange={setClientAssociatedSequence}
+                  value={clientAssociatedSequenceValue}
+                  onChange={ClientAssociatedSequenceOnChange}
                   placeholder="Select"
+                  components={{ Option: CustomOption }}
                   styles={{
                     control: (base, state) => ({
                       ...base,
-                      height: '32px',
-                      minHeight: '32px',
                       border: state.isFocused
                         ? '1px solid #1d4ed8'
                         : '1px solid #d1d5db',
@@ -341,15 +416,22 @@ const AddToSequence = () => {
                         borderColor: 'none',
                       },
                       cursor: 'pointer',
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
                       height: '32px',
-                      padding: '0 8px',
+                      minHeight: '32px',
+                      flexWrap: 'no-wrap',
                     }),
                     indicatorSeparator: (base) => ({
                       ...base,
                       display: 'none',
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      color: '#1F2937',
+                      fontFamily: 'Inter',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      lineHeight: '20px',
                     }),
                     placeholder: (base) => ({
                       ...base,
@@ -383,6 +465,20 @@ const AddToSequence = () => {
                       lineHeight: '20px',
                       cursor: 'pointer',
                     }),
+                  }}
+                />
+                <ReactTooltip
+                  id="step-option-tooltip"
+                  place="bottom"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    lineHeight: '16px',
+                    textAlign: 'center',
+                    borderRadius: '4px',
+                    backgroundColor: '#1F2937',
+                    padding: '8px',
+                    zIndex: '99',
                   }}
                 />
               </div>
@@ -404,19 +500,14 @@ const AddToSequence = () => {
                 </span>
                 <Select
                   options={processedSequenceOptions}
-                  value={selectedSequence}
-                  onChange={(value) => setSelectedSequence(value)}
+                  value={selectedSequenceValue}
+                  onChange={(value) => SelectedSequenceOnChange(value)}
+                  components={{ Option: customOptionSequenceName }}
                   placeholder="Select"
                   formatGroupLabel={formatGroupLabel}
-                  components={{
-                    Option: customOption,
-                    // SingleValue: formatGroupLabel,
-                  }}
                   styles={{
                     control: (base, state) => ({
                       ...base,
-                      height: '32px',
-                      minHeight: '32px',
                       border: state.isFocused
                         ? '1px solid #1d4ed8'
                         : '1px solid #d1d5db',
@@ -428,11 +519,9 @@ const AddToSequence = () => {
                         borderColor: 'none',
                       },
                       cursor: 'pointer',
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
                       height: '32px',
-                      padding: '0 8px',
+                      minHeight: '32px',
+                      flexWrap: 'no-wrap',
                     }),
                     indicatorSeparator: (base) => ({
                       ...base,
@@ -441,6 +530,15 @@ const AddToSequence = () => {
                     placeholder: (base) => ({
                       ...base,
                       color: '#9CA3AF',
+                      fontFamily: 'Inter',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      lineHeight: '20px',
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      color: '#1F2937',
                       fontFamily: 'Inter',
                       fontSize: '14px',
                       fontStyle: 'normal',
@@ -469,6 +567,8 @@ const AddToSequence = () => {
                       fontWeight: 400,
                       lineHeight: '20px',
                       cursor: 'pointer',
+                      height: '32px',
+                      minHeight: '32px',
                     }),
                     groupHeading: (base) => ({
                       ...base,
@@ -479,6 +579,20 @@ const AddToSequence = () => {
                       padding: '0px 16px',
                       // backgroundColor: '#f9fafb',
                     }),
+                  }}
+                />
+                <ReactTooltip
+                  id="step-option-tooltip"
+                  place="bottom"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    lineHeight: '16px',
+                    textAlign: 'center',
+                    borderRadius: '4px',
+                    backgroundColor: '#1F2937',
+                    padding: '8px',
+                    zIndex: '99',
                   }}
                 />
               </div>
@@ -500,14 +614,13 @@ const AddToSequence = () => {
                 </span>
                 <Select
                   options={stepOptions}
-                  value={selectedStep}
-                  onChange={setSelectedStep}
+                  value={selectedStepValue}
+                  onChange={SelectedStepOnChange}
                   placeholder="Select"
+                  components={{ Option: CustomOption }}
                   styles={{
                     control: (base, state) => ({
                       ...base,
-                      height: '32px',
-                      minHeight: '32px',
                       border: state.isFocused
                         ? '1px solid #1d4ed8'
                         : '1px solid #d1d5db',
@@ -519,11 +632,9 @@ const AddToSequence = () => {
                         borderColor: 'none',
                       },
                       cursor: 'pointer',
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
                       height: '32px',
-                      padding: '0 8px',
+                      minHeight: '32px',
+                      flexWrap: 'no-wrap',
                     }),
                     indicatorSeparator: (base) => ({
                       ...base,
@@ -532,6 +643,15 @@ const AddToSequence = () => {
                     placeholder: (base) => ({
                       ...base,
                       color: '#9CA3AF',
+                      fontFamily: 'Inter',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      lineHeight: '20px',
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      color: '#1F2937',
                       fontFamily: 'Inter',
                       fontSize: '14px',
                       fontStyle: 'normal',
@@ -560,7 +680,23 @@ const AddToSequence = () => {
                       fontWeight: 400,
                       lineHeight: '20px',
                       cursor: 'pointer',
+                      height: '32px',
+                      minHeight: '32px',
                     }),
+                  }}
+                />
+                <ReactTooltip
+                  id="step-option-tooltip"
+                  place="bottom"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    lineHeight: '16px',
+                    textAlign: 'center',
+                    borderRadius: '4px',
+                    backgroundColor: '#1F2937',
+                    padding: '8px',
+                    zIndex: '99',
                   }}
                 />
               </div>
@@ -583,14 +719,35 @@ const AddToSequence = () => {
                 <CreatableSelect
                   isMulti
                   options={tagOptions}
-                  value={selectedTags}
-                  onChange={setSelectedTags}
+                  value={selectedTagsValue}
+                  onChange={SelectedTagsOnChange}
+                  components={{
+                    Option: CustomOptionTags,
+                    // eslint-disable-next-line react/no-unstable-nested-components
+                    MultiValueLabel: ({ data, ...props }) => {
+                      const showTooltip = data.label.length > 10;
+                      const displayLabel = showTooltip
+                        ? `${data.label.slice(0, 10)}....`
+                        : data.label;
+
+                      return (
+                        <div
+                          {...(showTooltip && {
+                            'data-tooltip-id': 'chip-tooltip',
+                            'data-tooltip-content': data.label,
+                          })}
+                        >
+                          <components.MultiValueLabel {...props}>
+                            {displayLabel}
+                          </components.MultiValueLabel>
+                        </div>
+                      );
+                    },
+                  }}
                   placeholder="Select"
                   styles={{
                     control: (base, state) => ({
                       ...base,
-                      height: '32px',
-                      minHeight: '32px',
                       border: state.isFocused
                         ? '1px solid #1d4ed8'
                         : '1px solid #d1d5db',
@@ -602,11 +759,18 @@ const AddToSequence = () => {
                         borderColor: 'none',
                       },
                       cursor: 'pointer',
+                      minHeight: '32px',
+                      flexWrap: 'no-wrap',
                     }),
                     valueContainer: (base) => ({
                       ...base,
-                      height: '32px',
-                      padding: '0 8px',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      maxHeight: '58px',
+                      overflowY: 'auto',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 8px',
                     }),
                     dropdownIndicator: (base) => ({
                       ...base,
@@ -619,6 +783,15 @@ const AddToSequence = () => {
                     placeholder: (base) => ({
                       ...base,
                       color: '#9CA3AF',
+                      fontFamily: 'Inter',
+                      fontSize: '14px',
+                      fontStyle: 'normal',
+                      fontWeight: 400,
+                      lineHeight: '20px',
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      color: '#1F2937',
                       fontFamily: 'Inter',
                       fontSize: '14px',
                       fontStyle: 'normal',
@@ -638,6 +811,8 @@ const AddToSequence = () => {
                       fontWeight: 400,
                       lineHeight: '20px',
                       cursor: 'pointer',
+                      height: '32px',
+                      maxHeight: '58px',
                     }),
                     multiValue: (base) => ({
                       ...base,
@@ -660,10 +835,40 @@ const AddToSequence = () => {
                     }),
                     multiValueRemove: (base) => ({
                       ...base,
-                      display: 'none',
-                      // color: '#1F2937',
-                      // cursor: 'pointer',
+                      padding: '0px',
+                      borderRadius: '50%',
+                      ':hover': {
+                        backgroundColor: '#BFDBFE',
+                      },
                     }),
+                  }}
+                />
+                <ReactTooltip
+                  id="option-tooltip"
+                  place="bottom"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    lineHeight: '16px',
+                    textAlign: 'center',
+                    borderRadius: '4px',
+                    backgroundColor: '#1F2937',
+                    padding: '8px',
+                    zIndex: '99',
+                  }}
+                />
+                <ReactTooltip
+                  id="chip-tooltip"
+                  place="bottom"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    lineHeight: '16px',
+                    textAlign: 'center',
+                    borderRadius: '4px',
+                    backgroundColor: '#1F2937',
+                    padding: '8px',
+                    zIndex: '99',
                   }}
                 />
               </div>
@@ -673,7 +878,7 @@ const AddToSequence = () => {
             <Button
               variant="primary"
               className="py-2"
-              disabled={!selectedSequence || !selectedStep}
+              disabled={!selectedSequenceValue || !selectedStepValue}
               style={{
                 fontSize: '14px',
                 padding: '6px 16px',

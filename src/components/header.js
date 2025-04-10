@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { profilePageState } from './state';
 import Main from './main';
+import './responsive-screen.css';
 
 const handleClose = () => {
   const element = document.getElementById('react-root');
@@ -56,6 +57,7 @@ const Header = () => {
               alignItems: 'baseline',
               borderBottom: '1px solid #E5E7EB',
               gap: '12px',
+              marginTop: '16px',
             }}
           >
             <div
@@ -161,58 +163,51 @@ const Header = () => {
                 }}
               >
                 <div
+                  className="credits-container"
                   onClick={handleClick} // Adding onClick event handler
                   style={{
                     backgroundColor: '#EFF6FF',
-                    cursor: 'pointer',
-                    border: '1px solid #BFDBFE',
-                    width: 'auto',
-                    maxHeight: '20px',
                     borderRadius: '4px',
+                    border: '1px solid #BFDBFE',
+                    cursor: 'pointer',
                     padding: '2px 6px',
+                    height: '20px',
+                    alignItems: 'center',
+                    display: 'flex',
+                    gap: '2px',
+                    width: 'auto',
                   }}
                 >
-                  <div
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M3.00013 2.61134C3.10555 2.43563 3.29543 2.32812 3.50033 2.32812H10.5003C10.7052 2.32812 10.8951 2.43563 11.0005 2.61134L12.7505 5.528C12.8821 5.74723 12.8555 6.02656 12.6851 6.21709L7.72672 11.7588C7.72085 11.7653 7.71483 11.7717 7.70867 11.778C7.61633 11.8723 7.50613 11.9471 7.3845 11.9983C7.26286 12.0494 7.13226 12.0757 7.00033 12.0757C6.8684 12.0757 6.7378 12.0494 6.61617 11.9983C6.49454 11.9471 6.38433 11.8723 6.292 11.778C6.28583 11.7717 6.27981 11.7653 6.27394 11.7588L1.31561 6.21709C1.14514 6.02656 1.11859 5.74723 1.25013 5.528L3.00013 2.61134ZM3.83061 3.49479L2.47174 5.75957L7.00033 10.8209L11.5289 5.75957L10.1701 3.49479H3.83061Z"
+                      fill="#1D4ED8"
+                    />
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M5.31647 4.63986C5.59273 4.80561 5.68231 5.16393 5.51655 5.44018L5.3896 5.65178L6.26465 6.61434C6.48136 6.85272 6.46379 7.22165 6.22541 7.43836C5.98702 7.65507 5.6181 7.6375 5.40138 7.39912L4.23472 6.11579C4.06159 5.92535 4.03373 5.64396 4.16614 5.42327L4.51614 4.83994C4.6819 4.56368 5.04022 4.4741 5.31647 4.63986Z"
+                      fill="#1D4ED8"
+                    />
+                  </svg>
+                  <span
                     style={{
-                      display: 'flex',
-                      gap: '2px',
+                      color: '#1D4ED8',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      lineHeight: '16px',
                     }}
                   >
-                    <div>
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 14 14"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M3.00013 2.61134C3.10555 2.43563 3.29543 2.32812 3.50033 2.32812H10.5003C10.7052 2.32812 10.8951 2.43563 11.0005 2.61134L12.7505 5.528C12.8821 5.74723 12.8555 6.02656 12.6851 6.21709L7.72672 11.7588C7.72085 11.7653 7.71483 11.7717 7.70867 11.778C7.61633 11.8723 7.50613 11.9471 7.3845 11.9983C7.26286 12.0494 7.13226 12.0757 7.00033 12.0757C6.8684 12.0757 6.7378 12.0494 6.61617 11.9983C6.49454 11.9471 6.38433 11.8723 6.292 11.778C6.28583 11.7717 6.27981 11.7653 6.27394 11.7588L1.31561 6.21709C1.14514 6.02656 1.11859 5.74723 1.25013 5.528L3.00013 2.61134ZM3.83061 3.49479L2.47174 5.75957L7.00033 10.8209L11.5289 5.75957L10.1701 3.49479H3.83061Z"
-                          fill="#1D4ED8"
-                        />
-                        <path
-                          fillRule="evenodd"
-                          clipRule="evenodd"
-                          d="M5.31647 4.63986C5.59273 4.80561 5.68231 5.16393 5.51655 5.44018L5.3896 5.65178L6.26465 6.61434C6.48136 6.85272 6.46379 7.22165 6.22541 7.43836C5.98702 7.65507 5.6181 7.6375 5.40138 7.39912L4.23472 6.11579C4.06159 5.92535 4.03373 5.64396 4.16614 5.42327L4.51614 4.83994C4.6819 4.56368 5.04022 4.4741 5.31647 4.63986Z"
-                          fill="#1D4ED8"
-                        />
-                      </svg>
-                    </div>
-                    <span
-                      style={{
-                        display: 'flex',
-                        alignSelf: 'baseline',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        lineHeight: '16px',
-                        color: '#1D4ED8',
-                      }}
-                    >
-                      {leadFinderCredits}
-                    </span>
-                  </div>
+                    {leadFinderCredits}
+                  </span>
                 </div>
                 <div onClick={handleProfileClick}>
                   <svg
