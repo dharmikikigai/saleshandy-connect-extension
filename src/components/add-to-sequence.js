@@ -68,9 +68,9 @@ const customOptionSequenceName = (props) => {
   const { data, innerRef, innerProps, isFocused } = props;
 
   const fullLabel = data.label;
-  const shouldShowTooltip = fullLabel.length > 29;
+  const shouldShowTooltip = fullLabel.length > 30;
   const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 29)}....`
+    ? `${fullLabel.slice(0, 30)}..`
     : fullLabel;
 
   return (
@@ -86,6 +86,9 @@ const customOptionSequenceName = (props) => {
           alignItems: 'center',
           gap: 6,
           cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: '400',
+          lineHeight: '20px',
         }}
         {...(shouldShowTooltip && {
           'data-tooltip-id': 'step-option-tooltip',
