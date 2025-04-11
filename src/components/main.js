@@ -38,16 +38,23 @@ const Main = () => {
       return;
     }
 
-    const metaData = (await mailboxInstance.getMetaData())?.payload;
+    chrome.storage.local.get(['saleshandyMetaData'], async (result) => {
+      const saleshandyMetaData = result?.saleshandyMetaData;
 
-    if (metaData) {
-      chrome.storage.local.set({ saleshandyMetaData: metaData });
-
-      if (metaData.user?.isUserRestricted) {
-        console.log('isAgency');
-        setIsFeatureAvailable(true);
+      if (saleshandyMetaData || saleshandyMetaData?.user) {
+        return;
       }
-    }
+
+      const metaData = (await mailboxInstance.getMetaData())?.payload;
+
+      if (metaData) {
+        chrome.storage.local.set({ saleshandyMetaData: metaData });
+
+        if (metaData.user?.isUserRestricted) {
+          setIsFeatureAvailable(true);
+        }
+      }
+    });
   };
 
   const authCheck = () => {
@@ -144,8 +151,6 @@ const Main = () => {
     authCheck();
     pageCheck();
   }, []);
-
-  console.log(showProfilePage, 'showProfilePage');
 
   if (!isSaleshandyLoggedIn) {
     return <Login />;
