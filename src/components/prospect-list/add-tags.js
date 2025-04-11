@@ -3,7 +3,7 @@ import CreatableSelect from 'react-select/creatable';
 import cross from '../../assets/icons/cross.svg';
 import prospectsInstance from '../../config/server/finder/prospects';
 
-const CustomButton = ({
+export const CustomButton = ({
   variant,
   className,
   onClick,

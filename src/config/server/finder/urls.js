@@ -60,4 +60,22 @@ export default {
     path: () => 'lead-finder/tags',
     error: 'Error in getting the tags',
   },
+
+  getSequences: {
+    type: REQUEST_TYPES.GET,
+    path: (clientIds) => {
+      let path = 'chrome-extension/sequences/list';
+      if (clientIds) {
+        path += `?clientIds=${clientIds}`;
+      }
+      return path;
+    },
+    error: 'Error in getting the sequences',
+  },
+
+  getAgencyClients: {
+    type: REQUEST_TYPES.GET,
+    path: () => 'client/list',
+    error: 'Error in getting the agency clients',
+  },
 };

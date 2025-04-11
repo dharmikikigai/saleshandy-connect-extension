@@ -79,6 +79,22 @@ class Prospects extends Server {
       console.log(URLs.getTags.error, e);
     }
   }
+
+  async getSequences(clientIds) {
+    try {
+      return (await this.req.get(URLs.getSequences.path(clientIds))).data;
+    } catch (e) {
+      console.log(URLs.getSequences.error, e);
+    }
+  }
+
+  async getAgencyClients() {
+    try {
+      return (await this.req.get(URLs.getAgencyClients.path())).data;
+    } catch (e) {
+      console.log(URLs.getAgencyClients.error, e);
+    }
+  }
 }
 
 const prospectsInstance = new Prospects();

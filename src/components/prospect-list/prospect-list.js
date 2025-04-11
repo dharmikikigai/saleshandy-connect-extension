@@ -24,6 +24,7 @@ import tagIcon from '../../assets/icons/tag.svg';
 import SkeletonLoading from '../skeleton-loading/skeleton-loading';
 import prospectsInstance from '../../config/server/finder/prospects';
 import AddTagsModal from './add-tags';
+import AddToSequenceModal from './add-to-sequence-modal';
 
 const CustomButton = ({
   variant,
@@ -410,6 +411,34 @@ const tempBulkInfo = {
   ],
 };
 
+// const sequenceOptionLabels = [
+//   {
+//     label: 'Recent Sequences',
+//     options: [
+//       { value: 'sequence_2', label: 'Another Sequence', status: 1 },
+//       { value: 'sequence_3', label: 'Sequence 3', status: 2 },
+//       // Add more if needed
+//     ],
+//   },
+//   {
+//     value: 'abhishek_first',
+//     label: "Abhishek's First Sequence 🚀 (Current Sequence)",
+//     status: 3,
+//   },
+//   { value: 'sequence_2', label: 'Another Sequence' },
+// ];
+
+// const stepOptions = [
+//   { value: 'step_1', label: 'Step 1: Email' },
+//   { value: 'step_2', label: 'Step 2: Follow-up' },
+// ];
+
+// const tagOptions = [
+//   { value: 'tag1', label: 'Tag 1' },
+//   { value: 'tag2', label: 'Tag 2' },
+//   { value: 'tag3', label: 'Tag 3' },
+// ];
+
 const BULK_ACTION_TIMEOUT = 7000;
 const MAX_POLLING_LIMIT = 20;
 
@@ -427,11 +456,16 @@ const ProspectList = () => {
   const [revealProspectLoading, setRevealProspectLoading] = useState({
     ignore: false,
     apply: false,
+    save: false,
   });
 
   const [isPollingEnabled, setIsPollingEnabled] = useState(false);
   const [isFirstPollRequest, setIsFirstPollRequest] = useState(true);
   const pollingAttemptsRef = useRef(0);
+
+  const [showAddToSequenceModal, setShowAddToSequenceModal] = useState(false);
+
+  const [isAgency, setIsAgency] = useState(false);
 
   const selectableProspects = prospects.filter(
     (prospect) => prospect.id && !prospect.isRevealing,
@@ -516,6 +550,7 @@ const ProspectList = () => {
     setRevealProspectLoading({
       ignore: false,
       apply: true,
+      save: false,
     });
     const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
     if (bulkRevealRes) {
@@ -544,6 +579,7 @@ const ProspectList = () => {
     setRevealProspectLoading({
       ignore: false,
       apply: false,
+      save: false,
     });
     setSelectedProspects([]);
     setSelectedTags([]);
@@ -559,6 +595,7 @@ const ProspectList = () => {
     setRevealProspectLoading({
       ignore: true,
       apply: false,
+      save: false,
     });
     const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
     if (bulkRevealRes) {
@@ -587,10 +624,60 @@ const ProspectList = () => {
     setRevealProspectLoading({
       ignore: false,
       apply: false,
+      save: false,
     });
     setSelectedProspects([]);
     setSelectedTags([]);
     setShowTagsModal(false);
+  };
+
+  const handleAddToSequence = async (data) => {
+    console.log('handleAddToSequence', data);
+    const payload = {
+      leadIds: selectedProspects,
+      revealType: 'email',
+      tagIds: data.tagIds,
+      newTags: data.newTags,
+      sequenceId: data.sequenceId,
+      stepId: data.stepId,
+    };
+    console.log('payload', payload);
+    setRevealProspectLoading({
+      ignore: false,
+      apply: false,
+      save: true,
+    });
+    const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
+    if (bulkRevealRes) {
+      const { message, status } = bulkRevealRes.payload;
+      if (status === 0) {
+        console.log('error', message);
+      } else if (status === 2) {
+        console.log('warning', message);
+      } else {
+        // if (bulkRevealRes?.payload?.shouldPoll) {
+        const newRevealingProspects = {
+          ...revealingProspects,
+          ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+        };
+        console.log('newRevealingProspects', newRevealingProspects);
+        setRevealingProspects(newRevealingProspects);
+        setIsPollingEnabled(true);
+        // }
+        console.log(
+          'success',
+          message ||
+            'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
+        );
+      }
+    }
+    setRevealProspectLoading({
+      ignore: false,
+      apply: false,
+      save: false,
+    });
+    setSelectedProspects([]);
+    setShowAddToSequenceModal(false);
   };
 
   const handleViewContact = (type) => {
@@ -678,6 +765,7 @@ const ProspectList = () => {
 
   useEffect(() => {
     fetchProspects();
+    setIsAgency(true);
     // setMetaData();  TODO for header
   }, []);
 
@@ -859,7 +947,7 @@ const ProspectList = () => {
       variant="outline"
       className={isExpanded ? 'action-button' : 'action-icon-button'}
       disabled={selectedProspects.length === 0}
-      onClick={() => handleViewContact('emailphone')}
+      onClick={() => setShowAddToSequenceModal(true)}
     >
       <img src={send} alt="send" />
       {isExpanded ? 'Sequence' : ''}
@@ -1142,6 +1230,14 @@ const ProspectList = () => {
         setSelectedTags={setSelectedTags}
         onApplyTags={handleApplyTags}
         onIgnoreTags={handleIgnoreTags}
+        isLoading={revealProspectLoading}
+      />
+
+      <AddToSequenceModal
+        showModal={showAddToSequenceModal}
+        onClose={() => setShowAddToSequenceModal(false)}
+        isAgency={isAgency}
+        handleAddToSequence={handleAddToSequence}
         isLoading={revealProspectLoading}
       />
     </>
