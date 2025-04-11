@@ -5,9 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './prospect-list.css';
 
 import minusIcon from '../../assets/icons/minus.svg';
-import shConnectLogo from '../../assets/icons/shConnectLogo.svg';
-import diamondIcon from '../../assets/icons/diamond.svg';
-import dotsVerticalIcon from '../../assets/icons/dotsVertical.svg';
 import email from '../../assets/icons/email.svg';
 import emailPhone from '../../assets/icons/emailPhone.svg';
 import send from '../../assets/icons/send.svg';
@@ -25,6 +22,7 @@ import SkeletonLoading from '../skeleton-loading/skeleton-loading';
 import prospectsInstance from '../../config/server/finder/prospects';
 import AddTagsModal from './add-tags';
 import AddToSequenceModal from './add-to-sequence-modal';
+import Header from '../header';
 
 const CustomButton = ({
   variant,
@@ -304,112 +302,112 @@ const CustomButton = ({
 //   },
 // ];
 
-const tempBulkInfo = {
-  oldurl: 'https://www.linkedin.com/company/letsblinkit/people/',
-  people: [
-    {
-      description: 'SDEI@ Blinkit',
-      firstname: 'Pranjal',
-      lastname: 'Mishra',
-      logo:
-        'https://media.licdn.com/dms/image/v2/C4E03AQG-rzxr8YtM0w/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1623038589430?e=1749686400&v=beta&t=O52_Kx1dfjL0x-TOuJlYcETzVS_zjWnpSHBgfCyupS4',
-      name: 'Pranjal Mishra',
-      source_id: '907177006',
-      source_id_2: 'pranjal-mishra-83a98a213',
-    },
-    {
-      description: "Software Developer | Blinkit | IIT Kgp' 23",
-      firstname: 'Ekansh',
-      lastname: 'Jain',
-      logo:
-        'https://media.licdn.com/dms/image/v2/D5603AQFdj3Ew7JI--A/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1703931476765?e=1749686400&v=beta&t=-VZxpPEN8L4hc23x7wlGq8T_kY_PM6zQV87MgvnR9PU',
-      name: 'Ekansh Jain',
-      source_id: '702810098',
-      source_id_2: 'ekansh-jain-982452177',
-    },
-    {
-      description: 'Product @ Swish | Prev Blinkit',
-      firstname: 'Pranav',
-      lastname: 'Sharma',
-      logo:
-        'https://media.licdn.com/dms/image/v2/D5603AQFS_qIc8B0auA/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1707728573099?e=1749686400&v=beta&t=sipcAbLtf8Acp74AOFY967JAIkkhQeuEEDUGVRJj_ec',
-      name: 'Pranav Sharma',
-      source_id: '783986355',
-      source_id_2: 'pranav-sharma-nsut',
-    },
-    {
-      description: 'SWE at Blinkit',
-      firstname: 'Tushar',
-      lastname: 'Singh',
-      logo:
-        'https://media.licdn.com/dms/image/v2/C4D03AQE7JAs9yjCHNg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1662950208681?e=1749686400&v=beta&t=Ksk7Ri_BJma1hM3kYhft1EyhgHPODp2zto8hPStj_u8',
-      name: 'Tushar Singh',
-      source_id: '650860457',
-      source_id_2: 'thatfedupguy',
-    },
-    {
-      description: 'SDE -2 @ Blinkit | ex-Razorpay',
-      firstname: 'Arpit',
-      lastname: 'Mishra',
-      logo:
-        'https://media.licdn.com/dms/image/v2/D5603AQE6kqiLd9WKSg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1726320766819?e=1749686400&v=beta&t=yUQ4Wxn5brN4DekxW1t8w8NCs3LUzzcSV2sLeOybruo',
-      name: 'Arpit Mishra',
-      source_id: '582977193',
-      source_id_2: 'mishrrag',
-    },
-    {
-      description: 'Building Seller Hub at Blinkit | Engineering Manager',
-      firstname: 'Sahil',
-      lastname: 'Jain',
-      logo:
-        'https://media.licdn.com/dms/image/v2/D4D03AQFwueNMJD7pjw/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1665750967997?e=1749686400&v=beta&t=cpKCuCwBBOTDQCb0cbJqv5zXLuoFtVGijttown7WGFg',
-      name: 'Sahil Jain',
-      source_id: '522783743',
-      source_id_2: 'iam-sahil',
-    },
-    {
-      description:
-        "Building Bistro @BlinkIt || 2 x ICPC Regionalist '24 '22 || Expert@Codeforces || Guardian@Leetcode",
-      firstname: 'Vikas',
-      lastname: 'Kumar Sharma',
-      logo:
-        'https://media.licdn.com/dms/image/v2/D5603AQEBNCcf_0RNpg/profile-displayphoto-shrink_100_100/B56ZXgdpdaGoAU-/0/1743227625069?e=1749686400&v=beta&t=y_yiOyGJc_QIzbWLc5lnxpdXwJE4APgCaFcV38nSEqA',
-      name: 'Vikas Kumar Sharma',
-      source_id: '959714640',
-      source_id_2: 'vikaskumarsharma2005',
-    },
-    {
-      description: 'HR executive',
-      firstname: 'Ashish',
-      lastname: 'Sharma',
-      logo:
-        'https://media.licdn.com/dms/image/v2/D4E35AQEj4V-sZ4-D_g/profile-framedphoto-shrink_100_100/profile-framedphoto-shrink_100_100/0/1715757920543?e=1744786800&v=beta&t=XUW-gT0ndFwIPg6phHXAlogcaHLAV9Cv6uJe8rMmbWY',
-      name: 'Ashish Sharma',
-      source_id: '1166379500',
-      source_id_2: 'ashish-sharma-178750286',
-    },
-    {
-      description: 'SDE 2 at Blinkit',
-      firstname: 'Nikhil',
-      lastname: 'Kumar',
-      logo:
-        'https://media.licdn.com/dms/image/v2/D5603AQGvSq6WgKFszg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1710153884522?e=1749686400&v=beta&t=ppUfCVYtjxQBlO0C6EyXLEtBNCgXuu2W6Nrs0YfETeE',
-      name: 'Nikhil Kumar',
-      source_id: '755921429',
-      source_id_2: 'nikhilkmtnk28',
-    },
-    {
-      description: 'Area Manager - Gujarat',
-      firstname: 'Anil',
-      lastname: 'Gupta',
-      logo:
-        'https://media.licdn.com/dms/image/v2/D4D35AQFct1vrrjL3kw/profile-framedphoto-shrink_100_100/profile-framedphoto-shrink_100_100/0/1695060894235?e=1744786800&v=beta&t=2A9E29TT3IgbNO7EbmnlBPELQGA7Sv5aDUyH1hTZCUk',
-      name: 'Anil Gupta',
-      source_id: '574195191',
-      source_id_2: 'anil-gupta-a73368140',
-    },
-  ],
-};
+// const tempBulkInfo = {
+//   oldurl: 'https://www.linkedin.com/company/letsblinkit/people/',
+//   people: [
+//     {
+//       description: 'SDEI@ Blinkit',
+//       firstname: 'Pranjal',
+//       lastname: 'Mishra',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/C4E03AQG-rzxr8YtM0w/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1623038589430?e=1749686400&v=beta&t=O52_Kx1dfjL0x-TOuJlYcETzVS_zjWnpSHBgfCyupS4',
+//       name: 'Pranjal Mishra',
+//       source_id: '907177006',
+//       source_id_2: 'pranjal-mishra-83a98a213',
+//     },
+//     {
+//       description: "Software Developer | Blinkit | IIT Kgp' 23",
+//       firstname: 'Ekansh',
+//       lastname: 'Jain',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/D5603AQFdj3Ew7JI--A/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1703931476765?e=1749686400&v=beta&t=-VZxpPEN8L4hc23x7wlGq8T_kY_PM6zQV87MgvnR9PU',
+//       name: 'Ekansh Jain',
+//       source_id: '702810098',
+//       source_id_2: 'ekansh-jain-982452177',
+//     },
+//     {
+//       description: 'Product @ Swish | Prev Blinkit',
+//       firstname: 'Pranav',
+//       lastname: 'Sharma',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/D5603AQFS_qIc8B0auA/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1707728573099?e=1749686400&v=beta&t=sipcAbLtf8Acp74AOFY967JAIkkhQeuEEDUGVRJj_ec',
+//       name: 'Pranav Sharma',
+//       source_id: '783986355',
+//       source_id_2: 'pranav-sharma-nsut',
+//     },
+//     {
+//       description: 'SWE at Blinkit',
+//       firstname: 'Tushar',
+//       lastname: 'Singh',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/C4D03AQE7JAs9yjCHNg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1662950208681?e=1749686400&v=beta&t=Ksk7Ri_BJma1hM3kYhft1EyhgHPODp2zto8hPStj_u8',
+//       name: 'Tushar Singh',
+//       source_id: '650860457',
+//       source_id_2: 'thatfedupguy',
+//     },
+//     {
+//       description: 'SDE -2 @ Blinkit | ex-Razorpay',
+//       firstname: 'Arpit',
+//       lastname: 'Mishra',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/D5603AQE6kqiLd9WKSg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1726320766819?e=1749686400&v=beta&t=yUQ4Wxn5brN4DekxW1t8w8NCs3LUzzcSV2sLeOybruo',
+//       name: 'Arpit Mishra',
+//       source_id: '582977193',
+//       source_id_2: 'mishrrag',
+//     },
+//     {
+//       description: 'Building Seller Hub at Blinkit | Engineering Manager',
+//       firstname: 'Sahil',
+//       lastname: 'Jain',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/D4D03AQFwueNMJD7pjw/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1665750967997?e=1749686400&v=beta&t=cpKCuCwBBOTDQCb0cbJqv5zXLuoFtVGijttown7WGFg',
+//       name: 'Sahil Jain',
+//       source_id: '522783743',
+//       source_id_2: 'iam-sahil',
+//     },
+//     {
+//       description:
+//         "Building Bistro @BlinkIt || 2 x ICPC Regionalist '24 '22 || Expert@Codeforces || Guardian@Leetcode",
+//       firstname: 'Vikas',
+//       lastname: 'Kumar Sharma',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/D5603AQEBNCcf_0RNpg/profile-displayphoto-shrink_100_100/B56ZXgdpdaGoAU-/0/1743227625069?e=1749686400&v=beta&t=y_yiOyGJc_QIzbWLc5lnxpdXwJE4APgCaFcV38nSEqA',
+//       name: 'Vikas Kumar Sharma',
+//       source_id: '959714640',
+//       source_id_2: 'vikaskumarsharma2005',
+//     },
+//     {
+//       description: 'HR executive',
+//       firstname: 'Ashish',
+//       lastname: 'Sharma',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/D4E35AQEj4V-sZ4-D_g/profile-framedphoto-shrink_100_100/profile-framedphoto-shrink_100_100/0/1715757920543?e=1744786800&v=beta&t=XUW-gT0ndFwIPg6phHXAlogcaHLAV9Cv6uJe8rMmbWY',
+//       name: 'Ashish Sharma',
+//       source_id: '1166379500',
+//       source_id_2: 'ashish-sharma-178750286',
+//     },
+//     {
+//       description: 'SDE 2 at Blinkit',
+//       firstname: 'Nikhil',
+//       lastname: 'Kumar',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/D5603AQGvSq6WgKFszg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1710153884522?e=1749686400&v=beta&t=ppUfCVYtjxQBlO0C6EyXLEtBNCgXuu2W6Nrs0YfETeE',
+//       name: 'Nikhil Kumar',
+//       source_id: '755921429',
+//       source_id_2: 'nikhilkmtnk28',
+//     },
+//     {
+//       description: 'Area Manager - Gujarat',
+//       firstname: 'Anil',
+//       lastname: 'Gupta',
+//       logo:
+//         'https://media.licdn.com/dms/image/v2/D4D35AQFct1vrrjL3kw/profile-framedphoto-shrink_100_100/profile-framedphoto-shrink_100_100/0/1695060894235?e=1744786800&v=beta&t=2A9E29TT3IgbNO7EbmnlBPELQGA7Sv5aDUyH1hTZCUk',
+//       name: 'Anil Gupta',
+//       source_id: '574195191',
+//       source_id_2: 'anil-gupta-a73368140',
+//     },
+//   ],
+// };
 
 // const sequenceOptionLabels = [
 //   {
@@ -509,22 +507,23 @@ const ProspectList = () => {
   };
 
   const fetchProspects = async () => {
-    // const bulkInfo = chrome.storage.local.get(['bulkInfo']);
-    const bulkInfo = tempBulkInfo.people;
-    if (bulkInfo && bulkInfo.length > 0) {
-      const linkedinUrls = bulkInfo.map(
-        (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
-      );
-      const payload = {
-        start: 1,
-        take: linkedinUrls.length,
-        link: linkedinUrls,
-      };
-      console.log('payload', payload);
-      const response = await prospectsInstance.getProspects(payload);
-      console.log('response', response);
-      setProspectsData(response, bulkInfo);
-    }
+    chrome.storage.local.get(['bulkInfo'], async (result) => {
+      const bulkInfo = result?.bulkInfo.people;
+      if (bulkInfo && bulkInfo.length > 0) {
+        const linkedinUrls = bulkInfo.map(
+          (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
+        );
+        const payload = {
+          start: 1,
+          take: linkedinUrls.length,
+          link: linkedinUrls,
+        };
+        console.log('payload', payload);
+        const response = await prospectsInstance.getProspects(payload);
+        console.log('response', response);
+        setProspectsData(response, bulkInfo);
+      }
+    });
   };
 
   const handleApplyTags = async () => {
@@ -1010,20 +1009,8 @@ const ProspectList = () => {
   return (
     <>
       <div className="prospect-list-container">
-        <div className="prospect-list-header">
-          <div className="prospect-list-header-title">
-            <img src={shConnectLogo} alt="sh-logo" />
-          </div>
-          <div className="prospect-list-header-actions">
-            <div className="lf-credits-box">
-              <img src={diamondIcon} alt="diamond" />
-              100
-            </div>
-            <img src={dotsVerticalIcon} alt="options" />
-            <img src={minusIcon} alt="minus" />
-          </div>
-        </div>
-        <div className="prospect-tabs-container">
+        <Header />
+        <div className="prospect-tabs-container" id="prospect-list-container">
           {prospects.length === 0 ? (
             <>
               {getProspectTabsSkeleton()}

@@ -5,7 +5,6 @@ import Header from './header';
 const CommonSearchPeople = () => (
   <>
     <div
-      id="common-screen-id"
       style={{
         width: '100%',
         height: '100%',
@@ -17,6 +16,7 @@ const CommonSearchPeople = () => (
     >
       <Header />
       <div
+        id="common-screen-id"
         style={{
           width: '100%',
           height: '100%',

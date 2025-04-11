@@ -34,6 +34,16 @@ const Profile = () => {
       const findTwo = document.getElementById('common-search-id');
       if (findTwo) {
         findTwo.style.display = 'none';
+      } else {
+        const findThree = document.getElementById('prospect-list-container');
+        if (findThree) {
+          findThree.style.display = 'none';
+        } else {
+          const findFour = document.getElementById('single-profile-container');
+          if (findFour) {
+            findFour.style.display = 'none';
+          }
+        }
       }
     }
   };
@@ -67,7 +77,7 @@ const Profile = () => {
         },
         newMailboxId,
       )
-    ).payload;
+    )?.payload;
 
     chrome.storage.local.get(['mailboxEmail'], (request) => {
       setMailboxEmail(request.mailboxEmail);
@@ -91,7 +101,7 @@ const Profile = () => {
   const fetchNotificationSetting = async () => {
     const notificationSetting = (
       await mailboxInstance.fetchNotificationSetting()
-    ).payload;
+    )?.payload;
     if (notificationSetting) {
       if (notificationSetting.settings[0].value === '1') {
         setDesktopNotification(true);
