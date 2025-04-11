@@ -41,7 +41,7 @@ const Main = () => {
     if (metaData) {
       chrome.storage.local.set({ saleshandyMetaData: metaData });
 
-      if (metaData.user?.isAgency) {
+      if (metaData.user?.isUserRestricted) {
         console.log('isAgency');
         setIsFeatureAvailable(true);
       }
