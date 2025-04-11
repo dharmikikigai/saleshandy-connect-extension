@@ -197,7 +197,7 @@ InboxSDK.load(2, 'sdk_sh_connect_3d6289d8a5').then(async (sdk) => {
       await mailboxInstance.fetchingMailboxSetting({
         email: currentUserEmail,
       })
-    ).payload;
+    )?.payload;
 
     console.log(mailboxId, 'mailboxId');
     console.log(isTrackingEnabled, 'isTrackingEnabled');
@@ -555,7 +555,7 @@ InboxSDK.load(2, 'sdk_sh_connect_3d6289d8a5').then(async (sdk) => {
               await mailboxInstance.fetchingMailboxSetting({
                 email: currentMailboxEmail,
               })
-            ).payload;
+            )?.payload;
 
             mailboxId = mailboxTracking.mailboxId;
             isTrackingEnabled = mailboxTracking.isTrackingEnabled;
