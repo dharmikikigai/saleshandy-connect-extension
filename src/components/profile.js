@@ -34,6 +34,16 @@ const Profile = () => {
       const findTwo = document.getElementById('common-search-id');
       if (findTwo) {
         findTwo.style.display = 'none';
+      } else {
+        const findThree = document.getElementById('prospect-list-container');
+        if (findThree) {
+          findThree.style.display = 'none';
+        } else {
+          const findFour = document.getElementById('single-profile-container');
+          if (findFour) {
+            findFour.style.display = 'none';
+          }
+        }
       }
     }
   };

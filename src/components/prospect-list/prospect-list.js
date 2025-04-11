@@ -5,9 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './prospect-list.css';
 
 import minusIcon from '../../assets/icons/minus.svg';
-import shConnectLogo from '../../assets/icons/shConnectLogo.svg';
-import diamondIcon from '../../assets/icons/diamond.svg';
-import dotsVerticalIcon from '../../assets/icons/dotsVertical.svg';
 import email from '../../assets/icons/email.svg';
 import emailPhone from '../../assets/icons/emailPhone.svg';
 import send from '../../assets/icons/send.svg';
@@ -24,6 +21,7 @@ import tagIcon from '../../assets/icons/tag.svg';
 import SkeletonLoading from '../skeleton-loading/skeleton-loading';
 import prospectsInstance from '../../config/server/finder/prospects';
 import AddTagsModal from './add-tags';
+import Header from '../header';
 
 const CustomButton = ({
   variant,
@@ -922,20 +920,8 @@ const ProspectList = () => {
   return (
     <>
       <div className="prospect-list-container">
-        <div className="prospect-list-header">
-          <div className="prospect-list-header-title">
-            <img src={shConnectLogo} alt="sh-logo" />
-          </div>
-          <div className="prospect-list-header-actions">
-            <div className="lf-credits-box">
-              <img src={diamondIcon} alt="diamond" />
-              100
-            </div>
-            <img src={dotsVerticalIcon} alt="options" />
-            <img src={minusIcon} alt="minus" />
-          </div>
-        </div>
-        <div className="prospect-tabs-container">
+        <Header />
+        <div className="prospect-tabs-container" id="prospect-list-container">
           {prospects.length === 0 ? (
             <>
               {getProspectTabsSkeleton()}

@@ -6,7 +6,7 @@ import Main from './main';
 import './responsive-screen.css';
 
 const handleClose = () => {
-  const element = document.getElementById('react-root');
+  const element = document.getElementById('saleshandy-window');
   if (element) {
     element.style.display = 'none';
   }

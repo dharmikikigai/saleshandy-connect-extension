@@ -7,6 +7,8 @@ import CommonSearchPeople from './common-search-people';
 import NotAvailableFeature from './feature-na';
 import { profilePageState } from './state';
 import mailboxInstance from '../config/server/tracker/mailbox';
+import SingleProfile from './single-profile';
+import ProspectList from './prospect-list/prospect-list';
 
 const Main = () => {
   const [isSaleshandyLoggedIn, setIsSaleshandyLoggedIn] = useState(false);
@@ -49,94 +51,101 @@ const Main = () => {
   };
 
   const authCheck = () => {
-    const element = document.getElementById('saleshandy-window');
+    chrome.storage.local.get(['authToken'], (result1) => {
+      const authenticationToken = result1?.authToken;
 
-    const authenticationToken = element?.getAttribute('authToken');
+      console.log('authToken', authenticationToken);
 
-    let checkFurther = true;
+      let checkFurther = true;
 
-    setShowProfilePage(showProfilePageState);
-    setShowProfilePageState(false);
+      setShowProfilePage(showProfilePageState);
+      setShowProfilePageState(false);
 
-    chrome.storage.local.get(['logoutTriggered'], (result) => {
-      const logoutTriggered = result?.logoutTriggered;
+      chrome.storage.local.get(['logoutTriggered'], (result) => {
+        const logoutTriggered = result?.logoutTriggered;
 
-      if (logoutTriggered && logoutTriggered === 'true') {
-        setIsSaleshandyLoggedIn(false);
-        checkFurther = false;
-      }
-
-      if (checkFurther) {
-        if (
-          authenticationToken !== undefined &&
-          authenticationToken !== null &&
-          authenticationToken !== ''
-        ) {
-          setIsSaleshandyLoggedIn(true);
-          getMetaData();
-        } else {
+        if (logoutTriggered && logoutTriggered === 'true') {
           setIsSaleshandyLoggedIn(false);
+          checkFurther = false;
         }
-      }
+
+        if (checkFurther) {
+          if (
+            authenticationToken !== undefined &&
+            authenticationToken !== null &&
+            authenticationToken !== ''
+          ) {
+            setIsSaleshandyLoggedIn(true);
+            getMetaData();
+          } else {
+            setIsSaleshandyLoggedIn(false);
+          }
+        }
+      });
     });
   };
 
   const pageCheck = () => {
-    const element = document.getElementById('saleshandy-window');
-    const activeUrl = element?.getAttribute('activeUrl');
+    chrome.storage.local.get(['activeUrl'], (result) => {
+      const activeUrl = result?.activeUrl;
 
-    if (!activeUrl || activeUrl === '') {
-      setIsCommonSearchScreenActive(true);
-      setIsSingleViewActive(false);
-      setIsBulkPagViewActive(false);
-      setIsBulkViewActive(false);
-      setIsFeatureAvailable(false);
-      setIsCommonPeopleScreenActive(false);
-    } else if (activeUrl.includes('linkedin.com/in/')) {
-      setIsCommonSearchScreenActive(false);
-      setIsSingleViewActive(true);
-      setIsBulkPagViewActive(false);
-      setIsBulkViewActive(false);
-      setIsFeatureAvailable(false);
-      setIsCommonPeopleScreenActive(false);
-    } else if (activeUrl.includes('linkedin.com/search/results/people/')) {
-      setIsCommonSearchScreenActive(false);
-      setIsSingleViewActive(false);
-      setIsBulkPagViewActive(true);
-      setIsBulkViewActive(false);
-      setIsFeatureAvailable(false);
-      setIsCommonPeopleScreenActive(false);
-    } else if (
-      activeUrl.includes('linkedin.com/company/') &&
-      activeUrl.includes('/people')
-    ) {
-      setIsCommonSearchScreenActive(false);
-      setIsSingleViewActive(false);
-      setIsBulkPagViewActive(false);
-      setIsBulkViewActive(true);
-      setIsFeatureAvailable(false);
-      setIsCommonPeopleScreenActive(false);
-    } else if (activeUrl.includes('linkedin.com/search/results/all')) {
-      setIsCommonSearchScreenActive(false);
-      setIsSingleViewActive(false);
-      setIsBulkPagViewActive(false);
-      setIsBulkViewActive(false);
-      setIsFeatureAvailable(false);
-      setIsCommonPeopleScreenActive(true);
-    } else {
-      setIsCommonSearchScreenActive(true);
-      setIsSingleViewActive(false);
-      setIsBulkPagViewActive(false);
-      setIsBulkViewActive(false);
-      setIsFeatureAvailable(false);
-      setIsCommonPeopleScreenActive(false);
-    }
+      console.log('activeUrl', activeUrl);
+
+      if (!activeUrl || activeUrl === '') {
+        setIsCommonSearchScreenActive(true);
+        setIsSingleViewActive(false);
+        setIsBulkPagViewActive(false);
+        setIsBulkViewActive(false);
+        setIsFeatureAvailable(false);
+        setIsCommonPeopleScreenActive(false);
+      } else if (activeUrl.includes('linkedin.com/in/')) {
+        setIsCommonSearchScreenActive(false);
+        setIsSingleViewActive(true);
+        setIsBulkPagViewActive(false);
+        setIsBulkViewActive(false);
+        setIsFeatureAvailable(false);
+        setIsCommonPeopleScreenActive(false);
+      } else if (activeUrl.includes('linkedin.com/search/results/people/')) {
+        setIsCommonSearchScreenActive(false);
+        setIsSingleViewActive(false);
+        setIsBulkPagViewActive(true);
+        setIsBulkViewActive(false);
+        setIsFeatureAvailable(false);
+        setIsCommonPeopleScreenActive(false);
+      } else if (
+        activeUrl.includes('linkedin.com/company/') &&
+        activeUrl.includes('/people')
+      ) {
+        setIsCommonSearchScreenActive(false);
+        setIsSingleViewActive(false);
+        setIsBulkPagViewActive(false);
+        setIsBulkViewActive(true);
+        setIsFeatureAvailable(false);
+        setIsCommonPeopleScreenActive(false);
+      } else if (activeUrl.includes('linkedin.com/search/results/all')) {
+        setIsCommonSearchScreenActive(false);
+        setIsSingleViewActive(false);
+        setIsBulkPagViewActive(false);
+        setIsBulkViewActive(false);
+        setIsFeatureAvailable(false);
+        setIsCommonPeopleScreenActive(true);
+      } else {
+        setIsCommonSearchScreenActive(true);
+        setIsSingleViewActive(false);
+        setIsBulkPagViewActive(false);
+        setIsBulkViewActive(false);
+        setIsFeatureAvailable(false);
+        setIsCommonPeopleScreenActive(false);
+      }
+    });
   };
 
   useEffect(() => {
     authCheck();
     pageCheck();
   }, []);
+
+  console.log(showProfilePage, 'showProfilePage');
 
   if (!isSaleshandyLoggedIn) {
     return <Login />;
@@ -151,18 +160,11 @@ const Main = () => {
   }
 
   if (isSingleViewActive) {
-    // return 'Hare Krishna';
-    return <CommonSearchPeople />;
+    return <SingleProfile />;
   }
 
-  if (isBulkPagViewActive) {
-    // return 'Hare Ramma';
-    return <CommonSearchPeople />;
-  }
-
-  if (isBulkViewActive) {
-    // return 'Hanuman';
-    return <CommonSearchPeople />;
+  if (isBulkPagViewActive || isBulkViewActive) {
+    return <ProspectList />;
   }
 
   if (isCommonPeopleScreenActive) {
