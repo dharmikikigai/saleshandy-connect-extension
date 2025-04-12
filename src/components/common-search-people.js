@@ -4,17 +4,18 @@ import Header from './header';
 
 const CommonSearchPeople = () => (
   <>
+    <Header />
     <div
       style={{
         width: '100%',
         height: '100%',
-        padding: '16px 0px',
+        padding: '0px 0px 16px 0px',
+        marginTop: '16px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
       }}
     >
-      <Header />
       <div
         id="common-screen-id"
         style={{
