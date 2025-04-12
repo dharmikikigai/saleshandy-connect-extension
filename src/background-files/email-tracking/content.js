@@ -27,8 +27,6 @@ function injectFloatingWindow() {
   document.body.appendChild(modalDiv);
 }
 
-injectFloatingWindow();
-
 function injectBeaconOnLinkedInUrl() {
   const existingModal = document.getElementById('saleshandy-beacon');
   if (existingModal) {
