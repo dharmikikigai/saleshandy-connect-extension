@@ -6,6 +6,7 @@ const CommonSearch = () => (
   <>
     <Header />
     <div
+      id="common-search-id"
       style={{
         width: '100%',
         height: '100%',
@@ -17,7 +18,6 @@ const CommonSearch = () => (
       }}
     >
       <div
-        id="common-search-id"
         style={{
           width: '100%',
           height: '100%',
