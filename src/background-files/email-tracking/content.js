@@ -76,6 +76,14 @@ function injectBeaconOnLinkedInUrl() {
   let isDragging = false;
   let offsetY = 0;
 
+  // Get the height of the viewport
+  const viewportHeight = window.innerHeight;
+  const beaconHeight = beacon.offsetHeight;
+
+  // Set boundaries for dragging
+  const minTop = 0; // Minimum Y position (top of the screen)
+  const maxTop = viewportHeight - beaconHeight; // Maximum Y position (bottom of the screen)
+
   // Drag logic only for the drag handle
   dragHandle.addEventListener('mousedown', (event) => {
     isDragging = true;
@@ -86,9 +94,16 @@ function injectBeaconOnLinkedInUrl() {
 
   document.addEventListener('mousemove', (event) => {
     if (isDragging) {
-      const y = event.clientY - offsetY;
+      let y = event.clientY - offsetY;
 
-      beacon.style.top = `${y}px`;
+      // Apply the boundaries
+      if (y < minTop) {
+        y = minTop; // Don't allow dragging above the screen
+      } else if (y > maxTop) {
+        y = maxTop; // Don't allow dragging below the screen
+      }
+
+      beacon.style.top = `${y}px`; // Move beacon
     }
   });
 
