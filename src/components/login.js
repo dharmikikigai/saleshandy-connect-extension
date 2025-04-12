@@ -199,7 +199,7 @@ const Login = () => {
                     minWidth: '284px',
                   }}
                 >
-                  <Card.Body>
+                  <Card.Body style={{ padding: '0px' }}>
                     <div style={{ borderRadius: '7px' }}>
                       <div
                         className="text-center"
@@ -283,6 +283,8 @@ const Login = () => {
                           borderRadius: '4px',
                           display: 'flex',
                           justifyContent: 'center',
+                          alignItems: 'center',
+                          gap: '4px',
                           fontWeight: '500',
                           lineHeight: '20px',
                           marginBottom: '16px',
@@ -291,13 +293,10 @@ const Login = () => {
                         }}
                         onClick={handleClick} // Adding onClick event handler
                       >
-                        Log in
+                        <span>Log in</span>
                         <div
                           style={{
-                            paddingLeft: '4px',
-                            position: 'absolute',
-                            left: '56.55%',
-                            bottom: '21.45%',
+                            paddingBottom: '3px',
                           }}
                         >
                           <svg
@@ -329,16 +328,19 @@ const Login = () => {
                         </div>
                       </Button>
 
-                      <p
+                      <div
                         className="text-center mb-0"
                         style={{
                           fontSize: '14px',
                           fontWeight: '400',
                           lineHeight: '20px',
                           color: '#1f2937',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
                         }}
                       >
-                        Don&apos;t have an account?{' '}
+                        <span>Don&apos;t have an account?</span>&nbsp;
                         <a
                           style={{
                             fontSize: '14px',
@@ -351,13 +353,12 @@ const Login = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          Sign up!
+                          <span>Sign up!</span>
                           <span
                             style={{
                               paddingLeft: '4px',
                               position: 'absolute',
-                              right: '8%',
-                              bottom: '10.25%',
+                              bottom: '9.5%',
                             }}
                           >
                             <svg
@@ -388,7 +389,7 @@ const Login = () => {
                             </svg>
                           </span>
                         </a>
-                      </p>
+                      </div>
                     </div>
                   </Card.Body>
                 </Card>
