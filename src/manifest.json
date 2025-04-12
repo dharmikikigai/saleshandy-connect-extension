@@ -25,7 +25,7 @@
   "content_scripts": [
     {
       "matches": ["*://*.linkedin.com/*", "*://linkedin.com/*"],
-      "js": ["app.js", "background-files/email-tracking/content.js"],
+      "js": ["background-files/email-tracking/content.js"],
       "run_at": "document_end"
     },
     {
@@ -56,6 +56,7 @@
         "app.js",
         "assets/icons/beacon.png",
         "index.html",
+        "frame.html",
         "assets/icons/shLogo.svg",
         "assets/images/circle.svg",
         "assets/images/header.svg",

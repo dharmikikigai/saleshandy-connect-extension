@@ -4,10 +4,9 @@ import Main from './main';
 import SkeletonLoading from './skeleton-loading';
 
 const handleClose = () => {
-  const element = document.getElementById('saleshandy-window');
-  if (element) {
-    element.style.display = 'none';
-  }
+  chrome.runtime.sendMessage({
+    method: 'closeIframe',
+  });
 };
 
 const HeaderSkeleton = () => (

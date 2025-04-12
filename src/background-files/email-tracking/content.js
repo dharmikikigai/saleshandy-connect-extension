@@ -1,26 +1,14 @@
-const FLOATING_WINDOW_ID = 'saleshandy-window';
+const FLOATING_WINDOW_ID = 'saleshandy-iframe';
 
-function loadReactApp() {
-  const script = document.createElement('script');
-  script.src = chrome.runtime.getURL('app.js');
-  document.head.appendChild(script);
-}
-
-function injectFloatingWindow(type) {
+function injectFloatingWindow() {
   const existingModal = document.getElementById(FLOATING_WINDOW_ID);
   if (existingModal) {
-    existingModal.style.display = 'flex';
     return;
   }
 
-  let displayType = 'flex';
-
-  if (type === 'none') {
-    displayType = 'none';
-  }
-
-  const modalDiv = document.createElement('div');
+  const modalDiv = document.createElement('iframe');
   modalDiv.id = FLOATING_WINDOW_ID;
+  modalDiv.src = chrome.runtime.getURL('frame.html');
   modalDiv.style.position = 'fixed';
   modalDiv.style.top = '50%';
   modalDiv.style.right = '15px';
@@ -31,32 +19,15 @@ function injectFloatingWindow(type) {
   modalDiv.style.borderRadius = '10px';
   modalDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
   modalDiv.style.zIndex = '9999';
-  modalDiv.style.display = displayType;
+  modalDiv.style.display = 'flex';
   modalDiv.style.flexDirection = 'column';
   modalDiv.style.alignItems = 'center';
   modalDiv.style.justifyContent = 'flex-start';
 
-  // Store authToken and activeUrl
-  chrome.storage.local.get(['authToken'], (request1) => {
-    modalDiv.setAttribute('authToken', request1?.authToken || '');
-  });
-
-  chrome.storage.local.get(['activeUrl'], (request1) => {
-    modalDiv.setAttribute('activeUrl', request1?.activeUrl || '');
-  });
-
   document.body.appendChild(modalDiv);
-
-  loadReactApp();
 }
 
-function injectScriptAndFloatingWindow(type) {
-  chrome.runtime.sendMessage({ action: 'loadScript' }, () => {
-    injectFloatingWindow(type);
-  });
-}
-
-injectScriptAndFloatingWindow('none');
+injectFloatingWindow();
 
 function injectBeaconOnLinkedInUrl() {
   const existingModal = document.getElementById('saleshandy-beacon');
@@ -108,11 +79,11 @@ function injectBeaconOnLinkedInUrl() {
     if (event.target && event.target.id === 'saleshandy-beacon') {
       const element = document.getElementById(FLOATING_WINDOW_ID);
 
-      if (element && element.style.display === 'flex') {
+      if (element) {
         return;
       }
 
-      injectScriptAndFloatingWindow();
+      injectFloatingWindow();
     }
   });
 }
@@ -165,7 +136,8 @@ function openIframe() {
 function closeDiv() {
   const element = document.getElementById(FLOATING_WINDOW_ID);
   if (element) {
-    element.style.display = 'none';
+    // element.style.display = 'none';
+    element.remove();
   }
 }
 
