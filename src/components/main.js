@@ -144,7 +144,6 @@ const Main = () => {
   useEffect(() => {
     authCheck();
     pageCheck();
-    console.log('Loading the component');
   }, []);
 
   if (!isSaleshandyLoggedIn) {

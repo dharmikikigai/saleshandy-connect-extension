@@ -14,22 +14,22 @@ const Login = () => {
   const handleClick = () => {
     chrome.storage.local.set({ logoutTriggered: 'false' });
 
-    const element = document.getElementById('saleshandy-window');
+    chrome.storage.local.get(['authToken'], (result) => {
+      const authenticationToken = result?.authToken;
 
-    const authenticationToken = element?.getAttribute('authToken');
-
-    if (
-      authenticationToken !== undefined &&
-      authenticationToken !== null &&
-      authenticationToken !== ''
-    ) {
-      setShowMainPage(true);
-    } else {
-      chrome.runtime.sendMessage({
-        method: 'openNewPage',
-        link: 'https://pyxis.lifeisgoodforlearner.com/login',
-      });
-    }
+      if (
+        authenticationToken !== undefined &&
+        authenticationToken !== null &&
+        authenticationToken !== ''
+      ) {
+        setShowMainPage(true);
+      } else {
+        chrome.runtime.sendMessage({
+          method: 'openNewPage',
+          link: 'https://pyxis.lifeisgoodforlearner.com/login',
+        });
+      }
+    });
   };
 
   return (
