@@ -35,14 +35,14 @@ const getStatusDotColor = (status) => {
 //   { value: 'sequence_2', label: 'Another Sequence' },
 // ];
 
-const clientSequenceOptions = [
-  {
-    value: 'abhishek_first',
-    label: "Abhishek's First Sequence 🚀 (Current Sequence)",
-    status: 3,
-  },
-  { value: 'sequence_2', label: 'Another Sequence' },
-];
+// const clientSequenceOptions = [
+//   {
+//     value: 'abhishek_first',
+//     label: "Abhishek's First Sequence 🚀 (Current Sequence)",
+//     status: 3,
+//   },
+//   { value: 'sequence_2', label: 'Another Sequence' },
+// ];
 
 const recentSequence = [
   {
@@ -193,6 +193,7 @@ const AddToSequence = ({
   sequenceOptionLabels,
   stepOptions,
   tagOptions,
+  clientSequenceOptions,
   clientAssociatedSequenceValue,
   ClientAssociatedSequenceOnChange,
   selectedSequenceValue,
@@ -201,6 +202,8 @@ const AddToSequence = ({
   SelectedStepOnChange,
   selectedTagsValue,
   SelectedTagsOnChange,
+  clientSequences,
+  handleOnSave,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
@@ -212,6 +215,20 @@ const AddToSequence = ({
 
   // Dropdown sequence name option (To add partition between recent and current sequence)
   const processedSequenceOptions = sequenceOptionLabels.map((group) => {
+    if (group.options) {
+      const updatedGroupOptions = group.options.map((opt, index, arr) => ({
+        ...opt,
+        isLastInGroup: index === arr.length - 1,
+      }));
+      return {
+        ...group,
+        options: updatedGroupOptions,
+      };
+    }
+    return group;
+  });
+
+  const processedClientSequencesOptions = clientSequences.map((group) => {
     if (group.options) {
       const updatedGroupOptions = group.options.map((opt, index, arr) => ({
         ...opt,
@@ -502,7 +519,11 @@ const AddToSequence = ({
                   Sequence Name
                 </span>
                 <Select
-                  options={processedSequenceOptions}
+                  options={
+                    clientAssociatedSequenceValue
+                      ? processedClientSequencesOptions
+                      : processedSequenceOptions
+                  }
                   value={selectedSequenceValue}
                   onChange={(value) => SelectedSequenceOnChange(value)}
                   components={{ Option: customOptionSequenceName }}
@@ -894,6 +915,7 @@ const AddToSequence = ({
                 gap: '8px',
                 width: '100px',
               }}
+              onClick={handleOnSave}
             >
               <span>Save</span>
             </Button>

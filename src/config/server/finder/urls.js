@@ -49,6 +49,12 @@ export default {
     error: 'Error in revealing the leads',
   },
 
+  revealProspect: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'chrome-extension/reveal',
+    error: 'Error in revealing the lead',
+  },
+
   leadStatus: {
     type: REQUEST_TYPES.POST,
     path: () => 'chrome-extension/status',

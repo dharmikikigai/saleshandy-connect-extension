@@ -63,6 +63,15 @@ class Prospects extends Server {
     }
   }
 
+  // to reveal single prospect
+  async revealProspect(payload) {
+    try {
+      return (await this.req.post(URLs.revealProspect.path(), payload)).data;
+    } catch (e) {
+      console.log(URLs.revealProspect.error, e);
+    }
+  }
+
   // to get the lead status
   async leadStatus(payload) {
     try {
