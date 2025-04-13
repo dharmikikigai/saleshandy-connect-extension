@@ -124,6 +124,7 @@ const AddTagsSelect = () => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          height: '16px',
         }}
         onClick={() => setIsExpanded((prev) => !prev)}
       >
