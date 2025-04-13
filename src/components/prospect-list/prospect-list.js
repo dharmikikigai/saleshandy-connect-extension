@@ -1191,10 +1191,17 @@ const ProspectList = () => {
                             >
                               <img src={phoneSignal} alt="phone-signal" />
                               <span>
-                                {phone?.number?.slice(0, 3)}
-                                <span className="list-dots">
-                                  &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                </span>
+                                {phone?.number?.includes('X') ? (
+                                  <>
+                                    {phone?.number?.slice(0, 3)}
+                                    <span className="list-dots">
+                                      &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                    </span>
+                                    {phone?.number?.slice(3)}
+                                  </>
+                                ) : (
+                                  phone?.number
+                                )}
                               </span>
                             </div>
                           ))}

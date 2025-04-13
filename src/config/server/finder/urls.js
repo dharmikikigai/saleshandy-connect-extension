@@ -84,4 +84,16 @@ export default {
     path: () => 'client/list',
     error: 'Error in getting the agency clients',
   },
+
+  saveTags: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'lead-finder/tag/assign',
+    error: 'Error in saving the tags',
+  },
+
+  saveTagsForBulkLeads: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'lead-finder/tag/bulk-assign',
+    error: 'Error in saving the tags',
+  },
 };

@@ -1,8 +1,8 @@
 /* eslint-disable react/destructuring-assignment */
-import React, { useState } from 'react';
+import React from 'react';
 import CreatableSelect from 'react-select/creatable';
 import Select, { components } from 'react-select';
-import { Button } from 'react-bootstrap';
+import { Button, Spinner } from 'react-bootstrap';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 
 const getStatusDotColor = (status) => {
@@ -44,13 +44,13 @@ const getStatusDotColor = (status) => {
 //   { value: 'sequence_2', label: 'Another Sequence' },
 // ];
 
-const recentSequence = [
-  {
-    value: 'abhishek_first',
-    label: "Abhishek's First Sequence",
-  },
-  { value: 'sequence_2', label: 'Another Sequence' },
-];
+// const recentSequence = [
+//   {
+//     value: 'abhishek_first',
+//     label: "Abhishek's First Sequence",
+//   },
+//   { value: 'sequence_2', label: 'Another Sequence' },
+// ];
 
 // const stepOptions = [
 //   { value: 'step_1', label: 'Step 1: Email' },
@@ -204,8 +204,12 @@ const AddToSequence = ({
   SelectedTagsOnChange,
   clientSequences,
   handleOnSave,
+  recentSequence,
+  isExpanded,
+  setIsExpanded,
+  btnLoadingStatus,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  // const [isExpanded, setIsExpanded] = useState(false);
   // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
   //   null,
   // );
@@ -371,7 +375,7 @@ const AddToSequence = ({
                       lineHeight: '20px',
                     }}
                   >
-                    {sequence.label}
+                    {sequence.sequenceName}
                   </span>
                 ))}
               </div>
@@ -387,12 +391,6 @@ const AddToSequence = ({
 
           <div
             style={{
-              border: '1.2px solid #F3F4F6',
-            }}
-          />
-
-          <div
-            style={{
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
@@ -401,107 +399,113 @@ const AddToSequence = ({
             <div
               style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}
             >
-              <div
-                style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}
-              >
-                <span
+              {clientSequenceOptions.length > 0 && (
+                <div
                   style={{
-                    color: '#9ca3af',
-                    fontFamily: 'Inter',
-                    fontStyle: 'normal',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    lineHeight: '16px',
+                    display: 'flex',
+                    gap: '8px',
+                    flexDirection: 'column',
                   }}
                 >
-                  Client Associated
-                </span>
-                <Select
-                  options={clientSequenceOptions}
-                  value={clientAssociatedSequenceValue}
-                  onChange={ClientAssociatedSequenceOnChange}
-                  placeholder="Select"
-                  components={{ Option: CustomOption }}
-                  styles={{
-                    control: (base, state) => ({
-                      ...base,
-                      border: state.isFocused
-                        ? '1px solid #1d4ed8'
-                        : '1px solid #d1d5db',
-                      boxShadow: state.isFocused
-                        ? '0px 0px 0px 2px #DBEAFE'
-                        : 'none',
+                  <span
+                    style={{
+                      color: '#9ca3af',
+                      fontFamily: 'Inter',
+                      fontStyle: 'normal',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      lineHeight: '16px',
+                    }}
+                  >
+                    Client Associated
+                  </span>
+                  <Select
+                    options={clientSequenceOptions}
+                    value={clientAssociatedSequenceValue}
+                    onChange={ClientAssociatedSequenceOnChange}
+                    placeholder="Select"
+                    components={{ Option: CustomOption }}
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        border: state.isFocused
+                          ? '1px solid #1d4ed8'
+                          : '1px solid #d1d5db',
+                        boxShadow: state.isFocused
+                          ? '0px 0px 0px 2px #DBEAFE'
+                          : 'none',
+                        borderRadius: '4px',
+                        '&:hover': {
+                          borderColor: 'none',
+                        },
+                        cursor: 'pointer',
+                        height: '32px',
+                        minHeight: '32px',
+                        flexWrap: 'no-wrap',
+                      }),
+                      indicatorSeparator: (base) => ({
+                        ...base,
+                        display: 'none',
+                      }),
+                      input: (base) => ({
+                        ...base,
+                        color: '#1F2937',
+                        fontFamily: 'Inter',
+                        fontSize: '14px',
+                        fontStyle: 'normal',
+                        fontWeight: 400,
+                        lineHeight: '20px',
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: '#9CA3AF',
+                        fontFamily: 'Inter',
+                        fontSize: '14px',
+                        fontStyle: 'normal',
+                        fontWeight: 400,
+                        lineHeight: '20px',
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        color: '#1F2937',
+                        fontFamily: 'Inter',
+                        fontSize: '14px',
+                        fontStyle: 'normal',
+                        fontWeight: 400,
+                        lineHeight: '20px',
+                      }),
+                      option: (base, state) => ({
+                        ...base,
+                        padding: '6px 16px',
+                        backgroundColor: state.isFocused
+                          ? '#eff6ff'
+                          : 'transparent',
+                        color: '#1F2937',
+                        fontFamily: 'Inter',
+                        fontSize: '14px',
+                        fontStyle: 'normal',
+                        fontWeight: 400,
+                        lineHeight: '20px',
+                        cursor: 'pointer',
+                      }),
+                    }}
+                  />
+                  <ReactTooltip
+                    id="step-option-tooltip"
+                    place="bottom"
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      lineHeight: '16px',
+                      textAlign: 'center',
                       borderRadius: '4px',
-                      '&:hover': {
-                        borderColor: 'none',
-                      },
-                      cursor: 'pointer',
-                      height: '32px',
-                      minHeight: '32px',
-                      flexWrap: 'no-wrap',
-                    }),
-                    indicatorSeparator: (base) => ({
-                      ...base,
-                      display: 'none',
-                    }),
-                    input: (base) => ({
-                      ...base,
-                      color: '#1F2937',
-                      fontFamily: 'Inter',
-                      fontSize: '14px',
-                      fontStyle: 'normal',
-                      fontWeight: 400,
-                      lineHeight: '20px',
-                    }),
-                    placeholder: (base) => ({
-                      ...base,
-                      color: '#9CA3AF',
-                      fontFamily: 'Inter',
-                      fontSize: '14px',
-                      fontStyle: 'normal',
-                      fontWeight: 400,
-                      lineHeight: '20px',
-                    }),
-                    singleValue: (base) => ({
-                      ...base,
-                      color: '#1F2937',
-                      fontFamily: 'Inter',
-                      fontSize: '14px',
-                      fontStyle: 'normal',
-                      fontWeight: 400,
-                      lineHeight: '20px',
-                    }),
-                    option: (base, state) => ({
-                      ...base,
-                      padding: '6px 16px',
-                      backgroundColor: state.isFocused
-                        ? '#eff6ff'
-                        : 'transparent',
-                      color: '#1F2937',
-                      fontFamily: 'Inter',
-                      fontSize: '14px',
-                      fontStyle: 'normal',
-                      fontWeight: 400,
-                      lineHeight: '20px',
-                      cursor: 'pointer',
-                    }),
-                  }}
-                />
-                <ReactTooltip
-                  id="step-option-tooltip"
-                  place="bottom"
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    lineHeight: '16px',
-                    textAlign: 'center',
-                    borderRadius: '4px',
-                    backgroundColor: '#1F2937',
-                    padding: '8px',
-                    zIndex: '99',
-                  }}
-                />
-              </div>
+                      backgroundColor: '#1F2937',
+                      padding: '8px',
+                      zIndex: '99',
+                    }}
+                  />
+                </div>
+              )}
 
               <div
                 style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}
@@ -902,7 +906,9 @@ const AddToSequence = ({
             <Button
               variant="primary"
               className="py-2"
-              disabled={!selectedSequenceValue || !selectedStepValue}
+              disabled={
+                !selectedSequenceValue || !selectedStepValue || btnLoadingStatus
+              }
               style={{
                 fontSize: '14px',
                 padding: '6px 16px',
@@ -916,8 +922,13 @@ const AddToSequence = ({
                 width: '100px',
               }}
               onClick={handleOnSave}
+              isLoading={btnLoadingStatus}
             >
-              <span>Save</span>
+              {btnLoadingStatus ? (
+                <Spinner animation="border" size="sm" />
+              ) : (
+                <span>Save</span>
+              )}
             </Button>
           </div>
         </>
