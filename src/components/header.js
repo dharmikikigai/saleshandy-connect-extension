@@ -64,6 +64,7 @@ const Header = () => {
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
+                height: '20px',
                 justifyContent: 'space-between',
                 padding: '0px 16px',
               }}

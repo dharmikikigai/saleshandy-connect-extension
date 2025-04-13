@@ -959,7 +959,7 @@ const Popup = () => {
                         }}
                       >
                         <span>
-                          Email tracking for vibha@saleshandy.com is turned on
+                          Email tracking for dharmik@saleshandy.com is turned on
                         </span>
                       </div>
                     </div>

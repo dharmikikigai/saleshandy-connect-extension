@@ -27,8 +27,6 @@ function injectFloatingWindow() {
   document.body.appendChild(modalDiv);
 }
 
-injectFloatingWindow();
-
 function injectBeaconOnLinkedInUrl() {
   const existingModal = document.getElementById('saleshandy-beacon');
   if (existingModal) {
@@ -42,37 +40,85 @@ function injectBeaconOnLinkedInUrl() {
   beacon.style.right = '1px';
   beacon.style.width = '40px';
   beacon.style.height = '40px';
-  beacon.style.backgroundImage = `url(chrome-extension://${chrome.runtime.id}/assets/icons/beacon.png)`;
+  beacon.style.backgroundImage = `url(chrome-extension://${chrome.runtime.id}/assets/icons/beacon.svg)`;
   beacon.style.backgroundSize = 'cover';
   beacon.style.cursor = 'pointer';
   beacon.style.borderRadius = '7px 0 0 7px';
   beacon.style.zIndex = '8888';
+  beacon.style.transition = 'all 0.3s ease'; // Add transition for smooth hover effect
 
+  // Create the drag handle
+  const dragHandle = document.createElement('div');
+  dragHandle.id = 'drag-handle';
+  dragHandle.style.position = 'absolute';
+  dragHandle.style.bottom = '-25px'; // Position the drag icon at the bottom of the beacon
+  dragHandle.style.left = '60%'; // Center horizontally
+  dragHandle.style.transform = 'translateX(-50%)'; // Center it properly
+  dragHandle.style.cursor = 'grab';
+  dragHandle.style.width = '20px'; // Width of the drag icon area
+  dragHandle.style.height = '20px'; // Height of the drag icon area
+  dragHandle.style.backgroundImage = `url(chrome-extension://${chrome.runtime.id}/assets/icons/drag.svg)`; // Set the drag icon as background image
+  dragHandle.style.backgroundSize = 'contain'; // Ensure the icon fits inside the div
+  dragHandle.style.backgroundRepeat = 'no-repeat'; // Avoid repeating the image
+  dragHandle.style.display = 'flex';
+  dragHandle.style.justifyContent = 'center';
+  dragHandle.style.alignItems = 'center';
+
+  // Initially hide the drag icon
+  dragHandle.style.opacity = '0'; // Make it invisible by default
+  dragHandle.style.transition = 'opacity 0.3s ease'; // Smooth transition for visibility change
+
+  beacon.appendChild(dragHandle);
   document.body.appendChild(beacon);
 
   let isDragging = false;
   let offsetY = 0;
 
-  beacon.addEventListener('mousedown', (event) => {
+  // Get the height of the viewport
+  const viewportHeight = window.innerHeight;
+  const beaconHeight = beacon.offsetHeight;
+
+  // Set boundaries for dragging
+  const minTop = 0; // Minimum Y position (top of the screen)
+  const maxTop = viewportHeight - beaconHeight; // Maximum Y position (bottom of the screen)
+
+  // Drag logic only for the drag handle
+  dragHandle.addEventListener('mousedown', (event) => {
     isDragging = true;
     offsetY = event.clientY - beacon.getBoundingClientRect().top;
 
-    beacon.style.cursor = 'grabbing';
+    dragHandle.style.cursor = 'grabbing';
   });
 
   document.addEventListener('mousemove', (event) => {
     if (isDragging) {
-      const y = event.clientY - offsetY;
+      let y = event.clientY - offsetY;
 
-      beacon.style.top = `${y}px`;
+      // Apply the boundaries
+      if (y < minTop) {
+        y = minTop; // Don't allow dragging above the screen
+      } else if (y > maxTop) {
+        y = maxTop; // Don't allow dragging below the screen
+      }
+
+      beacon.style.top = `${y}px`; // Move beacon
     }
   });
 
   document.addEventListener('mouseup', () => {
     if (isDragging) {
       isDragging = false;
-      beacon.style.cursor = 'pointer';
+      dragHandle.style.cursor = 'grab';
     }
+  });
+
+  // Show the drag handle when beacon is hovered
+  beacon.addEventListener('mouseenter', () => {
+    dragHandle.style.opacity = '1'; // Show the drag icon on hover
+  });
+
+  beacon.addEventListener('mouseleave', () => {
+    dragHandle.style.opacity = '0'; // Hide the drag icon when not hovered
   });
 
   document.body.addEventListener('click', (event) => {
@@ -135,9 +181,21 @@ function openIframe() {
 
 function closeDiv() {
   const element = document.getElementById(FLOATING_WINDOW_ID);
+
   if (element) {
-    // element.style.display = 'none';
-    element.remove();
+    // Apply inline CSS for transition
+    element.style.transition = 'transform 0.5s ease-out';
+
+    // Start position: set the initial transform
+    element.style.transform = 'translate(0, 0)'; // Starts from current position
+
+    // Move the element to the right corner
+    element.style.transform = 'translate(100vw, -100vh)'; // Move it out to the top-right corner
+
+    // Wait for the transition to complete before removing the element
+    setTimeout(() => {
+      element.remove();
+    }, 500); // Timeout should match the duration of the CSS transition (500ms)
   }
 }
 
