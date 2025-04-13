@@ -41,16 +41,8 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
       if (currentUrl.includes('linkedin.com')) {
         await getAndSetAuthToken();
         await fetchAndSetActiveUrl(tab?.url);
-        // Send a message to the content script to inject the beacon
-        chrome.scripting.executeScript(
-          {
-            target: { tabId: tab.id },
-            files: ['./app.js'],
-          },
-          () => {
-            chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
-          },
-        );
+
+        chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
       }
       if (currentUrl.includes('mail.google.com')) {
         updateMailboxEmail(tab.id);
@@ -66,16 +58,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (currentUrl.includes('linkedin.com')) {
       await getAndSetAuthToken();
       await fetchAndSetActiveUrl(tab?.url);
-      // Send a message to the content script to inject the beacon
-      chrome.scripting.executeScript(
-        {
-          target: { tabId: tab.id },
-          files: ['./app.js'],
-        },
-        () => {
-          chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
-        },
-      );
+
+      chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
     }
     if (currentUrl.includes('mail.google.com')) {
       updateMailboxEmail(tab.id);
@@ -298,33 +282,16 @@ chrome.notifications.onButtonClicked.addListener((notificationId, btnIdx) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'loadScript') {
-    // Get the current active tab in the window
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      // Ensure that we got the active tab
-      const tab = tabs[0]; // tabs array, so access the first tab
-
-      if (tab) {
-        // Execute script in the active tab
-        chrome.scripting.executeScript(
-          {
-            target: { tabId: tab.id },
-            files: ['./app.js'],
-          },
-          () => {
-            sendResponse({ status: 'success', message: 'Script loaded' });
-          },
-        );
-      }
-    });
-
-    // Returning true here indicates that you will send the response asynchronously
-    return true;
-  }
-
+chrome.runtime.onMessage.addListener((message) => {
   if (message.method === 'openNewPage') {
     chrome.tabs.create({ url: message.link });
+  }
+
+  if (message.method === 'closeIframe') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0].id;
+      chrome.tabs.sendMessage(tabId, { method: 'closeDiv' });
+    });
   }
 
   if (message.method === 'socketIo') {

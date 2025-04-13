@@ -28,12 +28,6 @@ const Main = () => {
   );
 
   const getMetaData = async () => {
-    const element = document.getElementById('saleshandy-window');
-
-    if (element && element.style.display === 'none') {
-      return;
-    }
-
     if (!chrome?.storage?.local) {
       return;
     }

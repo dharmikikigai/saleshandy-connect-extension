@@ -6,10 +6,9 @@ import Main from './main';
 import './responsive-screen.css';
 
 const handleClose = () => {
-  const element = document.getElementById('saleshandy-window');
-  if (element) {
-    element.style.display = 'none';
-  }
+  chrome.runtime.sendMessage({
+    method: 'closeIframe',
+  });
 };
 
 const handleClick = () => {
@@ -65,6 +64,7 @@ const Header = () => {
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
+                height: '20px',
                 justifyContent: 'space-between',
                 padding: '0px 16px',
               }}

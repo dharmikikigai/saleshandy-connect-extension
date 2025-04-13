@@ -171,6 +171,12 @@ const options = {
         },
       ],
     }),
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, 'frame.html'),
+      filename: 'frame.html',
+      chunks: ['frame'],
+      cache: false,
+    }),
 
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'index.html'),

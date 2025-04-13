@@ -1,10 +1,9 @@
 import React from 'react';
 
 const handleClose = () => {
-  const element = document.getElementById('saleshandy-window');
-  if (element) {
-    element.style.display = 'none';
-  }
+  chrome.runtime.sendMessage({
+    method: 'closeIframe',
+  });
 };
 
 const NotAvailableFeature = () => (
