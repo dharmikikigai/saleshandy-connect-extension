@@ -29,7 +29,7 @@ const singleleadsData = [
       angelist: 'https://classroom.google.com/?pli=1',
     },
     isRevealed: true,
-    emails: null,
+    emails: 'abc@gmail.com',
     phones: {
       phone: '1234567890',
       mobile: '0962497536',
@@ -274,6 +274,8 @@ const SingleProfile = () => {
                       style={{
                         display: 'flex',
                         gap: '6px',
+                        height: '16px',
+                        alignItems: 'center',
                       }}
                     >
                       {singleProfile?.links?.facebook && (
@@ -489,6 +491,8 @@ const SingleProfile = () => {
                         borderRadius: '4px',
                         display: 'flex',
                         justifyContent: 'center',
+                        height: '32px',
+                        alignItems: 'center',
                         fontWeight: '500',
                         lineHeight: '20px',
                         background: '#1D4ED8',
@@ -550,6 +554,7 @@ const SingleProfile = () => {
                               borderRadius: '4px',
                               display: 'flex',
                               justifyContent: 'center',
+                              alignItems: 'center',
                               fontWeight: '500',
                               lineHeight: '20px',
                               color: '#1D4ED8',
@@ -560,8 +565,10 @@ const SingleProfile = () => {
                               fontSize: '14px',
                               padding: '6px 16px',
                               borderRadius: '4px',
+                              height: '32px',
                               display: 'flex',
                               justifyContent: 'center',
+                              alignItems: 'center',
                               fontWeight: '500',
                               lineHeight: '20px',
                               color: '#1D4ED8',
@@ -626,6 +633,8 @@ const SingleProfile = () => {
                     style={{
                       display: 'flex',
                       gap: '8px',
+                      height: '16px',
+                      alignItems: 'center',
                     }}
                     onMouseEnter={() => setIsEmailCopyIconDisplay(true)}
                     onMouseLeave={() => setIsEmailCopyIconDisplay(false)}
@@ -769,6 +778,7 @@ const SingleProfile = () => {
                     style={{
                       display: 'flex',
                       gap: '8px',
+                      alignItems: 'center',
                     }}
                     onMouseEnter={() => {
                       setIsPhoneCopyIconDisplay(true);
@@ -952,6 +962,8 @@ const SingleProfile = () => {
                     style={{
                       display: 'flex',
                       gap: '8px',
+                      height: '16px',
+                      alignItems: 'center',
                     }}
                   >
                     <svg

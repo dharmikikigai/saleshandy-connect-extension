@@ -246,6 +246,7 @@ const AddToSequence = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          height: '16px',
         }}
         onClick={() => setIsExpanded((prev) => !prev)}
       >
