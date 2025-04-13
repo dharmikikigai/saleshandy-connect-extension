@@ -32,6 +32,7 @@ const NotAvailableFeature = () => (
             justifyContent: 'space-between',
             alignItems: 'center',
             width: '100%',
+            height: '16px',
           }}
         >
           <svg
