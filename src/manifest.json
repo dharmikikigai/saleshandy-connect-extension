@@ -54,7 +54,8 @@
       "resources": [
         "index.js",
         "app.js",
-        "assets/icons/beacon.png",
+        "assets/icons/beacon.svg",
+        "assets/icons/drag.svg",
         "index.html",
         "frame.html",
         "assets/icons/shLogo.svg",
