@@ -19,6 +19,8 @@ import circleCheck from '../../assets/icons/circleCheck.svg';
 import tagIcon from '../../assets/icons/tag.svg';
 import copy from '../../assets/icons/copy.svg';
 import filter from '../../assets/icons/filter.svg';
+import filterBlue from '../../assets/icons/filter-blue.svg';
+import cross from '../../assets/icons/cross.svg';
 import NogenderAvatar from '../no-gender-avatar';
 
 import SkeletonLoading from '../skeleton-loading/skeleton-loading';
@@ -104,6 +106,9 @@ const ProspectList = () => {
   const [showProspectFilterModal, setShowProspectFilterModal] = useState(false);
   const [selectedTagFilters, setSelectedTagFilters] = useState([]);
   const [dateFilterValue, setDateFilterValue] = useState(null);
+  const [dateFilterCustomValue, setDateFilterCustomValue] = useState(null);
+  const [applyFiltersLoading, setApplyFiltersLoading] = useState(false);
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
 
   const setProspectsData = (data, rawData) => {
     if (
@@ -406,13 +411,113 @@ const ProspectList = () => {
       });
   };
 
-  const applyFilters = () => {
-    console.log('applyFilters', selectedTagFilters, dateFilterValue);
+  const closeProspectFilterModal = () => {
+    setShowProspectFilterModal(false);
+  };
+
+  const applyFilters = async () => {
+    try {
+      setApplyFiltersLoading(true);
+      const tagFilter = selectedTagFilters.map((tag) => tag.value).join(',');
+      const payload = {
+        start: 1,
+        take: 25,
+        tags: tagFilter,
+      };
+
+      if (dateFilterValue) {
+        let startDate;
+        let endDate;
+
+        if (dateFilterValue.value === 'Custom' && dateFilterCustomValue) {
+          [startDate, endDate] = dateFilterCustomValue;
+        } else {
+          startDate = dateFilterValue.startDate;
+          endDate = dateFilterValue.endDate;
+        }
+
+        if (startDate && endDate) {
+          let formattedStartDate;
+          let formattedEndDate;
+
+          if (startDate.toISO && typeof startDate.toISO === 'function') {
+            const startDateMidnight = startDate.startOf('day');
+            const endDateMidnight = endDate.startOf('day');
+
+            formattedStartDate = startDateMidnight
+              .toLocal()
+              .toISO()
+              .replace('Z', '+05:30');
+            formattedEndDate = endDateMidnight
+              .toLocal()
+              .toISO()
+              .replace('Z', '+05:30');
+          } else if (
+            startDate.toISOString &&
+            typeof startDate.toISOString === 'function'
+          ) {
+            const startDateMidnight = new Date(startDate);
+            startDateMidnight.setHours(0, 0, 0, 0);
+
+            const endDateMidnight = new Date(endDate);
+            endDateMidnight.setHours(0, 0, 0, 0);
+
+            const formatDateToLocalISO = (date) => {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}T00:00:00.000+05:30`;
+            };
+
+            formattedStartDate = formatDateToLocalISO(startDateMidnight);
+            formattedEndDate = formatDateToLocalISO(endDateMidnight);
+          } else {
+            const startDateMidnight = new Date(startDate);
+            startDateMidnight.setHours(0, 0, 0, 0);
+
+            const endDateMidnight = new Date(endDate);
+            endDateMidnight.setHours(0, 0, 0, 0);
+
+            const formatDateToLocalISO = (date) => {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}T00:00:00.000+05:30`;
+            };
+
+            formattedStartDate = formatDateToLocalISO(startDateMidnight);
+            formattedEndDate = formatDateToLocalISO(endDateMidnight);
+          }
+
+          const createdDateString = `${formattedStartDate},${formattedEndDate}`;
+          payload.createdDate = encodeURIComponent(createdDateString);
+        }
+      }
+
+      const response = await prospectsInstance.getSavedLeads(payload);
+      if (response && response.payload && response.payload.profiles) {
+        setSavedProspects(response.payload.profiles);
+        setIsFilterApplied(true);
+      }
+      if (response?.payload?.pagination?.total) {
+        setSavedCount(response?.payload?.pagination?.total);
+      }
+    } catch (e) {
+      console.log('error', e);
+    } finally {
+      setApplyFiltersLoading(false);
+      setShowProspectFilterModal(false);
+    }
   };
 
   const clearFilters = () => {
     setSelectedTagFilters([]);
     setDateFilterValue(null);
+    setApplyFiltersLoading(false);
+    setSavedProspects([]);
+    setSavedCount(0);
+    setIsFilterApplied(false);
+    getSavedLeads();
   };
 
   useEffect(() => {
@@ -694,14 +799,45 @@ const ProspectList = () => {
                   <span>Saved</span>
                   <span className="prospect-saved-count"> {savedCount}</span>
                   {activeTab === 'saved' && (
-                    <div
-                      className="tooltip-container prospect-tab-filter"
-                      onClick={() => setShowProspectFilterModal(true)}
-                    >
-                      <img src={filter} alt="filter" />
-                      <div className="custom-tooltip tooltip-bottom">
-                        Filter
+                    <div className="prospect-tab-filter">
+                      <div
+                        className={`filter-container ${
+                          isFilterApplied ? 'filter-applied' : ''
+                        }`}
+                      >
+                        <div className="tooltip-container">
+                          <div
+                            className="filter-icon-container"
+                            onClick={() => setShowProspectFilterModal(true)}
+                          >
+                            <img
+                              src={isFilterApplied ? filterBlue : filter}
+                              alt="filter"
+                            />
+                          </div>
+                          <div className="custom-tooltip tooltip-bottom">
+                            Filter
+                          </div>
+                        </div>
+                        {isFilterApplied && (
+                          <div className="clear-filter" onClick={clearFilters}>
+                            <img src={cross} alt="cross" />
+                          </div>
+                        )}
                       </div>
+                      <ProspectFilterModal
+                        showModal={showProspectFilterModal}
+                        onClose={closeProspectFilterModal}
+                        selectedTags={selectedTagFilters}
+                        setSelectedTags={setSelectedTagFilters}
+                        dateFilterValue={dateFilterValue}
+                        setDateFilterValue={setDateFilterValue}
+                        dateFilterCustomValue={dateFilterCustomValue}
+                        setDateFilterCustomValue={setDateFilterCustomValue}
+                        applyFilters={applyFilters}
+                        clearFilters={clearFilters}
+                        isLoading={applyFiltersLoading}
+                      />
                     </div>
                   )}
                 </div>
@@ -797,7 +933,7 @@ const ProspectList = () => {
                               (prospect.emails.length > 0 ||
                                 prospect.phones.length > 0) && (
                                 <div
-                                  className="prospect-item-expand-icon"
+                                  className="prospect-item-expand-icon cursor-pointer"
                                   onClick={() =>
                                     setExpendedProspect(
                                       expendedProspect === prospect.id
@@ -918,17 +1054,6 @@ const ProspectList = () => {
         isAgency={isAgency}
         handleAddToSequence={handleAddToSequence}
         isLoading={revealProspectLoading}
-      />
-
-      <ProspectFilterModal
-        showModal={showProspectFilterModal}
-        onClose={() => setShowProspectFilterModal(false)}
-        selectedTags={selectedTagFilters}
-        setSelectedTags={setSelectedTagFilters}
-        dateFilterValue={dateFilterValue}
-        setDateFilterValue={setDateFilterValue}
-        applyFilters={applyFilters}
-        clearFilters={clearFilters}
       />
     </>
   );

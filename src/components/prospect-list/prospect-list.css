@@ -50,7 +50,7 @@
   padding-bottom: 11px;
   margin-right: 16px;
   display: flex;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -445,6 +445,11 @@ input[type='checkbox'] {
   opacity: 0.4;
 }
 
+.prospect-item-expand-icon {
+  border-radius: 2px;
+  background: #fff;
+}
+
 .prospect-item-expanded {
   display: flex;
   flex-direction: column;
@@ -719,7 +724,6 @@ body.modal-open {
 }
 
 .filter-section-container {
-  padding-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -744,6 +748,8 @@ body.modal-open {
   justify-content: space-between;
   align-items: center;
   flex: 1 0 0;
+  padding: 8px 0px;
+  margin-top: 14px;
 }
 
 .clear-filter-button {
@@ -758,4 +764,51 @@ body.modal-open {
 
 .filter-apply-button {
   width: 100px;
+}
+
+.filter-modal {
+  background: white;
+  position: absolute;
+  z-index: 9999;
+  left: calc(100% - 16px);
+  transform: translateX(-100%);
+  top: calc(100% - 4px);
+  width: 260px;
+  box-shadow: 0px 0px 20px 0px rgba(0, 13, 56, 0.12);
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.filter-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.filter-modal-body {
+  padding: 16px 16px 0px 16px;
+}
+
+.filter-container.filter-applied {
+  display: flex;
+  padding: 0px 2px;
+  align-items: center;
+  gap: 4px;
+  border-radius: 2px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+}
+
+.clear-filter {
+  display: flex;
+  padding: 4px;
+  align-items: center;
+  gap: 8px;
+  border-left: 1px solid #dbeafe;
+}
+
+.clear-filter img {
+  width: 12px;
+  height: 12px;
 }
