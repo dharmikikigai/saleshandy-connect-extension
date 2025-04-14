@@ -208,6 +208,7 @@ const AddToSequence = ({
   isExpanded,
   setIsExpanded,
   btnLoadingStatus,
+  isAgency,
 }) => {
   // const [isExpanded, setIsExpanded] = useState(false);
   // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
@@ -400,7 +401,7 @@ const AddToSequence = ({
             <div
               style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}
             >
-              {clientSequenceOptions.length > 0 && (
+              {isAgency && (
                 <div
                   style={{
                     display: 'flex',
