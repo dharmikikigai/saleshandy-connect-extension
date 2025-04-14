@@ -283,7 +283,9 @@ const Popup = () => {
             width: '100%',
             height: '32px',
             marginTop: '8px',
+            cursor: 'pointer',
           }}
+          onClick={handleClose}
         >
           <div>
             <svg
@@ -571,6 +573,9 @@ const Popup = () => {
                 onClick={() =>
                   handleClick('https://my.saleshandy.com/prospects')
                 }
+                style={{
+                  cursor: 'pointer',
+                }}
               >
                 <svg
                   width="17"
@@ -652,6 +657,9 @@ const Popup = () => {
                 onClick={() =>
                   handleClick('https://my.saleshandy.com/sequence')
                 }
+                style={{
+                  cursor: 'pointer',
+                }}
               >
                 <svg
                   width="17"
@@ -797,6 +805,9 @@ const Popup = () => {
               }
               onMouseEnter={() => setEmailReportTooltip(true)}
               onMouseLeave={() => setEmailReportTooltip(false)}
+              style={{
+                cursor: 'pointer',
+              }}
             >
               <svg
                 width="17"

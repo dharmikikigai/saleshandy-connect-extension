@@ -72,7 +72,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 async function openLinkedinOnInstall() {
   chrome.tabs.create(
-    { url: 'https://www.linkedin.com/in/dhruvikigai/' },
+    { url: 'https://www.linkedin.com/in/rajat-chahar-4744aa196/' },
     (newTab) => {
       // Wait for the tab to finish loading before sending a message
       chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
