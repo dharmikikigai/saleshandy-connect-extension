@@ -393,8 +393,7 @@ const Popup = () => {
         <div
           style={{
             border: '1.2px solid #F3F4F6',
-            width: '300px',
-            marginLeft: '5%',
+            width: '268px',
           }}
         />
         {/* Saleshandy Platform */}
@@ -695,7 +694,7 @@ const Popup = () => {
           <div
             style={{
               border: '1.2px solid #F3F4F6',
-              width: '300px',
+              width: '268px',
               marginLeft: '5%',
             }}
           />

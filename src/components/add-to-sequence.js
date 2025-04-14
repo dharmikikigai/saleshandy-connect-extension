@@ -136,8 +136,10 @@ const formatGroupLabel = (data) => (
       style={{
         padding: '4px 12px',
         fontSize: '12px',
-        fontWeight: 600,
         color: '#6B7280',
+        textTransform: 'none',
+        fontWeight: '500',
+        lineHeight: '16px',
       }}
     >
       {data.label}
