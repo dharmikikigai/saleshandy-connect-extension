@@ -663,6 +663,16 @@ body.modal-open {
   }
 }
 
+.copy-icon {
+  opacity: 0;
+}
+
+.prospect-item-expanded-email:hover .copy-icon,
+.prospect-item-expanded-phone:hover .copy-icon,
+.copy-icon:hover {
+  opacity: 1;
+}
+
 .cursor-pointer {
   cursor: pointer;
 }

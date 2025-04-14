@@ -17,6 +17,7 @@ import checkbox from '../../assets/icons/checkbox.svg';
 import checkboxChecked from '../../assets/icons/checkboxChecked.svg';
 import circleCheck from '../../assets/icons/circleCheck.svg';
 import tagIcon from '../../assets/icons/tag.svg';
+import copy from '../../assets/icons/copy.svg';
 
 import SkeletonLoading from '../skeleton-loading/skeleton-loading';
 import prospectsInstance from '../../config/server/finder/prospects';
@@ -443,7 +444,7 @@ const MAX_POLLING_LIMIT = 20;
 const ProspectList = () => {
   // const [isLoading, setIsLoading] = useState(true);
   const [prospects, setProspects] = useState([]);
-
+  const [savedProspects, setSavedProspects] = useState([]);
   const [activeTab, setActiveTab] = useState('leads');
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [selectedProspects, setSelectedProspects] = useState([]);
@@ -762,8 +763,34 @@ const ProspectList = () => {
     }
   };
 
+  const getSavedLeads = async () => {
+    try {
+      const payload = {
+        start: 1,
+        take: 10,
+      };
+      const response = await prospectsInstance.getSavedLeads(payload);
+      console.log('response', response);
+      if (
+        response &&
+        response.payload &&
+        response.payload.profiles &&
+        response.payload.profiles.length > 0
+      ) {
+        setSavedProspects(response.payload.profiles);
+      }
+    } catch (e) {
+      console.log('error', e);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator?.clipboard?.writeText(text);
+  };
+
   useEffect(() => {
     fetchProspects();
+    getSavedLeads();
     setIsAgency(true);
     // setMetaData();  TODO for header
   }, []);
@@ -992,6 +1019,8 @@ const ProspectList = () => {
     );
   };
 
+  const visibleProspects = activeTab === 'leads' ? prospects : savedProspects;
+
   if (loading) {
     // skeleton ui
     return (
@@ -1011,7 +1040,7 @@ const ProspectList = () => {
       <div className="prospect-list-container">
         <Header />
         <div className="prospect-tabs-container" id="prospect-list-container">
-          {prospects.length === 0 ? (
+          {visibleProspects.length === 0 ? (
             <>
               {getProspectTabsSkeleton()}
               <div className="prospect-tab-actions-skeleton" />
@@ -1163,6 +1192,12 @@ const ProspectList = () => {
                                     {e.email}
                                   </span>
                                   <img src={circleCheck} alt="circle-check" />
+                                  <div
+                                    className="copy-icon"
+                                    onClick={() => copyToClipboard(e.email)}
+                                  >
+                                    <img src={copy} alt="copy" />
+                                  </div>
                                 </div>
                               ))
                             : prospect.emails.map((e, i) => (
@@ -1200,7 +1235,17 @@ const ProspectList = () => {
                                     {phone?.number?.slice(3)}
                                   </>
                                 ) : (
-                                  phone?.number
+                                  <>
+                                    {phone?.number}
+                                    <div
+                                      className="copy-icon"
+                                      onClick={() =>
+                                        copyToClipboard(phone?.number)
+                                      }
+                                    >
+                                      <img src={copy} alt="copy" />
+                                    </div>
+                                  </>
                                 )}
                               </span>
                             </div>

@@ -121,6 +121,14 @@ class Prospects extends Server {
       console.log(URLs.saveTagsForBulkLeads.error, e);
     }
   }
+
+  async getSavedLeads(payload) {
+    try {
+      return (await this.req.get(URLs.getSavedLeads.path(payload))).data;
+    } catch (e) {
+      console.log(URLs.getSavedLeads.error, e);
+    }
+  }
 }
 
 const prospectsInstance = new Prospects();

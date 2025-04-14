@@ -96,4 +96,14 @@ export default {
     path: () => 'lead-finder/tag/bulk-assign',
     error: 'Error in saving the tags',
   },
+
+  getSavedLeads: {
+    type: REQUEST_TYPES.GET,
+    path: ({ start, take }) => {
+      let path = 'lead-finder/saved-leads';
+      path += `?start=${start}&take=${take}`;
+      return path;
+    },
+    error: 'Error in getting the saved leads',
+  },
 };
