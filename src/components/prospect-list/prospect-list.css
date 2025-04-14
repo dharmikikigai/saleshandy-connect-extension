@@ -663,6 +663,16 @@ body.modal-open {
   }
 }
 
+.copy-icon {
+  opacity: 0;
+}
+
+.prospect-item-expanded-email:hover .copy-icon,
+.prospect-item-expanded-phone:hover .copy-icon,
+.copy-icon:hover {
+  opacity: 1;
+}
+
 .cursor-pointer {
   cursor: pointer;
 }
@@ -672,7 +682,32 @@ body.modal-open {
   cursor: not-allowed;
 }
 
+#react-select-1-input {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
 #react-select-2-input {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+#react-select-3-input {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+#react-select-4-input {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+#react-select-5-input {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+#react-select-6-input {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
