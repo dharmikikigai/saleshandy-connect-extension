@@ -38,10 +38,10 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
     const currentUrl = tab.url;
 
     if (tab.status === 'complete') {
-      if (currentUrl.includes('linkedin.com')) {
-        await getAndSetAuthToken();
-        await fetchAndSetActiveUrl(tab?.url);
+      await getAndSetAuthToken();
+      await fetchAndSetActiveUrl(tab?.url);
 
+      if (currentUrl.includes('linkedin.com')) {
         chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
       }
       if (currentUrl.includes('mail.google.com')) {
@@ -55,10 +55,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const currentUrl = tab.url;
 
   if (changeInfo.status === 'complete') {
-    if (currentUrl.includes('linkedin.com')) {
-      await getAndSetAuthToken();
-      await fetchAndSetActiveUrl(tab?.url);
+    await getAndSetAuthToken();
+    await fetchAndSetActiveUrl(tab?.url);
 
+    if (currentUrl.includes('linkedin.com')) {
       chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
     }
     if (currentUrl.includes('mail.google.com')) {
