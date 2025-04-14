@@ -1,9 +1,11 @@
 /* eslint-disable react/destructuring-assignment */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import CreatableSelect from 'react-select/creatable';
 import Select, { components } from 'react-select';
-import { Button, Spinner } from 'react-bootstrap';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import cross from '../../assets/icons/cross.svg';
+import { CustomButton } from './add-tags';
+import prospectsInstance from '../../config/server/finder/prospects';
 
 const getStatusDotColor = (status) => {
   switch (status) {
@@ -189,37 +191,222 @@ const CustomOptionTags = (props) => {
   );
 };
 
-const AddToSequence = ({
-  sequenceOptionLabels,
-  stepOptions,
-  tagOptions,
-  clientSequenceOptions,
-  clientAssociatedSequenceValue,
-  ClientAssociatedSequenceOnChange,
-  selectedSequenceValue,
-  SelectedSequenceOnChange,
-  selectedStepValue,
-  SelectedStepOnChange,
-  selectedTagsValue,
-  SelectedTagsOnChange,
-  clientSequences,
-  handleOnSave,
-  recentSequence,
-  isExpanded,
-  setIsExpanded,
-  btnLoadingStatus,
+const AddToSequenceModal = ({
+  showModal,
+  onClose,
+  handleAddToSequence,
   isAgency,
+  isLoading,
 }) => {
-  // const [isExpanded, setIsExpanded] = useState(false);
-  // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
-  //   null,
-  // );
-  // const [selectedSequence, setSelectedSequence] = useState(null);
-  // const [selectedStep, setSelectedStep] = useState(null);
-  // const [selectedTags, setSelectedTags] = useState([]);
+  const [tagOptions, setTagOptions] = useState([]);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+  const [selectedTags, setSelectedTags] = useState([]);
+  // const [sequences, setSequences] = useState([]);
+  const [isLoadingSequences, setIsLoadingSequences] = useState(false);
+  const [sequenceOptions, setSequenceOptions] = useState([]);
+  const [clientSequences, setClientSequences] = useState([]);
+  const [clientOptions, setClientOptions] = useState([]);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedSequence, setSelectedSequence] = useState(null);
+  const [stepOptions, setStepOptions] = useState([]);
+  const [selectedStep, setSelectedStep] = useState(null);
 
-  // Dropdown sequence name option (To add partition between recent and current sequence)
-  const processedSequenceOptions = sequenceOptionLabels.map((group) => {
+  const fetchTags = async () => {
+    try {
+      setIsLoadingTags(true);
+      const res = await prospectsInstance.getTags();
+      if (
+        res &&
+        res.payload &&
+        Array.isArray(res.payload) &&
+        res.payload.length > 0
+      ) {
+        const tags = res.payload.map((tag) => ({
+          value: tag.id,
+          label: tag.name,
+          data: tag,
+        }));
+        setTagOptions(tags);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    } finally {
+      setIsLoadingTags(false);
+    }
+  };
+
+  const fetchAgencyClients = async () => {
+    try {
+      const res = await prospectsInstance.getAgencyClients();
+      if (
+        res &&
+        res.payload &&
+        res.payload.clients &&
+        Array.isArray(res.payload.clients) &&
+        res.payload.clients.length > 0
+      ) {
+        const clients = res.payload.clients.map((client) => ({
+          value: client.id,
+          label: `${client.firstName} ${client.lastName}`,
+        }));
+        setClientOptions(clients);
+      }
+    } catch (error) {
+      console.error('Error fetching agency clients:', error);
+    }
+  };
+
+  const fetchSequences = async () => {
+    try {
+      setIsLoadingSequences(true);
+      const res = await prospectsInstance.getSequences();
+      if (
+        res &&
+        res.payload &&
+        Array.isArray(res.payload) &&
+        res.payload.length > 0
+      ) {
+        // setSequences(res.payload);
+        const recentSequences = [];
+        const remainingSequences = [];
+        res.payload.forEach((sequence) => {
+          if (sequence.isRecent) {
+            recentSequences.push({
+              value: sequence.id,
+              label: sequence.title,
+              status: sequence.status,
+              steps: sequence.step,
+            });
+          } else {
+            remainingSequences.push({
+              value: sequence.id,
+              label: sequence.title,
+              status: sequence.status,
+              steps: sequence.step,
+            });
+          }
+        });
+        const customSequenceOptions = [
+          {
+            label: 'Recent Sequences',
+            options: recentSequences,
+          },
+          ...remainingSequences,
+        ];
+        setSequenceOptions(customSequenceOptions);
+      }
+    } catch (error) {
+      console.error('Error fetching sequences:', error);
+    } finally {
+      setIsLoadingSequences(false);
+    }
+  };
+
+  const fetchClientSequences = async () => {
+    try {
+      const res = await prospectsInstance.getSequences(selectedClient?.value);
+      if (
+        res &&
+        res.payload &&
+        Array.isArray(res.payload) &&
+        res.payload.length > 0
+      ) {
+        // setSequences(res.payload);
+        const recentSequences = [];
+        const remainingSequences = [];
+        res.payload.forEach((sequence) => {
+          if (sequence.isRecent) {
+            recentSequences.push({
+              value: sequence.id,
+              label: sequence.title,
+              status: sequence.status,
+              steps: sequence.step,
+            });
+          } else {
+            remainingSequences.push({
+              value: sequence.id,
+              label: sequence.title,
+              status: sequence.status,
+              steps: sequence.step,
+            });
+          }
+        });
+        const customSequenceOptions = [
+          {
+            label: 'Recent Sequences',
+            options: recentSequences,
+          },
+          ...remainingSequences,
+        ];
+        setClientSequences(customSequenceOptions);
+      }
+    } catch (error) {
+      console.error('Error fetching sequences:', error);
+    } finally {
+      setIsLoadingSequences(false);
+    }
+  };
+  const handleOnSave = () => {
+    const tagIds = [];
+    const newTags = [];
+
+    selectedTags.forEach((tag) => {
+      // eslint-disable-next-line no-underscore-dangle
+      if (tag.__isNew__) {
+        newTags.push(tag.value);
+      } else {
+        tagIds.push(tag.value);
+      }
+    });
+
+    const payload = {
+      sequenceId: selectedSequence.value,
+      stepId: selectedStep.value,
+      tagIds,
+      newTags,
+    };
+    handleAddToSequence(payload);
+  };
+
+  const handleClose = () => {
+    setSelectedClient(null);
+    setSelectedSequence(null);
+    setSelectedStep(null);
+    setSelectedTags([]);
+    onClose();
+  };
+
+  useEffect(() => {
+    if (showModal) {
+      fetchTags();
+      fetchSequences();
+      if (isAgency) {
+        fetchAgencyClients();
+      }
+    }
+  }, [showModal]);
+
+  useEffect(() => {
+    if (selectedSequence) {
+      const { steps } = selectedSequence;
+
+      if (steps && Array.isArray(steps) && steps.length > 0) {
+        const customStepOptions = steps.map((step) => ({
+          value: step.id,
+          label: `Step ${step.number}`,
+        }));
+        setStepOptions(customStepOptions);
+      }
+    }
+  }, [selectedSequence]);
+
+  useEffect(() => {
+    if (selectedClient) {
+      fetchClientSequences();
+    }
+  }, [selectedClient]);
+
+  const processedSequenceOptions = sequenceOptions.map((group) => {
     if (group.options) {
       const updatedGroupOptions = group.options.map((opt, index, arr) => ({
         ...opt,
@@ -248,149 +435,19 @@ const AddToSequence = ({
   });
 
   return (
-    <div
-      style={{
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        padding: '12px 16px',
-        width: '320px',
-        backgroundColor: '#ffffff',
-        fontFamily: 'Inter',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        cursor: 'pointer',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: '16px',
-        }}
-        onClick={() => setIsExpanded('sequence')}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            color: '#6b7280',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M14.4711 2.02927C14.7315 2.28961 14.7315 2.71172 14.4711 2.97207L7.13779 10.3054C6.87744 10.5658 6.45533 10.5658 6.19498 10.3054C5.93463 10.0451 5.93463 9.62295 6.19498 9.3626L13.5283 2.02927C13.7887 1.76892 14.2108 1.76892 14.4711 2.02927Z"
-                fill="#6B7280"
-              />
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M14.4711 2.02927C14.6539 2.21204 14.7145 2.48399 14.6268 2.7271L10.2934 14.7271C10.2871 14.7445 10.2801 14.7616 10.2724 14.7784C10.19 14.9583 10.0577 15.1107 9.89115 15.2176C9.72463 15.3244 9.53092 15.3813 9.33306 15.3813C9.13519 15.3813 8.94148 15.3244 8.77496 15.2176C8.61242 15.1133 8.48245 14.9656 8.39966 14.7913L6.16948 10.3309L1.70914 8.10073C1.53485 8.01795 1.38713 7.88798 1.28282 7.72543C1.17595 7.55891 1.11914 7.3652 1.11914 7.16734C1.11914 6.96947 1.17595 6.77576 1.28282 6.60924C1.38968 6.44271 1.54211 6.31037 1.72199 6.22794C1.73879 6.22024 1.75591 6.21324 1.77329 6.20697L13.7733 1.87363C14.0164 1.78584 14.2884 1.84649 14.4711 2.02927ZM2.91423 7.21257L6.96453 9.23772C7.09355 9.30223 7.19816 9.40684 7.26267 9.53586L9.28782 13.5862L12.8903 3.6101L2.91423 7.21257Z"
-                fill="#6B7280"
-              />
-            </svg>
-            <span
-              style={{
-                fontSize: '14px',
-                fontWeight: 500,
-              }}
-            >
-              Add to Sequence
-            </span>
-          </div>
+    <div className={`custom-modal-overlay ${showModal ? 'show' : ''}`}>
+      <div className="custom-modal">
+        <div className="custom-modal-header">
+          <h3 className="custom-modal-title"> Add to Sequence</h3>
+          <button
+            type="button"
+            className="custom-modal-close"
+            onClick={handleClose}
+          >
+            <img src={cross} alt="close" />
+          </button>
         </div>
-        {isExpanded ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="17"
-            viewBox="0 0 16 17"
-            fill="none"
-          >
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M7.52827 6.02925C7.78862 5.7689 8.21073 5.7689 8.47108 6.02925L12.4711 10.0292C12.7314 10.2896 12.7314 10.7117 12.4711 10.9721C12.2107 11.2324 11.7886 11.2324 11.5283 10.9721L7.99967 7.44346L4.47108 10.9721C4.21073 11.2324 3.78862 11.2324 3.52827 10.9721C3.26792 10.7117 3.26792 10.2896 3.52827 10.0292L7.52827 6.02925Z"
-              fill="#6B7280"
-            />
-          </svg>
-        ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="17"
-            viewBox="0 0 16 17"
-            fill="none"
-          >
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M3.52876 6.02925C3.78911 5.7689 4.21122 5.7689 4.47157 6.02925L8.00016 9.55784L11.5288 6.02925C11.7891 5.7689 12.2112 5.7689 12.4716 6.02925C12.7319 6.2896 12.7319 6.71171 12.4716 6.97206L8.47157 10.9721C8.21122 11.2324 7.78911 11.2324 7.52876 10.9721L3.52876 6.97206C3.26841 6.71171 3.26841 6.2896 3.52876 6.02925Z"
-              fill="#6B7280"
-            />
-          </svg>
-        )}
-      </div>
-      {/* Expanded Content */}
-      {isExpanded && (
-        <>
-          {recentSequence.length > 0 && (
-            <>
-              <div
-                style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
-              >
-                <span
-                  style={{
-                    color: '#9ca3af',
-                    fontFamily: 'Inter',
-                    fontSize: '12px',
-                    fontStyle: 'normal',
-                    fontWeight: '500',
-                    lineHeight: '16px',
-                  }}
-                >
-                  Already in {recentSequence.length} Sequence
-                  {recentSequence.length > 1 ? 's' : ''}:
-                </span>
-
-                {recentSequence.map((sequence) => (
-                  <span
-                    key={sequence?.id}
-                    style={{
-                      color: '#1f2937',
-                      fontFamily: 'Inter',
-                      fontSize: '14px',
-                      fontStyle: 'normal',
-                      fontWeight: '400',
-                      lineHeight: '20px',
-                    }}
-                  >
-                    {sequence.sequenceName}
-                  </span>
-                ))}
-              </div>
-              <div
-                style={{
-                  // marginTop: '5%',
-                  border: '1.2px solid #F3F4F6',
-                  // width: '300px',
-                }}
-              />
-            </>
-          )}
-
+        <div className="custom-modal-body">
           <div
             style={{
               display: 'flex',
@@ -422,9 +479,9 @@ const AddToSequence = ({
                     Client Associated
                   </span>
                   <Select
-                    options={clientSequenceOptions}
-                    value={clientAssociatedSequenceValue}
-                    onChange={ClientAssociatedSequenceOnChange}
+                    options={clientOptions}
+                    value={selectedClient}
+                    onChange={setSelectedClient}
                     placeholder="Select"
                     components={{ Option: CustomOption }}
                     styles={{
@@ -526,15 +583,17 @@ const AddToSequence = ({
                 </span>
                 <Select
                   options={
-                    clientAssociatedSequenceValue
+                    selectedClient
                       ? processedClientSequencesOptions
                       : processedSequenceOptions
                   }
-                  value={selectedSequenceValue}
-                  onChange={(value) => SelectedSequenceOnChange(value)}
+                  value={selectedSequence}
+                  onChange={(value) => setSelectedSequence(value)}
                   components={{ Option: customOptionSequenceName }}
                   placeholder="Select"
                   formatGroupLabel={formatGroupLabel}
+                  isLoading={isLoadingSequences}
+                  isDisabled={isLoadingSequences}
                   styles={{
                     control: (base, state) => ({
                       ...base,
@@ -552,6 +611,7 @@ const AddToSequence = ({
                       height: '32px',
                       minHeight: '32px',
                       flexWrap: 'no-wrap',
+                      backgroundColor: 'hsl(0, 0%, 100%)',
                     }),
                     indicatorSeparator: (base) => ({
                       ...base,
@@ -644,8 +704,8 @@ const AddToSequence = ({
                 </span>
                 <Select
                   options={stepOptions}
-                  value={selectedStepValue}
-                  onChange={SelectedStepOnChange}
+                  value={selectedStep}
+                  onChange={setSelectedStep}
                   placeholder="Select"
                   components={{ Option: CustomOption }}
                   styles={{
@@ -665,6 +725,7 @@ const AddToSequence = ({
                       height: '32px',
                       minHeight: '32px',
                       flexWrap: 'no-wrap',
+                      backgroundColor: 'hsl(0, 0%, 100%)',
                     }),
                     indicatorSeparator: (base) => ({
                       ...base,
@@ -749,8 +810,9 @@ const AddToSequence = ({
                 <CreatableSelect
                   isMulti
                   options={tagOptions}
-                  value={selectedTagsValue}
-                  onChange={SelectedTagsOnChange}
+                  value={selectedTags}
+                  onChange={setSelectedTags}
+                  isLoading={isLoadingTags}
                   components={{
                     Option: CustomOptionTags,
                     // eslint-disable-next-line react/no-unstable-nested-components
@@ -789,18 +851,7 @@ const AddToSequence = ({
                         borderColor: 'none',
                       },
                       cursor: 'pointer',
-                      minHeight: '32px',
                       flexWrap: 'no-wrap',
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      maxHeight: '58px',
-                      overflowY: 'auto',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 8px',
                     }),
                     dropdownIndicator: (base) => ({
                       ...base,
@@ -813,15 +864,6 @@ const AddToSequence = ({
                     placeholder: (base) => ({
                       ...base,
                       color: '#9CA3AF',
-                      fontFamily: 'Inter',
-                      fontSize: '14px',
-                      fontStyle: 'normal',
-                      fontWeight: 400,
-                      lineHeight: '20px',
-                    }),
-                    input: (base) => ({
-                      ...base,
-                      color: '#1F2937',
                       fontFamily: 'Inter',
                       fontSize: '14px',
                       fontStyle: 'normal',
@@ -841,17 +883,16 @@ const AddToSequence = ({
                       fontWeight: 400,
                       lineHeight: '20px',
                       cursor: 'pointer',
-                      height: '32px',
-                      maxHeight: '58px',
                     }),
                     multiValue: (base) => ({
                       ...base,
                       display: 'flex',
-                      height: '22px',
-                      padding: '0px 6px',
+                      height: '25px',
+                      padding: '4px 8px',
                       alignItems: 'center',
                       borderRadius: '4px',
-                      background: '#eff6ff',
+                      background: '#DBEAFE',
+                      margin: '4px',
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
@@ -870,6 +911,10 @@ const AddToSequence = ({
                       ':hover': {
                         backgroundColor: '#BFDBFE',
                       },
+                    }),
+                    clearIndicator: (base) => ({
+                      ...base,
+                      display: 'none',
                     }),
                   }}
                 />
@@ -904,39 +949,21 @@ const AddToSequence = ({
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              variant="primary"
-              className="py-2"
-              disabled={
-                !selectedSequenceValue || !selectedStepValue || btnLoadingStatus
-              }
-              style={{
-                fontSize: '14px',
-                padding: '6px 16px',
-                borderRadius: '4px',
-                display: 'flex',
-                justifyContent: 'center',
-                fontWeight: '500',
-                lineHeight: '20px',
-                background: '#1D4ED8',
-                gap: '8px',
-                width: '100px',
-              }}
-              onClick={handleOnSave}
-              isLoading={btnLoadingStatus}
-            >
-              {btnLoadingStatus ? (
-                <Spinner animation="border" size="sm" />
-              ) : (
-                <span>Save</span>
-              )}
-            </Button>
-          </div>
-        </>
-      )}
+        </div>
+        <div className="custom-modal-footer">
+          <CustomButton
+            variant="primary"
+            className="action-button"
+            onClick={handleOnSave}
+            disabled={selectedSequence === null || selectedStep === null}
+            loading={isLoading.save}
+          >
+            Save
+          </CustomButton>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default AddToSequence;
+export default AddToSequenceModal;

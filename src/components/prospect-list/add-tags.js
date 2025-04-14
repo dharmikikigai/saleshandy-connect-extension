@@ -3,7 +3,7 @@ import CreatableSelect from 'react-select/creatable';
 import cross from '../../assets/icons/cross.svg';
 import prospectsInstance from '../../config/server/finder/prospects';
 
-const CustomButton = ({
+export const CustomButton = ({
   variant,
   className,
   onClick,
@@ -50,7 +50,6 @@ const AddTagsModal = ({
     try {
       setIsLoadingTags(true);
       const res = await prospectsInstance.getTags();
-      console.log('Tags response:', res);
       if (
         res &&
         res.payload &&
@@ -63,9 +62,6 @@ const AddTagsModal = ({
           data: tag,
         }));
         setTagOptions(tags);
-      } else {
-        console.log('No tags found or empty response, using fallback tags');
-        // Keep using fallback tags if API returns empty or invalid data
       }
     } catch (error) {
       console.error('Error fetching tags:', error);

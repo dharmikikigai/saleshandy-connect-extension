@@ -43,6 +43,11 @@ const Profile = () => {
           const findFour = document.getElementById('single-profile-container');
           if (findFour) {
             findFour.style.display = 'none';
+          } else {
+            const findFive = document.getElementById('no-result-container');
+            if (findFive) {
+              findFive.style.display = 'none';
+            }
           }
         }
       }

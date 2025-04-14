@@ -1119,6 +1119,10 @@ function BGActionDo(tab, tabId) {
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
 
+                  chrome.tabs.sendMessage(tab.id, {
+                    method: 'bulk-prospect-reload',
+                  });
+
                   chrome.storage.local.get(['bulkInfo'], (request1) => {
                     if (request1?.bulkInfo?.oldurl === tab.url) {
                       peopleInfo.people = mergeUniqueBy(
