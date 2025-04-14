@@ -23,6 +23,12 @@ import prospectsInstance from '../../config/server/finder/prospects';
 import AddTagsModal from './add-tags';
 import Header from '../header';
 
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.method === 'bulk-prospect-reload') {
+    console.log('refreshProspects');
+  }
+});
+
 const CustomButton = ({
   variant,
   className,
@@ -46,367 +52,6 @@ const CustomButton = ({
     </button>
   );
 };
-
-// const tempProspects = [
-//   {
-//     id: 7501604371,
-//     status: 'complete',
-//     name: 'Deepansh Pahuja',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/4b17b7e6f78051176a7d1f6e55f57f3a',
-//     links: { linkedin: 'https://www.linkedin.com/in/deepansh-pahuja' },
-//     linkedin_url: 'https://www.linkedin.com/in/deepansh-pahuja',
-//     emails: ['desaleshandy.com', 'gmail.com'],
-//     phones: [{ number: '637698XXXX', is_premium: true }],
-//     first_name: 'Deepansh',
-//     last_name: 'Pahuja',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti I create impactful functions and experiences. My designs prioriti',
-//   },
-//   {
-//     id: 542018412,
-//     status: 'complete',
-//     name: 'Prabhav Dogra',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/b89027d5bc662183904015695f6eb73d',
-//     links: {
-//       linkedin: 'https://www.linkedin.com/in/prabhav-dogra',
-//     },
-//     linkedin_url: 'https://www.linkedin.com/in/prabhav-dogra',
-//     emails: [
-//       {
-//         email: 'prabhav.dogra.something@blinkit.com',
-//         smtp_valid: 'valid',
-//         type: 'professional',
-//         last_validation_check: '2025-04-10',
-//         grade: 'A-',
-//       },
-//       {
-//         email: 'prabhav.dogra.somethingelse@blinkit.com',
-//         smtp_valid: 'valid',
-//         type: 'professional',
-//         last_validation_check: '2025-04-10',
-//         grade: 'A-',
-//       },
-//     ],
-//     phones: [],
-//     first_name: 'Prabhav',
-//     last_name: 'Dogra',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: true,
-//     revealType: 'email',
-//     isCreditRefunded: false,
-//     contactId: 39741876,
-//     prospectStatus: 1,
-//     isProspectCreated: true,
-//     tags: [],
-//     sequences: [],
-//     description: 'SDE II@Blinkit',
-//   },
-//   {
-//     id: 3882926612,
-//     status: 'complete',
-//     name: 'Harsh Vaghela',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/9302db1315d528ba22648637787a30cd',
-//     links: {
-//       linkedin: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     },
-//     linkedin_url: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     emails: [],
-//     phones: [{ number: '951041XXXX', is_premium: true }],
-//     first_name: 'Harsh',
-//     last_name: 'Vaghela',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-//   {
-//     name: 'Deepansh Pahuja',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/4b17b7e6f78051176a7d1f6e55f57f3a',
-//     links: { linkedin: 'https://www.linkedin.com/in/deepansh-pahuja' },
-//     linkedin_url: 'https://www.linkedin.com/in/deepansh-pahuja',
-//     first_name: 'Deepansh',
-//     last_name: 'Pahuja',
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-//   {
-//     id: 3882926614,
-//     status: 'complete',
-//     name: 'Harsh Vaghela',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/9302db1315d528ba22648637787a30cd',
-//     links: {
-//       linkedin: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     },
-//     linkedin_url: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     emails: ['saleshandy.com', 'gmail.com', 'ikigai.co.in'],
-//     phones: [],
-//     first_name: 'Harsh',
-//     last_name: 'Vaghela',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-//   {
-//     id: 7501604375,
-//     status: 'complete',
-//     name: 'Deepansh Pahuja',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/4b17b7e6f78051176a7d1f6e55f57f3a',
-//     links: { linkedin: 'https://www.linkedin.com/in/deepansh-pahuja' },
-//     linkedin_url: 'https://www.linkedin.com/in/deepansh-pahuja',
-//     emails: [],
-//     phones: [],
-//     first_name: 'Deepansh',
-//     last_name: 'Pahuja',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-//   {
-//     id: 3882926616,
-//     status: 'complete',
-//     name: 'Harsh Vaghela',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/9302db1315d528ba22648637787a30cd',
-//     links: {
-//       linkedin: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     },
-//     linkedin_url: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     emails: ['saleshandy.com', 'gmail.com', 'ikigai.co.in'],
-//     phones: [{ number: '951041XXXX', is_premium: true }],
-//     first_name: 'Harsh',
-//     last_name: 'Vaghela',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-//   {
-//     id: 7501604377,
-//     status: 'complete',
-//     name: 'Deepansh Pahuja',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/4b17b7e6f78051176a7d1f6e55f57f3a',
-//     links: { linkedin: 'https://www.linkedin.com/in/deepansh-pahuja' },
-//     linkedin_url: 'https://www.linkedin.com/in/deepansh-pahuja',
-//     emails: ['saleshandy.com', 'gmail.com'],
-//     phones: [{ number: '637698XXXX', is_premium: true }],
-//     first_name: 'Deepansh',
-//     last_name: 'Pahuja',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-//   {
-//     id: 3882926618,
-//     status: 'complete',
-//     name: 'Harsh Vaghela',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/9302db1315d528ba22648637787a30cd',
-//     links: {
-//       linkedin: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     },
-//     linkedin_url: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     emails: ['saleshandy.com', 'gmail.com', 'ikigai.co.in'],
-//     phones: [{ number: '951041XXXX', is_premium: true }],
-//     first_name: 'Harsh',
-//     last_name: 'Vaghela',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-//   {
-//     id: 7501604379,
-//     status: 'complete',
-//     name: 'Deepansh Pahuja',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/4b17b7e6f78051176a7d1f6e55f57f3a',
-//     links: { linkedin: 'https://www.linkedin.com/in/deepansh-pahuja' },
-//     linkedin_url: 'https://www.linkedin.com/in/deepansh-pahuja',
-//     emails: ['saleshandy.com', 'gmail.com'],
-//     phones: [{ number: '637698XXXX', is_premium: true }],
-//     first_name: 'Deepansh',
-//     last_name: 'Pahuja',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-//   {
-//     id: 3882926620,
-//     status: 'complete',
-//     name: 'Harsh Vaghela',
-//     profile_pic:
-//       'https://d2gjqh9j26unp0.cloudfront.net/profilepic/9302db1315d528ba22648637787a30cd',
-//     links: {
-//       linkedin: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     },
-//     linkedin_url: 'https://www.linkedin.com/in/harsh-vaghela-169059201',
-//     emails: ['saleshandy.com', 'gmail.com', 'ikigai.co.in'],
-//     phones: [{ number: '951041XXXX', is_premium: true }],
-//     first_name: 'Harsh',
-//     last_name: 'Vaghela',
-//     isRevealed: true,
-//     isRevealing: false,
-//     reReveal: false,
-//     revealType: null,
-//     contactId: null,
-//     isProspectCreated: false,
-//     description:
-//       'I create impactful functions and experiences. My designs prioriti..',
-//   },
-// ];
-
-// const tempBulkInfo = {
-//   oldurl: 'https://www.linkedin.com/company/letsblinkit/people/',
-//   people: [
-//     {
-//       description: 'SDEI@ Blinkit',
-//       firstname: 'Pranjal',
-//       lastname: 'Mishra',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/C4E03AQG-rzxr8YtM0w/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1623038589430?e=1749686400&v=beta&t=O52_Kx1dfjL0x-TOuJlYcETzVS_zjWnpSHBgfCyupS4',
-//       name: 'Pranjal Mishra',
-//       source_id: '907177006',
-//       source_id_2: 'pranjal-mishra-83a98a213',
-//     },
-//     {
-//       description: "Software Developer | Blinkit | IIT Kgp' 23",
-//       firstname: 'Ekansh',
-//       lastname: 'Jain',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/D5603AQFdj3Ew7JI--A/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1703931476765?e=1749686400&v=beta&t=-VZxpPEN8L4hc23x7wlGq8T_kY_PM6zQV87MgvnR9PU',
-//       name: 'Ekansh Jain',
-//       source_id: '702810098',
-//       source_id_2: 'ekansh-jain-982452177',
-//     },
-//     {
-//       description: 'Product @ Swish | Prev Blinkit',
-//       firstname: 'Pranav',
-//       lastname: 'Sharma',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/D5603AQFS_qIc8B0auA/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1707728573099?e=1749686400&v=beta&t=sipcAbLtf8Acp74AOFY967JAIkkhQeuEEDUGVRJj_ec',
-//       name: 'Pranav Sharma',
-//       source_id: '783986355',
-//       source_id_2: 'pranav-sharma-nsut',
-//     },
-//     {
-//       description: 'SWE at Blinkit',
-//       firstname: 'Tushar',
-//       lastname: 'Singh',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/C4D03AQE7JAs9yjCHNg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1662950208681?e=1749686400&v=beta&t=Ksk7Ri_BJma1hM3kYhft1EyhgHPODp2zto8hPStj_u8',
-//       name: 'Tushar Singh',
-//       source_id: '650860457',
-//       source_id_2: 'thatfedupguy',
-//     },
-//     {
-//       description: 'SDE -2 @ Blinkit | ex-Razorpay',
-//       firstname: 'Arpit',
-//       lastname: 'Mishra',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/D5603AQE6kqiLd9WKSg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1726320766819?e=1749686400&v=beta&t=yUQ4Wxn5brN4DekxW1t8w8NCs3LUzzcSV2sLeOybruo',
-//       name: 'Arpit Mishra',
-//       source_id: '582977193',
-//       source_id_2: 'mishrrag',
-//     },
-//     {
-//       description: 'Building Seller Hub at Blinkit | Engineering Manager',
-//       firstname: 'Sahil',
-//       lastname: 'Jain',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/D4D03AQFwueNMJD7pjw/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1665750967997?e=1749686400&v=beta&t=cpKCuCwBBOTDQCb0cbJqv5zXLuoFtVGijttown7WGFg',
-//       name: 'Sahil Jain',
-//       source_id: '522783743',
-//       source_id_2: 'iam-sahil',
-//     },
-//     {
-//       description:
-//         "Building Bistro @BlinkIt || 2 x ICPC Regionalist '24 '22 || Expert@Codeforces || Guardian@Leetcode",
-//       firstname: 'Vikas',
-//       lastname: 'Kumar Sharma',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/D5603AQEBNCcf_0RNpg/profile-displayphoto-shrink_100_100/B56ZXgdpdaGoAU-/0/1743227625069?e=1749686400&v=beta&t=y_yiOyGJc_QIzbWLc5lnxpdXwJE4APgCaFcV38nSEqA',
-//       name: 'Vikas Kumar Sharma',
-//       source_id: '959714640',
-//       source_id_2: 'vikaskumarsharma2005',
-//     },
-//     {
-//       description: 'HR executive',
-//       firstname: 'Ashish',
-//       lastname: 'Sharma',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/D4E35AQEj4V-sZ4-D_g/profile-framedphoto-shrink_100_100/profile-framedphoto-shrink_100_100/0/1715757920543?e=1744786800&v=beta&t=XUW-gT0ndFwIPg6phHXAlogcaHLAV9Cv6uJe8rMmbWY',
-//       name: 'Ashish Sharma',
-//       source_id: '1166379500',
-//       source_id_2: 'ashish-sharma-178750286',
-//     },
-//     {
-//       description: 'SDE 2 at Blinkit',
-//       firstname: 'Nikhil',
-//       lastname: 'Kumar',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/D5603AQGvSq6WgKFszg/profile-displayphoto-shrink_100_100/profile-displayphoto-shrink_100_100/0/1710153884522?e=1749686400&v=beta&t=ppUfCVYtjxQBlO0C6EyXLEtBNCgXuu2W6Nrs0YfETeE',
-//       name: 'Nikhil Kumar',
-//       source_id: '755921429',
-//       source_id_2: 'nikhilkmtnk28',
-//     },
-//     {
-//       description: 'Area Manager - Gujarat',
-//       firstname: 'Anil',
-//       lastname: 'Gupta',
-//       logo:
-//         'https://media.licdn.com/dms/image/v2/D4D35AQFct1vrrjL3kw/profile-framedphoto-shrink_100_100/profile-framedphoto-shrink_100_100/0/1695060894235?e=1744786800&v=beta&t=2A9E29TT3IgbNO7EbmnlBPELQGA7Sv5aDUyH1hTZCUk',
-//       name: 'Anil Gupta',
-//       source_id: '574195191',
-//       source_id_2: 'anil-gupta-a73368140',
-//     },
-//   ],
-// };
 
 const BULK_ACTION_TIMEOUT = 7000;
 const MAX_POLLING_LIMIT = 20;
@@ -443,22 +88,18 @@ const ProspectList = () => {
     (prospect) => prospect.isRevealed && !prospect.reReveal,
   );
 
-  console.log('selectedTags', selectedTags);
-
   const setProspectsData = (data, rawData) => {
     if (
       data.payload &&
       data.payload.profiles &&
       data.payload.profiles.length > 0
     ) {
-      console.log('rawData', rawData);
       const prospectsData = rawData.map((item) => {
         const prospect = data.payload.profiles.find(
           (profile) =>
             profile.linkedin_url ===
             `https://www.linkedin.com/in/${item.source_id_2}`,
         );
-        console.log('prospect', prospect);
         if (prospect) {
           return {
             ...prospect,
@@ -484,9 +125,7 @@ const ProspectList = () => {
           take: linkedinUrls.length,
           link: linkedinUrls,
         };
-        console.log('payload', payload);
         const response = await prospectsInstance.getProspects(payload);
-        console.log('response', response);
         setProspectsData(response, bulkInfo);
       }
     });
@@ -511,7 +150,6 @@ const ProspectList = () => {
       tagIds,
       newTags,
     };
-    console.log('payload', payload);
     setRevealProspectLoading({
       ignore: false,
       apply: true,
@@ -524,20 +162,12 @@ const ProspectList = () => {
       } else if (status === 2) {
         console.log('warning', message);
       } else {
-        // if (bulkRevealRes?.payload?.shouldPoll) {
         const newRevealingProspects = {
           ...revealingProspects,
           ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
         };
-        console.log('newRevealingProspects', newRevealingProspects);
         setRevealingProspects(newRevealingProspects);
         setIsPollingEnabled(true);
-        // }
-        console.log(
-          'success',
-          message ||
-            'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
-        );
       }
     }
     setRevealProspectLoading({
@@ -554,7 +184,6 @@ const ProspectList = () => {
       leadIds: selectedProspects,
       revealType: selectedRevealType,
     };
-    console.log('payload', payload);
     setRevealProspectLoading({
       ignore: true,
       apply: false,
@@ -572,15 +201,9 @@ const ProspectList = () => {
           ...revealingProspects,
           ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
         };
-        console.log('newRevealingProspects', newRevealingProspects);
         setRevealingProspects(newRevealingProspects);
         setIsPollingEnabled(true);
         // }
-        console.log(
-          'success',
-          message ||
-            'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
-        );
       }
     }
     setRevealProspectLoading({
@@ -601,13 +224,11 @@ const ProspectList = () => {
     const allRevealingProspectIds = Object.keys(revealingProspects)
       .filter((id) => revealingProspects[id] === true)
       .map(Number);
-    console.log('allRevealingProspectIds', allRevealingProspectIds);
     const payload = {
       leadIds: allRevealingProspectIds,
       revealType: selectedRevealType,
       isBulkAction: true,
     };
-    console.log('payload', payload);
     const response = await prospectsInstance.leadStatus(payload);
     if (
       response &&
@@ -641,7 +262,6 @@ const ProspectList = () => {
   };
 
   const refreshProspects = async () => {
-    console.log('revealingProspects', revealingProspects);
     const linkedinUrls = [];
     Object.keys(revealingProspects).forEach((id) => {
       // Convert id to number for comparison if prospects have numeric IDs
@@ -652,7 +272,6 @@ const ProspectList = () => {
         linkedinUrls.push(prospect.linkedin_url);
       }
     });
-    console.log('linkedinUrls', linkedinUrls);
     if (linkedinUrls.length > 0) {
       const payload = {
         start: 1,
@@ -660,7 +279,6 @@ const ProspectList = () => {
         link: linkedinUrls,
       };
       const response = await prospectsInstance.getProspects(payload);
-      console.log('response', response);
       setRevealingProspects({});
       const updatedProspects = [...prospects];
       response.payload.profiles.forEach((profile) => {
@@ -693,7 +311,6 @@ const ProspectList = () => {
   }, [showTagsModal]);
 
   useEffect(() => {
-    console.log('isPollingEnabled', isPollingEnabled);
     let intervalId = null;
 
     if (isPollingEnabled) {
@@ -876,8 +493,6 @@ const ProspectList = () => {
   );
 
   const getActionButtons = () => {
-    console.log('isAllEmailRevealed', isAllEmailRevealed);
-    console.log('isAllEmailPhoneRevealed', isAllEmailPhoneRevealed);
     if (isAllEmailRevealed && isAllEmailPhoneRevealed) {
       return (
         <>
