@@ -18,7 +18,7 @@ class Server {
       // eslint-disable-next-line no-param-reassign
       config.headers.authorization = `Bearer ${authenticationToken}`;
       // eslint-disable-next-line no-param-reassign
-      config.headers.Source = 'open-api';
+      config.headers['sh-application'] = 'chrome-extension';
       return config;
     });
   }

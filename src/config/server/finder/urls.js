@@ -49,6 +49,12 @@ export default {
     error: 'Error in revealing the leads',
   },
 
+  revealProspect: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'chrome-extension/reveal',
+    error: 'Error in revealing the lead',
+  },
+
   leadStatus: {
     type: REQUEST_TYPES.POST,
     path: () => 'chrome-extension/status',
@@ -59,5 +65,45 @@ export default {
     type: REQUEST_TYPES.GET,
     path: () => 'lead-finder/tags',
     error: 'Error in getting the tags',
+  },
+
+  getSequences: {
+    type: REQUEST_TYPES.GET,
+    path: (clientIds) => {
+      let path = 'chrome-extension/sequences/list';
+      if (clientIds) {
+        path += `?clientIds=${clientIds}`;
+      }
+      return path;
+    },
+    error: 'Error in getting the sequences',
+  },
+
+  getAgencyClients: {
+    type: REQUEST_TYPES.GET,
+    path: () => 'client/list',
+    error: 'Error in getting the agency clients',
+  },
+
+  saveTags: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'lead-finder/tag/assign',
+    error: 'Error in saving the tags',
+  },
+
+  saveTagsForBulkLeads: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'lead-finder/tag/bulk-assign',
+    error: 'Error in saving the tags',
+  },
+
+  getSavedLeads: {
+    type: REQUEST_TYPES.GET,
+    path: ({ start, take }) => {
+      let path = 'lead-finder/saved-leads';
+      path += `?start=${start}&take=${take}`;
+      return path;
+    },
+    error: 'Error in getting the saved leads',
   },
 };
