@@ -100,7 +100,7 @@ export default {
   getSavedLeads: {
     type: REQUEST_TYPES.GET,
     path: ({ start, take }) => {
-      let path = 'lead-finder/saved-leads';
+      let path = 'chrome-extension/saved-profiles';
       path += `?start=${start}&take=${take}`;
       return path;
     },

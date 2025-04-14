@@ -212,7 +212,7 @@ const SingleProfile = () => {
     try {
       chrome.storage.local.get(['saleshandyMetaData'], async (result) => {
         const isAgencyUser =
-          result?.saleshandyMetaData?.user?.isAgencyFicationActive;
+          result?.saleshandyMetaData?.user?.isAgencyficationActive;
         if (isAgencyUser) {
           setIsAgency(true);
           const res = await prospectsInstance.getAgencyClients();
@@ -405,21 +405,60 @@ const SingleProfile = () => {
     handleAddToSequence(payload);
   };
 
-  const handleEmailCopy = () => {
-    const emails = singleleadsData?.map((item) => item.emails);
-    if (emails) {
-      navigator.clipboard.writeText(emails);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+  const handleEmailCopy = (text) => {
+    if (text) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+        })
+        .catch((err) => {
+          console.error('Failed to copy text: ', err);
+          // Fallback method for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+          } catch (fallbackErr) {
+            console.error('Fallback: Oops, unable to copy', fallbackErr);
+          }
+          document.body.removeChild(textArea);
+        });
     }
   };
 
-  const handlePhoneNumberCopy = () => {
-    const phones = singleleadsData?.map((item) => item.phones.phone);
-    if (phones) {
-      navigator.clipboard.writeText(phones);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+  const handlePhoneNumberCopy = (text) => {
+    if (text) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
+        })
+        .catch((err) => {
+          console.error('Failed to copy phone number: ', err);
+          // Fallback method for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+          } catch (fallbackErr) {
+            console.error(
+              'Fallback: Oops, unable to copy phone number',
+              fallbackErr,
+            );
+          }
+          document.body.removeChild(textArea);
+        });
     }
   };
 
@@ -1140,7 +1179,7 @@ const SingleProfile = () => {
                             style={{
                               cursor: 'pointer',
                             }}
-                            onClick={handleEmailCopy}
+                            onClick={() => handleEmailCopy(email?.email)}
                             data-tooltip-id="my-tooltip-Email-Copy"
                           >
                             {isEmailCopyiconDisplay && (
@@ -1256,7 +1295,9 @@ const SingleProfile = () => {
                                 style={{
                                   cursor: 'pointer',
                                 }}
-                                onClick={handlePhoneNumberCopy}
+                                onClick={() =>
+                                  handlePhoneNumberCopy(phone?.number)
+                                }
                                 data-tooltip-id="my-tooltip-Email-Copy"
                               >
                                 {isPhoneCopyiconDisplay && (

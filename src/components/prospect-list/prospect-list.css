@@ -1,8 +1,3 @@
-.prospect-list-container {
-  width: 332px;
-  height: 686px;
-}
-
 .prospect-list-header {
   display: flex;
   justify-content: space-between;
@@ -40,6 +35,7 @@
   display: flex;
   padding-top: 12px;
   padding-left: 16px;
+  padding-right: 16px;
   position: relative;
 }
 
@@ -56,6 +52,15 @@
   display: flex;
   gap: 4px;
   align-items: center;
+}
+
+.saved-tab {
+  flex: 1;
+  margin-right: 0;
+}
+
+.prospect-tab-filter {
+  margin-left: auto;
 }
 
 .prospect-tab.active {
@@ -711,4 +716,46 @@ body.modal-open {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
+}
+
+.filter-section-container {
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prospect-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prospect-filter span {
+  color: #6b7280;
+  font-family: Inter;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.filter-action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1 0 0;
+}
+
+.clear-filter-button {
+  color: #6b7280;
+  text-align: center;
+  font-family: Inter;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.filter-apply-button {
+  width: 100px;
 }
