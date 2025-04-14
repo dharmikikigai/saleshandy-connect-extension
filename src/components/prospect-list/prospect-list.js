@@ -18,12 +18,15 @@ import checkboxChecked from '../../assets/icons/checkboxChecked.svg';
 import circleCheck from '../../assets/icons/circleCheck.svg';
 import tagIcon from '../../assets/icons/tag.svg';
 import copy from '../../assets/icons/copy.svg';
+import filter from '../../assets/icons/filter.svg';
+import NogenderAvatar from '../no-gender-avatar';
 
 import SkeletonLoading from '../skeleton-loading/skeleton-loading';
 import prospectsInstance from '../../config/server/finder/prospects';
 import AddTagsModal from './add-tags';
 import AddToSequenceModal from './add-to-sequence-modal';
 import Header from '../header';
+import ProspectFilterModal from './prospect-filter-modal';
 
 chrome.runtime.onMessage.addListener((request) => {
   if (request.method === 'bulk-prospect-reload') {
@@ -62,6 +65,7 @@ const ProspectList = () => {
   // const [isLoading, setIsLoading] = useState(true);
   const [prospects, setProspects] = useState([]);
   const [savedProspects, setSavedProspects] = useState([]);
+  const [savedCount, setSavedCount] = useState(0);
   const [activeTab, setActiveTab] = useState('leads');
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [selectedProspects, setSelectedProspects] = useState([]);
@@ -83,7 +87,9 @@ const ProspectList = () => {
 
   const [isAgency, setIsAgency] = useState(false);
 
-  const selectableProspects = prospects.filter(
+  const visibleProspects = activeTab === 'leads' ? prospects : savedProspects;
+
+  const selectableProspects = visibleProspects.filter(
     (prospect) => prospect.id && !prospect.isRevealing,
   );
 
@@ -94,6 +100,10 @@ const ProspectList = () => {
   const isAllEmailPhoneRevealed = selectableProspects.every(
     (prospect) => prospect.isRevealed && !prospect.reReveal,
   );
+
+  const [showProspectFilterModal, setShowProspectFilterModal] = useState(false);
+  const [selectedTagFilters, setSelectedTagFilters] = useState([]);
+  const [dateFilterValue, setDateFilterValue] = useState(null);
 
   const setProspectsData = (data, rawData) => {
     if (
@@ -354,7 +364,7 @@ const ProspectList = () => {
     try {
       const payload = {
         start: 1,
-        take: 10,
+        take: 25,
       };
       const response = await prospectsInstance.getSavedLeads(payload);
       if (
@@ -365,13 +375,44 @@ const ProspectList = () => {
       ) {
         setSavedProspects(response.payload.profiles);
       }
+      if (response?.payload?.pagination?.total) {
+        setSavedCount(response?.payload?.pagination?.total);
+      }
     } catch (e) {
       console.log('error', e);
     }
   };
 
   const copyToClipboard = (text) => {
-    navigator?.clipboard?.writeText(text);
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        console.log('text copied');
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+        // Fallback method for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          console.log('text copied');
+        } catch (fallbackErr) {
+          console.error('Fallback: Oops, unable to copy', fallbackErr);
+        }
+        document.body.removeChild(textArea);
+      });
+  };
+
+  const applyFilters = () => {
+    console.log('applyFilters', selectedTagFilters, dateFilterValue);
+  };
+
+  const clearFilters = () => {
+    setSelectedTagFilters([]);
+    setDateFilterValue(null);
   };
 
   useEffect(() => {
@@ -516,6 +557,12 @@ const ProspectList = () => {
             {prospect.emails[0].email}
           </span>
           <img src={circleCheck} alt="circle-check" />
+          <div
+            className="copy-icon"
+            onClick={() => copyToClipboard(prospect.emails[0].email)}
+          >
+            <img src={copy} alt="copy" />
+          </div>
         </div>
       );
     }
@@ -602,8 +649,6 @@ const ProspectList = () => {
     );
   };
 
-  const visibleProspects = activeTab === 'leads' ? prospects : savedProspects;
-
   if (loading) {
     // skeleton ui
     return (
@@ -641,13 +686,24 @@ const ProspectList = () => {
                   <span>Leads Available</span>
                 </div>
                 <div
-                  className={`prospect-tab ${
+                  className={`prospect-tab saved-tab ${
                     activeTab === 'saved' ? 'active' : ''
                   }`}
                   onClick={() => setActiveTab('saved')}
                 >
                   <span>Saved</span>
-                  <span className="prospect-saved-count">100</span>
+                  <span className="prospect-saved-count"> {savedCount}</span>
+                  {activeTab === 'saved' && (
+                    <div
+                      className="tooltip-container prospect-tab-filter"
+                      onClick={() => setShowProspectFilterModal(true)}
+                    >
+                      <img src={filter} alt="filter" />
+                      <div className="custom-tooltip tooltip-bottom">
+                        Filter
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div
                   className={`prospect-tab-highlight ${
@@ -680,7 +736,7 @@ const ProspectList = () => {
                 {getActionButtons()}
               </div>
               <div className="prospect-list-items-container">
-                {prospects.map((prospect, index) => (
+                {visibleProspects.map((prospect, index) => (
                   <div className="prospect-item-container" key={index}>
                     <div
                       className={`prospect-item ${
@@ -715,14 +771,18 @@ const ProspectList = () => {
                       </div>
                       <div className="prospect-item-info">
                         <div className="prospect-image">
-                          <img
-                            src={
-                              prospect.profile_pic
-                                ? prospect.profile_pic
-                                : prospect.logo
-                            }
-                            alt="profile"
-                          />
+                          {prospect.profile_pic || prospect.logo ? (
+                            <img
+                              src={
+                                prospect.profile_pic
+                                  ? prospect.profile_pic
+                                  : prospect.logo
+                              }
+                              alt="profile"
+                            />
+                          ) : (
+                            <NogenderAvatar />
+                          )}
                         </div>
                         <div
                           className={`prospect-item-details ${
@@ -808,29 +868,26 @@ const ProspectList = () => {
                               key={phone.number}
                             >
                               <img src={phoneSignal} alt="phone-signal" />
-                              <span>
-                                {phone?.number?.includes('X') ? (
-                                  <>
-                                    {phone?.number?.slice(0, 3)}
-                                    <span className="list-dots">
-                                      &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                    </span>
-                                    {phone?.number?.slice(3)}
-                                  </>
-                                ) : (
-                                  <>
-                                    {phone?.number}
-                                    <div
-                                      className="copy-icon"
-                                      onClick={() =>
-                                        copyToClipboard(phone?.number)
-                                      }
-                                    >
-                                      <img src={copy} alt="copy" />
-                                    </div>
-                                  </>
-                                )}
-                              </span>
+                              {phone?.number?.includes('X') ? (
+                                <span>
+                                  {phone?.number?.slice(0, 3)}
+                                  <span className="list-dots">
+                                    &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                  </span>
+                                </span>
+                              ) : (
+                                <>
+                                  <span>{phone?.number}</span>
+                                  <div
+                                    className="copy-icon"
+                                    onClick={() =>
+                                      copyToClipboard(phone?.number)
+                                    }
+                                  >
+                                    <img src={copy} alt="copy" />
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ))}
                       </div>
@@ -861,6 +918,17 @@ const ProspectList = () => {
         isAgency={isAgency}
         handleAddToSequence={handleAddToSequence}
         isLoading={revealProspectLoading}
+      />
+
+      <ProspectFilterModal
+        showModal={showProspectFilterModal}
+        onClose={() => setShowProspectFilterModal(false)}
+        selectedTags={selectedTagFilters}
+        setSelectedTags={setSelectedTagFilters}
+        dateFilterValue={dateFilterValue}
+        setDateFilterValue={setDateFilterValue}
+        applyFilters={applyFilters}
+        clearFilters={clearFilters}
       />
     </>
   );
