@@ -269,7 +269,7 @@ const AddToSequence = ({
           justifyContent: 'space-between',
           height: '16px',
         }}
-        onClick={() => setIsExpanded((prev) => !prev)}
+        onClick={() => setIsExpanded('sequence')}
       >
         <div
           style={{

@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
-// import Header from './header';
-// import NogenderAvatar from "./no-gender-avatar";
+import Header from './header';
+import NogenderAvatar from './no-gender-avatar';
 import AddToSequence from './add-to-sequence';
 import AddTagsSelect from './add-tags';
 import Toaster from './toaster';
@@ -10,188 +10,6 @@ import './responsive-screen.css';
 import ContactStatusTag from './contact-status-tag/contact-status-tag';
 import prospectsInstance from '../config/server/finder/prospects';
 import SingleProfileSkeleton from './single-profile-skeleton';
-
-const tempSingleleadsData = [
-  {
-    id: 7501604371,
-    status: 'complete',
-    name: 'Deepansh Pahuja',
-    profile_pic:
-      'https://d2gjqh9j26unp0.cloudfront.net/profilepic/4b17b7e6f78051176a7d1f6e55f57f3a',
-    links: { linkedin: 'https://www.linkedin.com/in/deepansh-pahuja' },
-    linkedin_url: 'https://www.linkedin.com/in/deepansh-pahuja',
-    emails: [
-      {
-        email: 'tushar.singh@blinkit.com',
-        smtp_valid: 'valid',
-        type: 'professional',
-        last_validation_check: '2025-04-12',
-        grade: 'A-',
-      },
-    ],
-    phones: [
-      { number: '12345642131', is_premium: true },
-      { number: '1234567890', is_premium: true },
-    ],
-    first_name: 'Deepansh',
-    last_name: 'Pahuja',
-    isRevealed: true,
-    isRevealing: false,
-    reReveal: false,
-    revealType: null,
-    contactId: null,
-    isProspectCreated: false,
-    sequences: [
-      {
-        sequenceId: 156391,
-        sequenceName: 'Chrome extension Testing ',
-      },
-    ],
-    tags: [
-      {
-        id: 63313,
-        name: 'Google',
-      },
-    ],
-    locality: 'Ahmedabad, Gujarat, India',
-    headline:
-      'I create impactful functions and experiences. My designs prioriti I create impactful functions and experiences. My designs prioriti',
-  },
-  {
-    id: 199528346,
-    status: 'complete',
-    name: 'Tushar Singh',
-    profile_pic:
-      'https://d2gjqh9j26unp0.cloudfront.net/profilepic/da79b04927a2488b3572dc1f9ba09b26',
-    links: {
-      linkedin: 'https://www.linkedin.com/in/thatfedupguy',
-    },
-    linkedin_url: 'https://www.linkedin.com/in/thatfedupguy',
-    emails: ['blinkit.com'],
-    phones: [],
-    first_name: 'Tushar',
-    last_name: 'Singh',
-    isRevealed: false,
-    isRevealing: false,
-    reReveal: false,
-    revealType: null,
-    contactId: null,
-    prospectStatus: 1,
-    isProspectCreated: false,
-    sequences: [],
-    headline: 'SWE at Blinkit',
-    locality: 'Ahmedabad, Gujarat, India',
-  },
-];
-
-const tempLocalData = {
-  cInfo: {
-    e: [],
-  },
-  country: 'in',
-  current: [
-    {
-      company_name: 'Saleshandy',
-      position: 'Co-Founder',
-      source_id: '6643262',
-      start: 1438367400,
-    },
-  ],
-  entityUrn: 'ACoAAAPf6fIBPBHeDP4fS7qRGRNgCQT2F1fozks',
-  firstName: 'Tushar',
-  fullInfo: 1,
-  headline: 'SWE at Blinkit',
-  industry: 'Computer Software',
-  lastName: 'Singh',
-  locality: 'Ahmedabad, Gujarat, India',
-  name: 'Tushar Singh',
-  previous: [
-    {
-      company_name: 'SoftwareSuggest',
-      end: 1480530600,
-      location: 'Ahmedabad Area, India',
-      position: 'Co-Founder & CTO',
-      source_id: '3618255',
-      start: 1383244200,
-    },
-    {
-      company_name: 'Sabse Technologies Inc.',
-      end: 1351708200,
-      location: 'Gandhinagar',
-      position: 'Software Engineer',
-      source_id: '2952886',
-      start: 1293820200,
-    },
-    {
-      company_name: 'eWave IT Solutions Pvt. Ltd',
-      end: 1291141800,
-      location: 'Ahmedabad Area, India',
-      position: 'Software Engineer',
-      source_id: '1094253',
-      start: 1275330600,
-    },
-    {
-      company_name: 'Varaha Systems',
-      end: 1267381800,
-      location: 'Ahmedabad Area, India',
-      position: 'Project Intern',
-      source_id: '66250',
-      start: 1259605800,
-    },
-  ],
-  skills: [
-    'Business Development',
-    'Sales Development',
-    'Product Management',
-    'Entrepreneurship',
-    'Software Development',
-    'Mobile Applications',
-    'User Interface Design',
-    'Android Development',
-    'Web Development',
-    'Digital Marketing',
-    'Web Applications',
-    'Android',
-    'Software as a Service (SaaS)',
-    'Java',
-    'Java Enterprise Edition',
-    'JavaScript',
-    'Growth Hacking',
-    'Cloud Applications',
-  ],
-  source: 'linkedIn',
-  sourceId2: 'thatfedupguy',
-  source_id: '65006066',
-  source_page: 'https://www.linkedin.com/in/thatfedupguy/',
-};
-
-// const sequenceOptionLabels = [
-//   {
-//     label: 'Recent Sequences',
-//     options: [
-//       { value: 'sequence_2', label: 'Another Sequence', status: 1 },
-//       { value: 'sequence_3', label: 'Sequence 3', status: 2 },
-//       // Add more if needed
-//     ],
-//   },
-//   {
-//     value: 'abhishek_first',
-//     label: "Abhishek's First Sequence 🚀 (Current Sequence)",
-//     status: 3,
-//   },
-//   { value: 'sequence_2', label: 'Another Sequence' },
-// ];
-
-// const stepOptions = [
-//   { value: 'step_1', label: 'Step 1: Email' },
-//   { value: 'step_2', label: 'Step 2: Follow-up' },
-// ];
-
-// const tagOptions = [
-//   { value: 'tag1', label: 'Tag 1' },
-//   { value: 'tag2', label: 'Tag 2' },
-//   { value: 'tag3', label: 'Tag 3' },
-// ];
 
 const BULK_ACTION_TIMEOUT = 7000;
 const MAX_POLLING_LIMIT = 20;
@@ -210,7 +28,7 @@ const SingleProfile = () => {
   const [selectedTags, setSelectedTags] = useState([]);
 
   // new state
-  const [prospect, setProspect] = useState(tempSingleleadsData[0]);
+  const [prospect, setProspect] = useState({});
   const singleleadsData = [prospect];
   const [revealType, setRevealType] = useState(null);
   const [isRevealing, setIsRevealing] = useState(false);
@@ -236,47 +54,50 @@ const SingleProfile = () => {
 
   const fetchProspect = async () => {
     try {
-      const localData = tempLocalData;
-      if (localData && localData.sourceId2) {
-        const linkedinUrl = `https://www.linkedin.com/in/${localData.sourceId2}`;
-        setIsLoading(true);
+      chrome.storage.local.get(['personInfo'], async (result) => {
+        console.log('result', result);
+        const localData = result.personInfo;
+        if (localData && localData.sourceId2) {
+          const linkedinUrl = `https://www.linkedin.com/in/${localData.sourceId2}`;
+          setIsLoading(true);
 
-        const payload = {
-          start: 1,
-          take: 1,
-          link: [linkedinUrl],
-        };
+          const payload = {
+            start: 1,
+            take: 1,
+            link: [linkedinUrl],
+          };
 
-        const response = await prospectsInstance.getProspects(payload);
+          const response = await prospectsInstance.getProspects(payload);
 
-        if (response) {
-          if (!response.payload) {
-            throw new Error('No data received from API');
-          }
-
-          if (response.payload.profiles.length > 0) {
-            setProspect({
-              ...response.payload.profiles[0],
-              headline: localData.headline,
-              locality: localData.locality,
-              logo: localData.logo,
-            });
-
-            if (response.payload.profiles[0]?.tags?.length > 0) {
-              setSelectedTags(
-                response.payload.profiles[0]?.tags?.map((tag) => ({
-                  value: tag.id,
-                  label: tag.name,
-                  data: tag,
-                })),
-              );
+          if (response) {
+            if (!response.payload) {
+              throw new Error('No data received from API');
             }
-          } else {
-            setProspect(tempSingleleadsData[0]);
+
+            if (response.payload.profiles.length > 0) {
+              setProspect({
+                ...response.payload.profiles[0],
+                headline: localData.headline,
+                locality: localData.locality,
+                logo: localData.logo,
+              });
+
+              if (response.payload.profiles[0]?.tags?.length > 0) {
+                setSelectedTags(
+                  response.payload.profiles[0]?.tags?.map((tag) => ({
+                    value: tag.id,
+                    label: tag.name,
+                    data: tag,
+                  })),
+                );
+              }
+            } else {
+              setProspect(localData);
+            }
           }
+          setIsLoading(false);
         }
-        setIsLoading(false);
-      }
+      });
     } catch (err) {
       console.error('Error fetching prospect:', err);
       setIsLoading(false);
@@ -548,7 +369,7 @@ const SingleProfile = () => {
   };
 
   const handleEmailCopy = () => {
-    const emails = singleleadsData.map((item) => item.emails);
+    const emails = singleleadsData?.map((item) => item.emails);
     if (emails) {
       navigator.clipboard.writeText(emails);
       setIsCopied(true);
@@ -557,7 +378,7 @@ const SingleProfile = () => {
   };
 
   const handlePhoneNumberCopy = () => {
-    const phones = singleleadsData.map((item) => item.phones.phone);
+    const phones = singleleadsData?.map((item) => item.phones.phone);
     if (phones) {
       navigator.clipboard.writeText(phones);
       setIsCopied(true);
@@ -691,9 +512,9 @@ const SingleProfile = () => {
         <SingleProfileSkeleton />
       ) : (
         <>
-          {singleleadsData.map((singleProfile, index) => (
+          {singleleadsData?.map((singleProfile, index) => (
             <>
-              {/* <Header /> */}
+              <Header />
               <div
                 key={`user-profile ${index + 1}`}
                 className="single-profile-container"
@@ -758,7 +579,7 @@ const SingleProfile = () => {
                             height: '32px',
                           }}
                         >
-                          {/* <NogenderAvatar /> */}
+                          <NogenderAvatar />
                         </div>
                       )}
 
@@ -772,12 +593,13 @@ const SingleProfile = () => {
                             lineHeight: '20px',
                           }}
                         >
-                          {/* Piyush patel */}
                           {singleProfile?.name || ''}
                         </span>
                       )}
                       {/* Create enum which will be provided by backend and replace here in status */}
-                      <ContactStatusTag status="bounced" />
+                      {singleProfile?.isRevealed && (
+                        <ContactStatusTag status="Active" />
+                      )}
                     </div>
 
                     <div
@@ -1177,7 +999,7 @@ const SingleProfile = () => {
                       }}
                     >
                       {/* Emails */}
-                      {singleProfile.emails.map((email) => (
+                      {singleProfile?.emails?.map((email) => (
                         <div
                           key={email.email}
                           className="email"
@@ -1550,9 +1372,7 @@ const SingleProfile = () => {
                           handleOnSave={handleOnSave}
                           recentSequence={singleProfile?.sequences}
                           isExpanded={expandedSection === 'sequence'}
-                          setIsExpanded={() =>
-                            handleExpandedSection('sequence')
-                          }
+                          setIsExpanded={handleExpandedSection}
                           btnLoadingStatus={btnLoadingStatus.addToSequence}
                         />
                       </div>
@@ -1563,7 +1383,7 @@ const SingleProfile = () => {
                             selectedTags={selectedTags}
                             setSelectedTags={setSelectedTags}
                             isExpanded={expandedSection === 'tags'}
-                            setIsExpanded={() => handleExpandedSection('tags')}
+                            setIsExpanded={handleExpandedSection}
                             saveTags={saveTags}
                             btnLoadingStatus={btnLoadingStatus.saveTags}
                           />

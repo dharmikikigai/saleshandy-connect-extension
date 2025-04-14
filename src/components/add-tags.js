@@ -130,7 +130,7 @@ const AddTagsSelect = ({
         justifyContent: 'space-between',
         alignItems: 'center',
       }}
-      onClick={() => setIsExpanded((prev) => !prev)}
+      onClick={() => setIsExpanded('tags')}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <svg
@@ -234,7 +234,7 @@ const AddTagsSelect = ({
               color: '#1f2937',
               cursor: 'pointer',
             }}
-            onClick={() => setIsExpanded(true)}
+            onClick={() => setIsExpanded('tags')}
           >
             +{selectedTags.length - 3}
           </div>
