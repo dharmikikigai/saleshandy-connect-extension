@@ -13,16 +13,19 @@ async function getAndSetAuthToken() {
   );
 }
 
-async function fetchAndSetActiveUrl(url) {
-  if (url) {
-    chrome.storage.local.set({ activeUrl: url });
-  }
+async function fetchAndSetActiveUrl() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const currentTab = tabs[0];
+    if (currentTab) {
+      chrome.storage.local.set({ activeUrl: currentTab.url });
+    }
+  });
 }
 
 async function onBeaconClickActivity(tab) {
   await getAndSetAuthToken();
 
-  await fetchAndSetActiveUrl(tab?.url);
+  await fetchAndSetActiveUrl();
 
   chrome.tabs.sendMessage(tab.id, { method: 'injectYTVideo' });
   chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
@@ -39,7 +42,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 
     if (tab.status === 'complete') {
       await getAndSetAuthToken();
-      await fetchAndSetActiveUrl(tab?.url);
+      await fetchAndSetActiveUrl();
 
       if (currentUrl.includes('linkedin.com')) {
         chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
@@ -56,7 +59,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
   if (changeInfo.status === 'complete') {
     await getAndSetAuthToken();
-    await fetchAndSetActiveUrl(tab?.url);
+    await fetchAndSetActiveUrl();
 
     if (currentUrl.includes('linkedin.com')) {
       chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
@@ -69,7 +72,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
 async function openLinkedinOnInstall() {
   chrome.tabs.create(
-    { url: 'https://www.linkedin.com/in/piyushnp/' },
+    { url: 'https://www.linkedin.com/in/dhruvikigai/' },
     (newTab) => {
       // Wait for the tab to finish loading before sending a message
       chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {

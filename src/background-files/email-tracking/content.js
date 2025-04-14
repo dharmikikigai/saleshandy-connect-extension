@@ -23,6 +23,7 @@ function injectFloatingWindow() {
   modalDiv.style.flexDirection = 'column';
   modalDiv.style.alignItems = 'center';
   modalDiv.style.justifyContent = 'flex-start';
+  modalDiv.allow = 'clipboard-write';
 
   document.body.appendChild(modalDiv);
 }
