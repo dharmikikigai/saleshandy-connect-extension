@@ -81,6 +81,15 @@ const ProspectList = () => {
     save: false,
   });
 
+  // Add pagination state for saved leads
+  const [savedLeadsPagination, setSavedLeadsPagination] = useState({
+    start: 1,
+    next: 10,
+    total: 0,
+    hasMore: false,
+    isLoading: false,
+  });
+
   const [isPollingEnabled, setIsPollingEnabled] = useState(false);
   const [isFirstPollRequest, setIsFirstPollRequest] = useState(true);
   const pollingAttemptsRef = useRef(0);
@@ -365,26 +374,76 @@ const ProspectList = () => {
     }
   };
 
-  const getSavedLeads = async () => {
+  const getSavedLeads = async (isLoadMore = false) => {
     try {
+      // If loading more, use the next value from pagination
+      const start = isLoadMore ? savedLeadsPagination.next : 1;
+
+      // Set loading state
+      if (isLoadMore) {
+        setSavedLeadsPagination((prev) => ({ ...prev, isLoading: true }));
+      }
+
       const payload = {
-        start: 1,
-        take: 25,
+        start,
+        take: 10,
       };
+
       const response = await prospectsInstance.getSavedLeads(payload);
+
       if (
         response &&
         response.payload &&
         response.payload.profiles &&
         response.payload.profiles.length > 0
       ) {
-        setSavedProspects(response.payload.profiles);
+        // If loading more, append to existing prospects
+        if (isLoadMore) {
+          setSavedProspects((prev) => [...prev, ...response.payload.profiles]);
+        } else {
+          setSavedProspects(response.payload.profiles);
+        }
       }
-      if (response?.payload?.pagination?.total) {
-        setSavedCount(response?.payload?.pagination?.total);
+
+      // Update pagination state
+      if (response?.payload?.pagination) {
+        const { total, next } = response.payload.pagination;
+        setSavedCount(total);
+
+        setSavedLeadsPagination((prev) => ({
+          ...prev,
+          start,
+          next,
+          total,
+          hasMore: next <= total,
+          isLoading: false,
+        }));
       }
     } catch (e) {
       console.log('error', e);
+      setSavedLeadsPagination((prev) => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  // Function to handle scroll and load more saved leads
+  const handleScroll = () => {
+    console.log('activeTab', activeTab);
+    if (activeTab !== 'saved') return;
+
+    const container = document.getElementById('prospect-list-items-container');
+    if (!container) return;
+
+    console.log('container', container);
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const scrollThreshold = 100; // pixels from bottom to trigger load
+
+    // Check if we're near the bottom and not already loading
+    if (
+      scrollHeight - scrollTop - clientHeight < scrollThreshold &&
+      !savedLeadsPagination.isLoading &&
+      savedLeadsPagination.hasMore
+    ) {
+      getSavedLeads(true);
     }
   };
 
@@ -498,6 +557,20 @@ const ProspectList = () => {
       if (response && response.payload && response.payload.profiles) {
         setSavedProspects(response.payload.profiles);
         setIsFilterApplied(true);
+
+        // Reset pagination state for filtered results
+        if (response?.payload?.pagination) {
+          const { total, next } = response.payload.pagination;
+          setSavedCount(total);
+
+          setSavedLeadsPagination({
+            start: 1,
+            next,
+            total,
+            hasMore: next <= total,
+            isLoading: false,
+          });
+        }
       }
       if (response?.payload?.pagination?.total) {
         setSavedCount(response?.payload?.pagination?.total);
@@ -517,6 +590,14 @@ const ProspectList = () => {
     setSavedProspects([]);
     setSavedCount(0);
     setIsFilterApplied(false);
+    // Reset pagination state
+    setSavedLeadsPagination({
+      start: 1,
+      next: 10,
+      total: 0,
+      hasMore: false,
+      isLoading: false,
+    });
     getSavedLeads();
   };
 
@@ -538,6 +619,20 @@ const ProspectList = () => {
       document.body.classList.remove('modal-open');
     };
   }, [showTagsModal]);
+
+  // Add scroll event listener for infinite scroll
+  useEffect(() => {
+    const container = document.getElementById('prospect-list-items-container');
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [activeTab, savedLeadsPagination.isLoading, savedLeadsPagination.hasMore]);
 
   useEffect(() => {
     let intervalId = null;
@@ -754,6 +849,19 @@ const ProspectList = () => {
     );
   };
 
+  // Add a function to render the loading spinner at the bottom of the list
+  const renderLoadingSpinner = () => {
+    if (activeTab === 'saved' && savedLeadsPagination.isLoading) {
+      return (
+        <div className="loading-spinner-container">
+          <div className="spinner" />
+          <span>Loading more prospects...</span>
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (loading) {
     // skeleton ui
     return (
@@ -871,7 +979,10 @@ const ProspectList = () => {
                 <div className="action-divider" />
                 {getActionButtons()}
               </div>
-              <div className="prospect-list-items-container">
+              <div
+                id="prospect-list-items-container"
+                className="prospect-list-items-container"
+              >
                 {visibleProspects.map((prospect, index) => (
                   <div className="prospect-item-container" key={index}>
                     <div
@@ -1030,6 +1141,8 @@ const ProspectList = () => {
                     )}
                   </div>
                 ))}
+                {/* Add loading spinner at the bottom of the list */}
+                {renderLoadingSpinner()}
               </div>
             </>
           )}
