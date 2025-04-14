@@ -215,7 +215,6 @@ const AddToSequenceModal = ({
     try {
       setIsLoadingTags(true);
       const res = await prospectsInstance.getTags();
-      console.log('Tags response:', res);
       if (
         res &&
         res.payload &&
@@ -228,13 +227,9 @@ const AddToSequenceModal = ({
           data: tag,
         }));
         setTagOptions(tags);
-      } else {
-        console.log('No tags found or empty response, using fallback tags');
-        // Keep using fallback tags if API returns empty or invalid data
       }
     } catch (error) {
       console.error('Error fetching tags:', error);
-      // Keep using fallback tags if API call fails
     } finally {
       setIsLoadingTags(false);
     }
@@ -243,7 +238,6 @@ const AddToSequenceModal = ({
   const fetchAgencyClients = async () => {
     try {
       const res = await prospectsInstance.getAgencyClients();
-      console.log('Agency clients response:', res);
       if (
         res &&
         res.payload &&
@@ -266,7 +260,6 @@ const AddToSequenceModal = ({
     try {
       setIsLoadingSequences(true);
       const res = await prospectsInstance.getSequences();
-      console.log('Sequences response:', res);
       if (
         res &&
         res.payload &&
@@ -300,12 +293,7 @@ const AddToSequenceModal = ({
           },
           ...remainingSequences,
         ];
-        console.log('Custom sequence options:', customSequenceOptions);
         setSequenceOptions(customSequenceOptions);
-      } else {
-        console.log(
-          'No sequences found or empty response, using fallback sequences',
-        );
       }
     } catch (error) {
       console.error('Error fetching sequences:', error);
@@ -317,7 +305,6 @@ const AddToSequenceModal = ({
   const fetchClientSequences = async () => {
     try {
       const res = await prospectsInstance.getSequences(selectedClient?.value);
-      console.log('Client sequences response:', res);
       if (
         res &&
         res.payload &&
@@ -351,12 +338,7 @@ const AddToSequenceModal = ({
           },
           ...remainingSequences,
         ];
-        console.log('Custom sequence options:', customSequenceOptions);
         setClientSequences(customSequenceOptions);
-      } else {
-        console.log(
-          'No sequences found or empty response, using fallback sequences',
-        );
       }
     } catch (error) {
       console.error('Error fetching sequences:', error);

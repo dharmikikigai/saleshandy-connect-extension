@@ -216,7 +216,6 @@ const SingleProfile = () => {
   const [isRevealing, setIsRevealing] = useState(false);
   const [isPollingEnabled, setIsPollingEnabled] = useState(false);
   const pollingAttemptsRef = useRef(0);
-  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const [tagOptions, setTagOptions] = useState([]);
@@ -241,7 +240,6 @@ const SingleProfile = () => {
       if (localData && localData.sourceId2) {
         const linkedinUrl = `https://www.linkedin.com/in/${localData.sourceId2}`;
         setIsLoading(true);
-        setError(null);
 
         const payload = {
           start: 1,
@@ -251,7 +249,6 @@ const SingleProfile = () => {
 
         const response = await prospectsInstance.getProspects(payload);
 
-        console.log('response', response);
         if (response) {
           if (!response.payload) {
             throw new Error('No data received from API');
@@ -282,7 +279,6 @@ const SingleProfile = () => {
       }
     } catch (err) {
       console.error('Error fetching prospect:', err);
-      setError(err.message || 'Failed to fetch prospect data');
       setIsLoading(false);
     }
   };
@@ -290,15 +286,12 @@ const SingleProfile = () => {
   const revealProspect = async (leadRevealType) => {
     try {
       setIsRevealing(true);
-      setError(null);
       const payload = {
         leadId: prospect.id,
         revealType: leadRevealType,
       };
 
       const response = await prospectsInstance.revealProspect(payload);
-
-      console.log('response', response);
 
       if (response) {
         const { message, status } = response.payload;
@@ -318,20 +311,17 @@ const SingleProfile = () => {
       }
     } catch (err) {
       console.error('Error revealing prospect:', err);
-      setError(err.message || 'Failed to reveal prospect');
       setIsRevealing(false);
     }
   };
 
   const handleFetchLead = async () => {
     const allRevealingProspectIds = [prospect.id];
-    console.log('allRevealingProspectIds', allRevealingProspectIds);
     const payload = {
       leadIds: allRevealingProspectIds,
       revealType: revealType || 'email',
       isBulkAction: true,
     };
-    console.log('payload', payload);
     const response = await prospectsInstance.leadStatus(payload);
     if (
       response &&
@@ -353,7 +343,6 @@ const SingleProfile = () => {
   const fetchTags = async () => {
     try {
       const res = await prospectsInstance.getTags();
-      console.log('Tags response:', res);
       if (
         res &&
         res.payload &&
@@ -379,7 +368,6 @@ const SingleProfile = () => {
   const fetchAgencyClients = async () => {
     try {
       const res = await prospectsInstance.getAgencyClients();
-      console.log('Agency clients response:', res);
       if (
         res &&
         res.payload &&
@@ -401,7 +389,6 @@ const SingleProfile = () => {
   const fetchSequences = async () => {
     try {
       const res = await prospectsInstance.getSequences();
-      console.log('Sequences response:', res);
       if (
         res &&
         res.payload &&
@@ -435,7 +422,6 @@ const SingleProfile = () => {
           },
           ...remainingSequences,
         ];
-        console.log('Custom sequence options:', customSequenceOptions);
         setSequenceOptions(customSequenceOptions);
       } else {
         console.log(
@@ -450,7 +436,6 @@ const SingleProfile = () => {
   const fetchClientSequences = async () => {
     try {
       const res = await prospectsInstance.getSequences(selectedClient?.value);
-      console.log('Client sequences response:', res);
       if (
         res &&
         res.payload &&
@@ -484,7 +469,6 @@ const SingleProfile = () => {
           },
           ...remainingSequences,
         ];
-        console.log('Custom sequence options:', customSequenceOptions);
         setClientSequences(customSequenceOptions);
       } else {
         console.log(
@@ -498,7 +482,6 @@ const SingleProfile = () => {
 
   const handleAddToSequence = async (data) => {
     try {
-      console.log('handleAddToSequence', data);
       const payload = {
         leadId: prospect.id,
         revealType: 'email',
@@ -507,7 +490,6 @@ const SingleProfile = () => {
         sequenceId: data.sequenceId,
         stepId: data.stepId,
       };
-      console.log('payload', payload);
 
       const response = await prospectsInstance.revealProspect(payload);
 
@@ -529,7 +511,6 @@ const SingleProfile = () => {
       }
     } catch (err) {
       console.error('Error revealing prospect:', err);
-      setError(err.message || 'Failed to reveal prospect');
       setIsRevealing(false);
     } finally {
       setBtnLoadingStatus({
@@ -608,7 +589,6 @@ const SingleProfile = () => {
       saveTags: true,
     });
     try {
-      console.log('saveTags');
       const tagIds = [];
       const newTags = [];
 
@@ -626,7 +606,7 @@ const SingleProfile = () => {
         newTags,
       };
       const response = await prospectsInstance.saveTags(payload);
-      console.log('response', response);
+      console.log('success', response);
     } catch (err) {
       console.error('Error saving tags:', err);
     } finally {
@@ -668,7 +648,6 @@ const SingleProfile = () => {
   }, [selectedClient]);
 
   useEffect(() => {
-    console.log('isPollingEnabled', isPollingEnabled);
     let intervalId = null;
 
     if (isPollingEnabled) {
@@ -701,8 +680,6 @@ const SingleProfile = () => {
       pollingAttemptsRef.current = 0;
     }
   }, [isPollingEnabled]);
-
-  console.log('error', error);
 
   if (singleleadsData.length === 0) {
     return <SingleProfileSkeleton />;

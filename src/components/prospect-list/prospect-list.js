@@ -227,7 +227,6 @@ const ProspectList = () => {
   };
 
   const handleAddToSequence = async (data) => {
-    console.log('handleAddToSequence', data);
     const payload = {
       leadIds: selectedProspects,
       revealType: 'email',
@@ -236,7 +235,6 @@ const ProspectList = () => {
       sequenceId: data.sequenceId,
       stepId: data.stepId,
     };
-    console.log('payload', payload);
     setRevealProspectLoading({
       ignore: false,
       apply: false,
@@ -255,7 +253,6 @@ const ProspectList = () => {
           ...revealingProspects,
           ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
         };
-        console.log('newRevealingProspects', newRevealingProspects);
         setRevealingProspects(newRevealingProspects);
         setIsPollingEnabled(true);
         // }
@@ -360,7 +357,6 @@ const ProspectList = () => {
         take: 10,
       };
       const response = await prospectsInstance.getSavedLeads(payload);
-      console.log('response', response);
       if (
         response &&
         response.payload &&
