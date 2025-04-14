@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Switch } from '@saleshandy/designs';
 import mailboxInstance from '../config/server/tracker/mailbox';
-// import Gmail from '../assets/icons/gmail.svg';
+import Gmail from '../assets/icons/gmail.svg';
 
 const handleClose = () => {
   window.close();
@@ -20,7 +20,7 @@ const Popup = () => {
   const [newMailboxId, setMailboxId] = useState();
   const [mailboxEmail, setMailboxEmail] = useState('');
   const [newUserId, setUserId] = useState();
-  // const [isMessageVisible, setIsMessageVisible] = useState(false);
+  const [isMessageVisible, setIsMessageVisible] = useState(false);
 
   const fetchSetting = () => {
     chrome.storage.local.get(['mailboxEmail'], async (request) => {
@@ -100,7 +100,18 @@ const Popup = () => {
     setDesktopNotification(!desktopNotification);
   };
 
+  const pageCheck = () => {
+    chrome.storage.local.get(['activeUrl'], (result) => {
+      const activeUrl = result?.activeUrl;
+
+      if (activeUrl?.includes('mail.google.com')) {
+        setIsMessageVisible(true);
+      }
+    });
+  };
+
   useEffect(() => {
+    pageCheck();
     fetchSetting();
     fetchNotificationSetting();
   }, []);
@@ -910,7 +921,7 @@ const Popup = () => {
                     gap: '8px',
                   }}
                 >
-                  {isMessageVisible && (
+                  {isMessageVisible && mailboxSetting && (
                     <div
                       style={{
                         display: 'flex',
@@ -959,7 +970,7 @@ const Popup = () => {
                         }}
                       >
                         <span>
-                          Email tracking for dharmik@saleshandy.com is turned on
+                          Email tracking for {mailboxEmail} is turned on
                         </span>
                       </div>
                     </div>

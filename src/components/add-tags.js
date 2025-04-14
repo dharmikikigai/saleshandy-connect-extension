@@ -197,6 +197,9 @@ const AddTagsSelect = ({
           display: 'flex',
           flexWrap: 'wrap',
           gap: '8px',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '16px',
         }}
       >
         {/* {selectedTags.slice(0, 3).map((tag) => (
