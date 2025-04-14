@@ -17,10 +17,12 @@ import checkbox from '../../assets/icons/checkbox.svg';
 import checkboxChecked from '../../assets/icons/checkboxChecked.svg';
 import circleCheck from '../../assets/icons/circleCheck.svg';
 import tagIcon from '../../assets/icons/tag.svg';
+import copy from '../../assets/icons/copy.svg';
 
 import SkeletonLoading from '../skeleton-loading/skeleton-loading';
 import prospectsInstance from '../../config/server/finder/prospects';
 import AddTagsModal from './add-tags';
+import AddToSequenceModal from './add-to-sequence-modal';
 import Header from '../header';
 
 chrome.runtime.onMessage.addListener((request) => {
@@ -59,7 +61,7 @@ const MAX_POLLING_LIMIT = 20;
 const ProspectList = () => {
   // const [isLoading, setIsLoading] = useState(true);
   const [prospects, setProspects] = useState([]);
-
+  const [savedProspects, setSavedProspects] = useState([]);
   const [activeTab, setActiveTab] = useState('leads');
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [selectedProspects, setSelectedProspects] = useState([]);
@@ -70,11 +72,16 @@ const ProspectList = () => {
   const [revealProspectLoading, setRevealProspectLoading] = useState({
     ignore: false,
     apply: false,
+    save: false,
   });
 
   const [isPollingEnabled, setIsPollingEnabled] = useState(false);
   const [isFirstPollRequest, setIsFirstPollRequest] = useState(true);
   const pollingAttemptsRef = useRef(0);
+
+  const [showAddToSequenceModal, setShowAddToSequenceModal] = useState(false);
+
+  const [isAgency, setIsAgency] = useState(false);
 
   const selectableProspects = prospects.filter(
     (prospect) => prospect.id && !prospect.isRevealing,
@@ -153,6 +160,7 @@ const ProspectList = () => {
     setRevealProspectLoading({
       ignore: false,
       apply: true,
+      save: false,
     });
     const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
     if (bulkRevealRes) {
@@ -173,6 +181,7 @@ const ProspectList = () => {
     setRevealProspectLoading({
       ignore: false,
       apply: false,
+      save: false,
     });
     setSelectedProspects([]);
     setSelectedTags([]);
@@ -187,6 +196,7 @@ const ProspectList = () => {
     setRevealProspectLoading({
       ignore: true,
       apply: false,
+      save: false,
     });
     const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
     if (bulkRevealRes) {
@@ -209,10 +219,57 @@ const ProspectList = () => {
     setRevealProspectLoading({
       ignore: false,
       apply: false,
+      save: false,
     });
     setSelectedProspects([]);
     setSelectedTags([]);
     setShowTagsModal(false);
+  };
+
+  const handleAddToSequence = async (data) => {
+    const payload = {
+      leadIds: selectedProspects,
+      revealType: 'email',
+      tagIds: data.tagIds,
+      newTags: data.newTags,
+      sequenceId: data.sequenceId,
+      stepId: data.stepId,
+    };
+    setRevealProspectLoading({
+      ignore: false,
+      apply: false,
+      save: true,
+    });
+    const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
+    if (bulkRevealRes) {
+      const { message, status } = bulkRevealRes.payload;
+      if (status === 0) {
+        console.log('error', message);
+      } else if (status === 2) {
+        console.log('warning', message);
+      } else {
+        // if (bulkRevealRes?.payload?.shouldPoll) {
+        const newRevealingProspects = {
+          ...revealingProspects,
+          ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+        };
+        setRevealingProspects(newRevealingProspects);
+        setIsPollingEnabled(true);
+        // }
+        console.log(
+          'success',
+          message ||
+            'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
+        );
+      }
+    }
+    setRevealProspectLoading({
+      ignore: false,
+      apply: false,
+      save: false,
+    });
+    setSelectedProspects([]);
+    setShowAddToSequenceModal(false);
   };
 
   const handleViewContact = (type) => {
@@ -293,8 +350,34 @@ const ProspectList = () => {
     }
   };
 
+  const getSavedLeads = async () => {
+    try {
+      const payload = {
+        start: 1,
+        take: 10,
+      };
+      const response = await prospectsInstance.getSavedLeads(payload);
+      if (
+        response &&
+        response.payload &&
+        response.payload.profiles &&
+        response.payload.profiles.length > 0
+      ) {
+        setSavedProspects(response.payload.profiles);
+      }
+    } catch (e) {
+      console.log('error', e);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator?.clipboard?.writeText(text);
+  };
+
   useEffect(() => {
     fetchProspects();
+    getSavedLeads();
+    setIsAgency(true);
     // setMetaData();  TODO for header
   }, []);
 
@@ -475,7 +558,7 @@ const ProspectList = () => {
       variant="outline"
       className={isExpanded ? 'action-button' : 'action-icon-button'}
       disabled={selectedProspects.length === 0}
-      onClick={() => handleViewContact('emailphone')}
+      onClick={() => setShowAddToSequenceModal(true)}
     >
       <img src={send} alt="send" />
       {isExpanded ? 'Sequence' : ''}
@@ -519,6 +602,8 @@ const ProspectList = () => {
     );
   };
 
+  const visibleProspects = activeTab === 'leads' ? prospects : savedProspects;
+
   if (loading) {
     // skeleton ui
     return (
@@ -538,7 +623,7 @@ const ProspectList = () => {
       <div className="prospect-list-container">
         <Header />
         <div className="prospect-tabs-container" id="prospect-list-container">
-          {prospects.length === 0 ? (
+          {visibleProspects.length === 0 ? (
             <>
               {getProspectTabsSkeleton()}
               <div className="prospect-tab-actions-skeleton" />
@@ -690,6 +775,12 @@ const ProspectList = () => {
                                     {e.email}
                                   </span>
                                   <img src={circleCheck} alt="circle-check" />
+                                  <div
+                                    className="copy-icon"
+                                    onClick={() => copyToClipboard(e.email)}
+                                  >
+                                    <img src={copy} alt="copy" />
+                                  </div>
                                 </div>
                               ))
                             : prospect.emails.map((e, i) => (
@@ -718,10 +809,27 @@ const ProspectList = () => {
                             >
                               <img src={phoneSignal} alt="phone-signal" />
                               <span>
-                                {phone?.number?.slice(0, 3)}
-                                <span className="list-dots">
-                                  &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                </span>
+                                {phone?.number?.includes('X') ? (
+                                  <>
+                                    {phone?.number?.slice(0, 3)}
+                                    <span className="list-dots">
+                                      &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                    </span>
+                                    {phone?.number?.slice(3)}
+                                  </>
+                                ) : (
+                                  <>
+                                    {phone?.number}
+                                    <div
+                                      className="copy-icon"
+                                      onClick={() =>
+                                        copyToClipboard(phone?.number)
+                                      }
+                                    >
+                                      <img src={copy} alt="copy" />
+                                    </div>
+                                  </>
+                                )}
                               </span>
                             </div>
                           ))}
@@ -744,6 +852,14 @@ const ProspectList = () => {
         setSelectedTags={setSelectedTags}
         onApplyTags={handleApplyTags}
         onIgnoreTags={handleIgnoreTags}
+        isLoading={revealProspectLoading}
+      />
+
+      <AddToSequenceModal
+        showModal={showAddToSequenceModal}
+        onClose={() => setShowAddToSequenceModal(false)}
+        isAgency={isAgency}
+        handleAddToSequence={handleAddToSequence}
         isLoading={revealProspectLoading}
       />
     </>

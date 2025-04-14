@@ -63,6 +63,15 @@ class Prospects extends Server {
     }
   }
 
+  // to reveal single prospect
+  async revealProspect(payload) {
+    try {
+      return (await this.req.post(URLs.revealProspect.path(), payload)).data;
+    } catch (e) {
+      console.log(URLs.revealProspect.error, e);
+    }
+  }
+
   // to get the lead status
   async leadStatus(payload) {
     try {
@@ -77,6 +86,47 @@ class Prospects extends Server {
       return (await this.req.get(URLs.getTags.path())).data;
     } catch (e) {
       console.log(URLs.getTags.error, e);
+    }
+  }
+
+  async getSequences(clientIds) {
+    try {
+      return (await this.req.get(URLs.getSequences.path(clientIds))).data;
+    } catch (e) {
+      console.log(URLs.getSequences.error, e);
+    }
+  }
+
+  async getAgencyClients() {
+    try {
+      return (await this.req.get(URLs.getAgencyClients.path())).data;
+    } catch (e) {
+      console.log(URLs.getAgencyClients.error, e);
+    }
+  }
+
+  async saveTags(payload) {
+    try {
+      return (await this.req.post(URLs.saveTags.path(), payload)).data;
+    } catch (e) {
+      console.log(URLs.saveTags.error, e);
+    }
+  }
+
+  async saveTagsForBulkLeads(payload) {
+    try {
+      return (await this.req.post(URLs.saveTagsForBulkLeads.path(), payload))
+        .data;
+    } catch (e) {
+      console.log(URLs.saveTagsForBulkLeads.error, e);
+    }
+  }
+
+  async getSavedLeads(payload) {
+    try {
+      return (await this.req.get(URLs.getSavedLeads.path(payload))).data;
+    } catch (e) {
+      console.log(URLs.getSavedLeads.error, e);
     }
   }
 }
