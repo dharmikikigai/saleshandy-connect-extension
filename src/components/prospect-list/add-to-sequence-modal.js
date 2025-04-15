@@ -20,51 +20,6 @@ const getStatusDotColor = (status) => {
   }
 };
 
-// const sequenceOptions = [
-//   {
-//     label: 'Recent Sequences',
-//     options: [
-//       { value: 'sequence_2', label: 'Another Sequence', status: 1 },
-//       { value: 'sequence_3', label: 'Sequence 3', status: 2 },
-//       // Add more if needed
-//     ],
-//   },
-//   {
-//     value: 'abhishek_first',
-//     label: "Abhishek's First Sequence 🚀 (Current Sequence)",
-//     status: 3,
-//   },
-//   { value: 'sequence_2', label: 'Another Sequence' },
-// ];
-
-// const clientSequenceOptions = [
-//   {
-//     value: 'abhishek_first',
-//     label: "Abhishek's First Sequence 🚀 (Current Sequence)",
-//     status: 3,
-//   },
-//   { value: 'sequence_2', label: 'Another Sequence' },
-// ];
-
-// const recentSequence = [
-//   {
-//     value: 'abhishek_first',
-//     label: "Abhishek's First Sequence",
-//   },
-//   { value: 'sequence_2', label: 'Another Sequence' },
-// ];
-
-// const stepOptions = [
-//   { value: 'step_1', label: 'Step 1: Email' },
-//   { value: 'step_2', label: 'Step 2: Follow-up' },
-// ];
-
-// const tagOptions = [
-//   { value: 'tag1', label: 'Tag 1' },
-//   { value: 'tag2', label: 'Tag 2' },
-//   { value: 'tag3', label: 'Tag 3' },
-// ];
-
 // Custom option render in sequence name dropdown
 const customOptionSequenceName = (props) => {
   const { data, innerRef, innerProps, isFocused } = props;
@@ -123,23 +78,15 @@ const customOptionSequenceName = (props) => {
 
 // Title for sequence name dropdown
 const formatGroupLabel = (data) => (
-  // const isCurrentSequenceGroup = data.label !== 'Current Sequence';
-
   <div>
-    {/* {isCurrentSequenceGroup && (
-          <div
-            style={{
-              borderTop: '1px solid #D1D5DB',
-              margin: '8px 0',
-            }}
-          />
-        )} */}
     <div
       style={{
         padding: '4px 12px',
         fontSize: '12px',
-        fontWeight: 600,
         color: '#6B7280',
+        textTransform: 'none',
+        fontWeight: '500',
+        lineHeight: '16px',
       }}
     >
       {data.label}
@@ -274,14 +221,14 @@ const AddToSequenceModal = ({
             recentSequences.push({
               value: sequence.id,
               label: sequence.title,
-              status: sequence.status,
+              status: sequence.progress,
               steps: sequence.step,
             });
           } else {
             remainingSequences.push({
               value: sequence.id,
               label: sequence.title,
-              status: sequence.status,
+              status: sequence.progress,
               steps: sequence.step,
             });
           }
@@ -319,14 +266,14 @@ const AddToSequenceModal = ({
             recentSequences.push({
               value: sequence.id,
               label: sequence.title,
-              status: sequence.status,
+              status: sequence.progress,
               steps: sequence.step,
             });
           } else {
             remainingSequences.push({
               value: sequence.id,
               label: sequence.title,
-              status: sequence.status,
+              status: sequence.progress,
               steps: sequence.step,
             });
           }
@@ -476,12 +423,13 @@ const AddToSequenceModal = ({
                       lineHeight: '16px',
                     }}
                   >
-                    Client Associated
+                    Client Associated (Optional)
                   </span>
                   <Select
                     options={clientOptions}
                     value={selectedClient}
                     onChange={setSelectedClient}
+                    isClearable
                     placeholder="Select"
                     components={{ Option: CustomOption }}
                     styles={{
@@ -546,6 +494,10 @@ const AddToSequenceModal = ({
                         fontWeight: 400,
                         lineHeight: '20px',
                         cursor: 'pointer',
+                      }),
+                      clearIndicator: (base) => ({
+                        ...base,
+                        padding: '0px',
                       }),
                     }}
                   />
@@ -665,8 +617,8 @@ const AddToSequenceModal = ({
                       fontSize: '12px',
                       fontWeight: '500',
                       color: '#9ca3af',
+                      paddingLeft: '0px',
                       // textTransform: 'uppercase',
-                      padding: '0px 16px',
                       // backgroundColor: '#f9fafb',
                     }),
                   }}

@@ -50,6 +50,7 @@ class Prospects extends Server {
       return (await this.req.post(URLs.getProspects.path(), payload)).data;
     } catch (e) {
       console.log(URLs.getProspects.error, e);
+      return e?.response?.data;
     }
   }
 
