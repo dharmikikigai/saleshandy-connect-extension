@@ -1028,7 +1028,6 @@ function BGActionDo(tab, tabId) {
                         { personInfo: person },
                         () => {},
                       );
-                      console.log('Person Info 1: ', person);
                       chrome.storage.local.set(
                         { companyLink: 'link is undefined' },
                         () => {},
@@ -1040,11 +1039,9 @@ function BGActionDo(tab, tabId) {
                         { personInfo: person },
                         () => {},
                       );
-                      console.log('Person Info 2: ', person);
                     }
                   } else {
                     chrome.storage.local.set({ personInfo: person }, () => {});
-                    console.log('Person Info 3: ', person);
 
                     chrome.storage.local.set({ companyLink: 'NA' }, () => {});
                   }

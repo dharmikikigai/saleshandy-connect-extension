@@ -118,7 +118,6 @@ const Popup = () => {
           setMailboxSetting(trackingData);
         }
       } else {
-        console.log(mailboxSetting, 'MailboxSetting');
         await mailboxInstance.updateMailboxesSetting({
           isTrackingEnabled: !mailboxSetting,
         });

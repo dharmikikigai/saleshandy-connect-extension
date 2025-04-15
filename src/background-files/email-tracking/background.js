@@ -87,7 +87,26 @@ async function openLinkedinOnInstall() {
 }
 
 chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
-  chrome.tabs.sendMessage(details.tabId, { method: 'closeDiv' });
+  fetchAndSetActiveUrl();
+  console.log('Inside change');
+
+  chrome.storage.local.remove('personInfo', () => {
+    if (chrome.runtime.lastError) {
+      console.error('Error removing authToken:', chrome.runtime.lastError);
+    } else {
+      console.log('authToken removed successfully');
+    }
+  });
+
+  chrome.storage.local.remove('bulkInfo', () => {
+    if (chrome.runtime.lastError) {
+      console.error('Error removing authToken:', chrome.runtime.lastError);
+    } else {
+      console.log('authToken removed successfully');
+    }
+  });
+
+  chrome.tabs.sendMessage(details.tabId, { method: 'pageChanged' });
 });
 
 const SOCKET_DISCONNECT_REASONS = {

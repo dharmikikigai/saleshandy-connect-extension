@@ -47,8 +47,6 @@ const Main = () => {
     chrome.storage.local.get(['authToken'], (result1) => {
       const authenticationToken = result1?.authToken;
 
-      console.log('authToken', authenticationToken);
-
       let checkFurther = true;
 
       setShowProfilePage(showProfilePageState);
@@ -133,10 +131,41 @@ const Main = () => {
     });
   };
 
-  useEffect(() => {
+  const pageRenderFunc = () => {
+    setIsSaleshandyLoggedIn(false);
+    setIsSingleViewActive(false);
+    setIsBulkPagViewActive(false);
+    setIsBulkViewActive(false);
+    setIsFeatureAvailable(false);
+    setShowProfilePage(false);
+    setIsCommonSearchScreenActive(false);
+    setIsCommonPeopleScreenActive(false);
     authCheck();
     pageCheck();
+  };
+
+  useEffect(() => {
+    pageRenderFunc();
+
+    chrome.runtime.onMessage.addListener((message) => {
+      if (message.method === 'pageChanged') {
+        console.log('Hare Krishna Hare Ramma');
+        pageRenderFunc();
+      }
+    });
   }, []);
+
+  console.log(
+    isSaleshandyLoggedIn,
+    isSingleViewActive,
+    isBulkPagViewActive,
+    isBulkViewActive,
+    isFeatureAvailable,
+    showProfilePage,
+    isCommonSearchScreenActive,
+    isCommonPeopleScreenActive,
+    'Checking the data',
+  );
 
   if (!isSaleshandyLoggedIn) {
     return <Login />;
