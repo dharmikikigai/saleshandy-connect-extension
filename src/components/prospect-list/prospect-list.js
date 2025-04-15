@@ -54,7 +54,7 @@ const CustomButton = ({
   );
 };
 
-const BULK_ACTION_TIMEOUT = 15000;
+const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
 
 const ProspectList = () => {
