@@ -421,12 +421,13 @@ const AddToSequence = ({
                       lineHeight: '16px',
                     }}
                   >
-                    Client Associated
+                    Client Associated (Optional)
                   </span>
                   <Select
                     options={clientSequenceOptions}
                     value={clientAssociatedSequenceValue}
                     onChange={ClientAssociatedSequenceOnChange}
+                    isClearable
                     placeholder="Select"
                     components={{ Option: CustomOption }}
                     styles={{
@@ -491,6 +492,10 @@ const AddToSequence = ({
                         fontWeight: 400,
                         lineHeight: '20px',
                         cursor: 'pointer',
+                      }),
+                      clearIndicator: (base) => ({
+                        ...base,
+                        padding: '0px',
                       }),
                     }}
                   />

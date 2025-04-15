@@ -99,9 +99,15 @@ export default {
 
   getSavedLeads: {
     type: REQUEST_TYPES.GET,
-    path: ({ start, take }) => {
+    path: ({ start, take, tags, createdDate }) => {
       let path = 'chrome-extension/saved-profiles';
       path += `?start=${start}&take=${take}`;
+      if (tags) {
+        path += `&tags=${tags}`;
+      }
+      if (createdDate) {
+        path += `&createdDate=${createdDate}`;
+      }
       return path;
     },
     error: 'Error in getting the saved leads',
