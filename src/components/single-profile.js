@@ -31,6 +31,7 @@ const SingleProfile = () => {
   const [selectedSequence, setSelectedSequence] = useState(null);
   const [selectedStep, setSelectedStep] = useState(null);
   const [selectedTags, setSelectedTags] = useState([]);
+  const [sequenceTags, setSequenceTags] = useState([]);
 
   // new state
   const [prospect, setProspect] = useState({});
@@ -255,14 +256,14 @@ const SingleProfile = () => {
             recentSequences.push({
               value: sequence.id,
               label: sequence.title,
-              status: sequence.status,
+              status: sequence.progress,
               steps: sequence.step,
             });
           } else {
             remainingSequences.push({
               value: sequence.id,
               label: sequence.title,
-              status: sequence.status,
+              status: sequence.progress,
               steps: sequence.step,
             });
           }
@@ -302,14 +303,14 @@ const SingleProfile = () => {
             recentSequences.push({
               value: sequence.id,
               label: sequence.title,
-              status: sequence.status,
+              status: sequence.progress,
               steps: sequence.step,
             });
           } else {
             remainingSequences.push({
               value: sequence.id,
               label: sequence.title,
-              status: sequence.status,
+              status: sequence.progress,
               steps: sequence.step,
             });
           }
@@ -376,6 +377,10 @@ const SingleProfile = () => {
         addToSequence: false,
       });
       setExpandedSection(null);
+      setSelectedClient(null);
+      setSelectedSequence(null);
+      setSelectedStep(null);
+      setSequenceTags([]);
     }
   };
 
@@ -663,9 +668,12 @@ const SingleProfile = () => {
                     </span>
                   )}
                   {/* Create enum which will be provided by backend and replace here in status */}
-                  {singleProfile?.isRevealed && (
-                    <ContactStatusTag status="Active" />
-                  )}
+                  {singleProfile?.isRevealed &&
+                    singleProfile?.prospectStatus && (
+                      <ContactStatusTag
+                        status={singleProfile?.prospectStatus?.toString()}
+                      />
+                    )}
                 </div>
 
                 <div
@@ -1434,8 +1442,8 @@ const SingleProfile = () => {
                         SelectedSequenceOnChange={setSelectedSequence}
                         selectedStepValue={selectedStep}
                         SelectedStepOnChange={setSelectedStep}
-                        selectedTagsValue={selectedTags}
-                        SelectedTagsOnChange={setSelectedTags}
+                        selectedTagsValue={sequenceTags}
+                        SelectedTagsOnChange={setSequenceTags}
                         clientSequences={clientSequences}
                         handleOnSave={handleOnSave}
                         recentSequence={singleProfile?.sequences}

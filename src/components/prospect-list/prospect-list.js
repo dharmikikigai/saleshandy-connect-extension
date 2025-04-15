@@ -30,12 +30,6 @@ import AddToSequenceModal from './add-to-sequence-modal';
 import Header from '../header';
 import ProspectFilterModal from './prospect-filter-modal';
 
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.method === 'bulk-prospect-reload') {
-    console.log('refreshProspects');
-  }
-});
-
 const CustomButton = ({
   variant,
   className,
@@ -101,7 +95,11 @@ const ProspectList = () => {
   const visibleProspects = activeTab === 'leads' ? prospects : savedProspects;
 
   const selectableProspects = visibleProspects.filter(
-    (prospect) => prospect.id && !prospect.isRevealing,
+    (prospect) =>
+      prospect.id &&
+      !prospect.isRevealing &&
+      (!prospect.isRevealed ||
+        (prospect.isRevealed && !prospect.isCreditRefunded)),
   );
 
   const isAllEmailRevealed = selectableProspects.every(
@@ -146,7 +144,7 @@ const ProspectList = () => {
 
   const fetchProspects = async () => {
     chrome.storage.local.get(['bulkInfo'], async (result) => {
-      const bulkInfo = result?.bulkInfo.people;
+      const bulkInfo = result?.bulkInfo?.people;
       if (bulkInfo && bulkInfo.length > 0) {
         const linkedinUrls = bulkInfo.map(
           (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
@@ -447,6 +445,11 @@ const ProspectList = () => {
     }
   };
 
+  const switchTabTo = (tab) => {
+    setActiveTab(tab);
+    setSelectedProspects([]);
+  };
+
   const copyToClipboard = (text) => {
     navigator.clipboard
       .writeText(text)
@@ -608,6 +611,24 @@ const ProspectList = () => {
     // setMetaData();  TODO for header
   }, []);
 
+  // Add effect to listen for local storage changes
+  useEffect(() => {
+    const handleStorageChange = (changes) => {
+      if (changes.bulkInfo) {
+        console.log('bulkInfo changed in storage, refreshing prospects');
+        fetchProspects();
+      }
+    };
+
+    // Add listener for storage changes
+    chrome.storage.onChanged.addListener(handleStorageChange);
+
+    // Clean up listener on component unmount
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
+  }, []);
+
   // Add effect to handle body scroll lock
   useEffect(() => {
     if (showTagsModal) {
@@ -727,7 +748,7 @@ const ProspectList = () => {
   );
 
   const getProspectDescription = (prospect) => {
-    if (!prospect.id || (prospect.isRevealed && prospect.emails.length === 0)) {
+    if (!prospect.id || (prospect.isRevealed && prospect.isCreditRefunded)) {
       return (
         <div className="prospect-email-unavailable">
           <img
@@ -740,11 +761,17 @@ const ProspectList = () => {
           </span>
           <div className="tooltip-container">
             <img src={alertCircle} alt="alert" />
-            <div className="custom-tooltip tooltip-bottom">
-              Email is not available your
-              <br />
-              credit is refunded
-            </div>
+            {!prospect.id ? (
+              <div className="custom-tooltip tooltip-bottom">
+                Email is not available
+              </div>
+            ) : (
+              <div className="custom-tooltip tooltip-bottom">
+                Email is not available your
+                <br />
+                credit is refunded
+              </div>
+            )}
           </div>
         </div>
       );
@@ -894,7 +921,7 @@ const ProspectList = () => {
                   className={`prospect-tab ${
                     activeTab === 'leads' ? 'active' : ''
                   }`}
-                  onClick={() => setActiveTab('leads')}
+                  onClick={() => switchTabTo('leads')}
                 >
                   <span>Leads Available</span>
                 </div>
@@ -902,7 +929,7 @@ const ProspectList = () => {
                   className={`prospect-tab saved-tab ${
                     activeTab === 'saved' ? 'active' : ''
                   }`}
-                  onClick={() => setActiveTab('saved')}
+                  onClick={() => switchTabTo('saved')}
                 >
                   <span>Saved</span>
                   <span className="prospect-saved-count"> {savedCount}</span>
@@ -997,12 +1024,18 @@ const ProspectList = () => {
                         ) : (
                           <div
                             className={`cursor-pointer ${
-                              !prospect.id ? 'checkbox-disabled' : ''
+                              !prospect.id ||
+                              (prospect.id &&
+                                prospect.isRevealed &&
+                                prospect.isCreditRefunded)
+                                ? 'checkbox-disabled'
+                                : ''
                             }`}
-                            {...(prospect.id && {
-                              onClick: () =>
-                                toggleProspectSelection(prospect.id),
-                            })}
+                            {...(prospect.id &&
+                              !prospect.isCreditRefunded && {
+                                onClick: () =>
+                                  toggleProspectSelection(prospect.id),
+                              })}
                           >
                             <img
                               src={
@@ -1039,30 +1072,32 @@ const ProspectList = () => {
                           }`}
                         >
                           <div className="prospect-name">
-                            <span>{prospect.name}</span>
-                            {prospect.id &&
-                              (prospect.emails.length > 0 ||
-                                prospect.phones.length > 0) && (
-                                <div
-                                  className="prospect-item-expand-icon cursor-pointer"
-                                  onClick={() =>
-                                    setExpendedProspect(
-                                      expendedProspect === prospect.id
-                                        ? null
-                                        : prospect.id,
-                                    )
+                            <span>{prospect?.name}</span>
+                            {(prospect?.emails?.length > 0 ||
+                              prospect?.phones?.length > 0 ||
+                              !prospect?.isRevealed) && (
+                              <div
+                                className={`prospect-item-expand-icon ${
+                                  !prospect.id ? 'disabled' : 'cursor-pointer'
+                                }`}
+                                onClick={() =>
+                                  setExpendedProspect(
+                                    expendedProspect === prospect?.id
+                                      ? null
+                                      : prospect?.id,
+                                  )
+                                }
+                              >
+                                <img
+                                  src={
+                                    expendedProspect === prospect?.id
+                                      ? chevronUp
+                                      : chevronDown
                                   }
-                                >
-                                  <img
-                                    src={
-                                      expendedProspect === prospect.id
-                                        ? chevronUp
-                                        : chevronDown
-                                    }
-                                    alt="chevron-down"
-                                  />
-                                </div>
-                              )}
+                                  alt="chevron-down"
+                                />
+                              </div>
+                            )}
                           </div>
                           {getProspectDescription(prospect)}
                         </div>

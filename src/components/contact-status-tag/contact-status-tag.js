@@ -2,64 +2,52 @@ import React from 'react';
 
 // Enum-like object for ContactStatusType
 const ContactStatusType = {
-  Active: 'active',
-  Inactive: 'inactive',
-  Failed: 'failed',
-  Replied: 'replied',
-  Bounced: 'bounced',
-  Unsubscribed: 'unsubscribed',
-  Blacklisted: 'blacklisted',
-  Paused: 'paused',
-  Finished: 'finished',
-  Completed: 'completed',
-  Waiting: 'waiting',
+  Active: 1,
+  Paused: 2,
+  Replied: 3,
+  Unsubscribed: 4,
+  Finished: 5,
+  BlackListed: 6,
+  Bounced: 7,
+  Opened: 8,
 };
 
 // Display names for each status
 const ContactStatusTypeDisplayName = {
   [ContactStatusType.Active]: 'Active',
-  [ContactStatusType.Inactive]: 'Inactive',
-  [ContactStatusType.Failed]: 'Failed',
-  [ContactStatusType.Replied]: 'Replied',
-  [ContactStatusType.Bounced]: 'Bounced',
-  [ContactStatusType.Unsubscribed]: 'Unsubscribed',
-  [ContactStatusType.Blacklisted]: 'Blacklisted',
   [ContactStatusType.Paused]: 'Paused',
+  [ContactStatusType.Replied]: 'Replied',
+  [ContactStatusType.Unsubscribed]: 'Unsubscribed',
   [ContactStatusType.Finished]: 'Finished',
-  [ContactStatusType.Completed]: 'Completed',
-  [ContactStatusType.Waiting]: 'Waiting',
+  [ContactStatusType.BlackListed]: 'Blacklisted',
+  [ContactStatusType.Bounced]: 'Bounced',
+  [ContactStatusType.Opened]: 'Opened',
 };
 
 const STATUS_STYLES = {
   [ContactStatusType.Active]: {
     backgroundColor: '#DBEAFE',
   },
-  [ContactStatusType.Inactive]: {
-    backgroundColor: '#F3f4f6',
+  [ContactStatusType.Paused]: {
+    backgroundColor: '#F3F4F6',
   },
   [ContactStatusType.Replied]: {
     backgroundColor: '#D1FAE5',
   },
-  [ContactStatusType.Bounced]: {
-    backgroundColor: '#FEE2E2',
-  },
   [ContactStatusType.Unsubscribed]: {
     backgroundColor: '#FEE2E2',
-  },
-  [ContactStatusType.Blacklisted]: {
-    backgroundColor: '#F3F4F6',
-  },
-  [ContactStatusType.Paused]: {
-    backgroundColor: '#F3F4F6',
   },
   [ContactStatusType.Finished]: {
     backgroundColor: '#EFF6FF',
   },
-  [ContactStatusType.Completed]: {
-    backgroundColor: '#E0E7FF',
+  [ContactStatusType.BlackListed]: {
+    backgroundColor: '#F3F4F6',
   },
-  [ContactStatusType.Waiting]: {
-    backgroundColor: '#FFEDD5',
+  [ContactStatusType.Bounced]: {
+    backgroundColor: '#FEE2E2',
+  },
+  [ContactStatusType.Opened]: {
+    backgroundColor: '#E0E7FF',
   },
 };
 

@@ -293,7 +293,7 @@ input[type='checkbox'] {
 }
 
 .prospect-list-items-container {
-  height: 528px;
+  height: 78vh;
   overflow-y: auto;
   padding-top: 4px;
 }
@@ -368,7 +368,7 @@ input[type='checkbox'] {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 100%;
+  width: 224px;
 }
 
 .prospect-item-details-unavailable {
@@ -448,6 +448,12 @@ input[type='checkbox'] {
 .prospect-item-expand-icon {
   border-radius: 2px;
   background: #fff;
+  margin-left: auto;
+}
+
+.prospect-item-expand-icon.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .prospect-item-expanded {
