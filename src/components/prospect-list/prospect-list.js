@@ -155,6 +155,9 @@ const ProspectList = () => {
           link: linkedinUrls,
         };
         const response = await prospectsInstance.getProspects(payload);
+        chrome.runtime.sendMessage({
+          method: 'meta-call',
+        });
         setProspectsData(response, bulkInfo);
       }
     });
@@ -358,6 +361,9 @@ const ProspectList = () => {
         link: linkedinUrls,
       };
       const response = await prospectsInstance.getProspects(payload);
+      chrome.runtime.sendMessage({
+        method: 'meta-call',
+      });
       setRevealingProspects({});
       const updatedProspects = [...prospects];
       response.payload.profiles.forEach((profile) => {

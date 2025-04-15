@@ -74,6 +74,10 @@ const SingleProfile = () => {
 
           const response = await prospectsInstance.getProspects(payload);
 
+          chrome.runtime.sendMessage({
+            method: 'meta-call',
+          });
+
           if (response) {
             if (!response.payload) {
               throw new Error('No data received from API');

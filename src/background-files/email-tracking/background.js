@@ -297,6 +297,12 @@ chrome.runtime.onMessage.addListener((message) => {
     });
   }
 
+  if (message.method === 'meta-call') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0].id;
+      chrome.tabs.sendMessage(tabId, { method: 'meta-call-cs' });
+    });
+  }
   if (message.method === 'socketIo') {
     const { data } = message;
     if (data) {
