@@ -33,6 +33,7 @@ import Header from '../header';
 import ProspectFilterModal from './prospect-filter-modal';
 import NoProspectFound from './no-prospect-found';
 import RateLimitReached from '../rate-limit-reached';
+import mailboxInstance from '../../config/server/tracker/mailbox';
 
 const CustomButton = ({
   variant,
@@ -58,7 +59,7 @@ const CustomButton = ({
   );
 };
 
-const BULK_ACTION_TIMEOUT = 15000;
+const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
 
 const ProspectList = () => {
@@ -765,6 +766,14 @@ const ProspectList = () => {
     }
   }, [isPollingEnabled, revealingProspects]);
 
+  const metaCall = async () => {
+    const metaData = (await mailboxInstance.getMetaData())?.payload;
+
+    if (metaData) {
+      chrome.storage.local.set({ saleshandyMetaData: metaData });
+    }
+  };
+
   // Separate useEffect for handling polling completion
   useEffect(() => {
     try {
@@ -773,6 +782,7 @@ const ProspectList = () => {
         refreshProspects();
         setIsFirstPollRequest(true);
         pollingAttemptsRef.current = 0;
+        metaCall();
       }
     } catch (error) {
       console.error('Error in polling completion useEffect:', error);

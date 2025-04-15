@@ -17,6 +17,8 @@ const Profile = () => {
   const [newMailboxId, setMailboxId] = useState();
   const [mailboxEmail, setMailboxEmail] = useState('');
   const [newUserId, setUserId] = useState();
+  const [mailboxList, setMailboxList] = useState([]);
+  const [emailTrackingSentence, setEmailTrackingSentence] = useState('');
 
   const handledLogout = () => {
     chrome.storage.local.set({ logoutTriggered: 'true' });
@@ -55,53 +57,111 @@ const Profile = () => {
   };
 
   const fetchSetting = () => {
-    chrome.storage.local.get(['mailboxEmail'], async (request) => {
-      if (request.mailboxEmail) {
-        const { mailboxId, isTrackingEnabled, userId } = (
-          await mailboxInstance.fetchingMailboxSetting({
-            email: request.mailboxEmail,
-          })
-        ).payload;
+    chrome.storage.local.get(['activeUrl'], async (result) => {
+      const activeUrl = result?.activeUrl;
+      if (activeUrl?.includes('mail.google.com')) {
+        chrome.storage.local.get(['mailboxEmail'], async (request) => {
+          if (request.mailboxEmail) {
+            const { mailboxId, isTrackingEnabled, userId } = (
+              await mailboxInstance.fetchingMailboxSetting({
+                email: request.mailboxEmail,
+              })
+            ).payload;
 
-        chrome.storage.local.set({
-          [request.mailboxEmail]: { mailboxId, isTrackingEnabled, userId },
+            chrome.storage.local.set({
+              [request.mailboxEmail]: { mailboxId, isTrackingEnabled, userId },
+            });
+
+            setMailboxSetting(isTrackingEnabled);
+            setMailboxId(mailboxId);
+            setMailboxEmail(request.mailboxEmail);
+            setUserId(userId);
+          }
         });
+        setEmailTrackingSentence(
+          `Email tracking for ${request.mailboxEmail} is turned on`,
+        );
+      } else {
+        const mailBoxes = (await mailboxInstance.getMailboxesSetting())
+          ?.payload;
 
-        setMailboxSetting(isTrackingEnabled);
-        setMailboxId(mailboxId);
-        setMailboxEmail(request.mailboxEmail);
-        setUserId(userId);
+        if (mailBoxes?.length) {
+          const anyTrackingEnabled = mailBoxes.filter(
+            (x) => x.isTrackingEnabled,
+          );
+
+          if (anyTrackingEnabled?.length) {
+            const trackingEmails = anyTrackingEnabled.map((item) => item.email);
+
+            setMailboxSetting(true);
+            setUserId(anyTrackingEnabled[0].userId);
+            setMailboxList(trackingEmails);
+
+            let sentence;
+
+            if (trackingEmails.length === 1) {
+              sentence = `Email tracking is turned on for ${trackingEmails[0]}`;
+            } else if (trackingEmails.length === 2) {
+              sentence = `Email tracking is turned on for ${trackingEmails[0]} and ${trackingEmails[1]}`;
+            } else {
+              sentence = `Email tracking is turned on for ${
+                trackingEmails[0]
+              }, ${trackingEmails[1]} [+${trackingEmails.length - 2} more]`;
+            }
+
+            setEmailTrackingSentence(sentence);
+          } else {
+            setMailboxSetting(false);
+          }
+        }
       }
     });
   };
 
   const handleTrackingSetting = async () => {
-    const trackingSetting = (
-      await mailboxInstance.updateMailboxSetting(
-        {
+    chrome.storage.local.get(['activeUrl'], async (result) => {
+      const activeUrl = result?.activeUrl;
+
+      if (activeUrl?.includes('mail.google.com')) {
+        const trackingSetting = (
+          await mailboxInstance.updateMailboxSetting(
+            {
+              isTrackingEnabled: !mailboxSetting,
+            },
+            newMailboxId,
+          )
+        )?.payload;
+
+        chrome.storage.local.get(['mailboxEmail'], (request) => {
+          setMailboxEmail(request.mailboxEmail);
+        });
+
+        const trackingData = trackingSetting.isTrackingEnabled;
+
+        chrome.storage.local.set({
+          [mailboxEmail]: {
+            mailboxId: newMailboxId,
+            isTrackingEnabled: trackingData,
+            userId: newUserId,
+          },
+        });
+
+        if (trackingSetting) {
+          setMailboxSetting(trackingData);
+        }
+      } else {
+        console.log(mailboxSetting, 'MailboxSetting');
+        await mailboxInstance.updateMailboxesSetting({
           isTrackingEnabled: !mailboxSetting,
-        },
-        newMailboxId,
-      )
-    )?.payload;
+        });
 
-    chrome.storage.local.get(['mailboxEmail'], (request) => {
-      setMailboxEmail(request.mailboxEmail);
+        if (!mailboxSetting === true) {
+          fetchSetting();
+        } else {
+          setMailboxSetting(!mailboxSetting);
+        }
+      }
     });
-
-    const trackingData = trackingSetting.isTrackingEnabled;
-
-    chrome.storage.local.set({
-      [mailboxEmail]: {
-        mailboxId: newMailboxId,
-        isTrackingEnabled: trackingData,
-        userId: newUserId,
-      },
-    });
-
-    if (trackingSetting) {
-      setMailboxSetting(trackingData);
-    }
   };
 
   const fetchNotificationSetting = async () => {
@@ -829,6 +889,58 @@ const Profile = () => {
                     />
                   </div>
                 </div>
+                {mailboxSetting && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      background: '#EFF6FF',
+                      border: '1px solid #DBEAFE',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      gap: '4px',
+                    }}
+                  >
+                    <div className="d-flex">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M8.00016 2.66732C5.05464 2.66732 2.66683 5.05513 2.66683 8.00065C2.66683 10.9462 5.05464 13.334 8.00016 13.334C10.9457 13.334 13.3335 10.9462 13.3335 8.00065C13.3335 5.05513 10.9457 2.66732 8.00016 2.66732ZM1.3335 8.00065C1.3335 4.31875 4.31826 1.33398 8.00016 1.33398C11.6821 1.33398 14.6668 4.31875 14.6668 8.00065C14.6668 11.6826 11.6821 14.6673 8.00016 14.6673C4.31826 14.6673 1.3335 11.6826 1.3335 8.00065Z"
+                          fill="#2563EB"
+                        />
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M7.3335 5.32899C7.3335 4.9608 7.63197 4.66233 8.00016 4.66233H8.00683C8.37502 4.66233 8.6735 4.9608 8.6735 5.32899C8.6735 5.69718 8.37502 5.99566 8.00683 5.99566H8.00016C7.63197 5.99566 7.3335 5.69718 7.3335 5.32899Z"
+                          fill="#2563EB"
+                        />
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M6.66683 8.00065C6.66683 7.63246 6.96531 7.33398 7.3335 7.33398H8.00016C8.36835 7.33398 8.66683 7.63246 8.66683 8.00065V10.0007C9.03502 10.0007 9.3335 10.2991 9.3335 10.6673C9.3335 11.0355 9.03502 11.334 8.66683 11.334H8.00016C7.63197 11.334 7.3335 11.0355 7.3335 10.6673V8.66732C6.96531 8.66732 6.66683 8.36884 6.66683 8.00065Z"
+                          fill="#2563EB"
+                        />
+                      </svg>
+                    </div>
+                    <div
+                      style={{
+                        alignItems: 'center',
+                        fontSize: '12px',
+                        fontWeight: '400',
+                        lineHeight: '16px',
+                        fontStyle: 'normal',
+                      }}
+                    >
+                      <span>{emailTrackingSentence}</span>
+                    </div>
+                  </div>
+                )}
                 <div
                   style={{
                     width: '300px',

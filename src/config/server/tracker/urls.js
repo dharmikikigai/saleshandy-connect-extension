@@ -7,6 +7,18 @@ export default {
     error: 'Error in updating the mailbox setting',
   },
 
+  updateMailboxesSetting: {
+    type: REQUEST_TYPES.POST,
+    path: () => `mailboxes/tracking-setting`,
+    error: 'Error in updating the mailboxes setting',
+  },
+
+  getMailboxesSetting: {
+    type: REQUEST_TYPES.GET,
+    path: () => `mailboxes/tracking-setting`,
+    error: 'Error in getting the mailboxes setting',
+  },
+
   updateNotificationSetting: {
     type: REQUEST_TYPES.PATCH,
     path: () => `user/settings`,

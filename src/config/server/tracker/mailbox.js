@@ -30,6 +30,23 @@ class Mailbox extends Server {
     }
   }
 
+  async updateMailboxesSetting(payload) {
+    try {
+      return (await this.req.post(URLs.updateMailboxesSetting.path(), payload))
+        .data;
+    } catch (e) {
+      console.log(URLs.updateMailboxesSetting.error, e);
+    }
+  }
+
+  async getMailboxesSetting() {
+    try {
+      return (await this.req.get(URLs.getMailboxesSetting.path())).data;
+    } catch (e) {
+      console.log(URLs.getMailboxesSetting.error, e);
+    }
+  }
+
   async updateNotificationSetting(payload) {
     try {
       return (

@@ -20,56 +20,116 @@ const Popup = () => {
   const [newMailboxId, setMailboxId] = useState();
   const [mailboxEmail, setMailboxEmail] = useState('');
   const [newUserId, setUserId] = useState();
-  const [isMessageVisible, setIsMessageVisible] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [mailboxList, setMailboxList] = useState([]);
+  const [emailTrackingSentence, setEmailTrackingSentence] = useState('');
 
   const fetchSetting = () => {
-    chrome.storage.local.get(['mailboxEmail'], async (request) => {
-      if (request.mailboxEmail) {
-        const { mailboxId, isTrackingEnabled, userId } = (
-          await mailboxInstance.fetchingMailboxSetting({
-            email: request.mailboxEmail,
-          })
-        ).payload;
+    chrome.storage.local.get(['activeUrl'], async (result) => {
+      const activeUrl = result?.activeUrl;
+      if (activeUrl?.includes('mail.google.com')) {
+        chrome.storage.local.get(['mailboxEmail'], async (request) => {
+          if (request.mailboxEmail) {
+            const { mailboxId, isTrackingEnabled, userId } = (
+              await mailboxInstance.fetchingMailboxSetting({
+                email: request.mailboxEmail,
+              })
+            ).payload;
 
-        chrome.storage.local.set({
-          [request.mailboxEmail]: { mailboxId, isTrackingEnabled, userId },
+            chrome.storage.local.set({
+              [request.mailboxEmail]: { mailboxId, isTrackingEnabled, userId },
+            });
+
+            setMailboxSetting(isTrackingEnabled);
+            setMailboxId(mailboxId);
+            setMailboxEmail(request.mailboxEmail);
+            setUserId(userId);
+            setEmailTrackingSentence(
+              `Email tracking for ${request.mailboxEmail} is turned on`,
+            );
+          }
         });
+      } else {
+        const mailBoxes = (await mailboxInstance.getMailboxesSetting())
+          ?.payload;
 
-        setMailboxSetting(isTrackingEnabled);
-        setMailboxId(mailboxId);
-        setMailboxEmail(request.mailboxEmail);
-        setUserId(userId);
+        if (mailBoxes?.length) {
+          const anyTrackingEnabled = mailBoxes.filter(
+            (x) => x.isTrackingEnabled,
+          );
+
+          if (anyTrackingEnabled?.length) {
+            const trackingEmails = anyTrackingEnabled.map((item) => item.email);
+
+            setMailboxSetting(true);
+            setUserId(anyTrackingEnabled[0].userId);
+            setMailboxList(trackingEmails);
+
+            let sentence;
+
+            if (trackingEmails.length === 1) {
+              sentence = `Email tracking is turned on for ${trackingEmails[0]}`;
+            } else if (trackingEmails.length === 2) {
+              sentence = `Email tracking is turned on for ${trackingEmails[0]} and ${trackingEmails[1]}`;
+            } else {
+              sentence = `Email tracking is turned on for ${
+                trackingEmails[0]
+              }, ${trackingEmails[1]} [+${trackingEmails.length - 2} more]`;
+            }
+
+            setEmailTrackingSentence(sentence);
+          } else {
+            setMailboxSetting(false);
+          }
+        }
       }
     });
   };
 
   const handleTrackingSetting = async () => {
-    const trackingSetting = (
-      await mailboxInstance.updateMailboxSetting(
-        {
+    chrome.storage.local.get(['activeUrl'], async (result) => {
+      const activeUrl = result?.activeUrl;
+
+      if (activeUrl?.includes('mail.google.com')) {
+        const trackingSetting = (
+          await mailboxInstance.updateMailboxSetting(
+            {
+              isTrackingEnabled: !mailboxSetting,
+            },
+            newMailboxId,
+          )
+        )?.payload;
+
+        chrome.storage.local.get(['mailboxEmail'], (request) => {
+          setMailboxEmail(request.mailboxEmail);
+        });
+
+        const trackingData = trackingSetting.isTrackingEnabled;
+
+        chrome.storage.local.set({
+          [mailboxEmail]: {
+            mailboxId: newMailboxId,
+            isTrackingEnabled: trackingData,
+            userId: newUserId,
+          },
+        });
+
+        if (trackingSetting) {
+          setMailboxSetting(trackingData);
+        }
+      } else {
+        console.log(mailboxSetting, 'MailboxSetting');
+        await mailboxInstance.updateMailboxesSetting({
           isTrackingEnabled: !mailboxSetting,
-        },
-        newMailboxId,
-      )
-    )?.payload;
+        });
 
-    chrome.storage.local.get(['mailboxEmail'], (request) => {
-      setMailboxEmail(request.mailboxEmail);
+        if (!mailboxSetting === true) {
+          fetchSetting();
+        } else {
+          setMailboxSetting(!mailboxSetting);
+        }
+      }
     });
-
-    const trackingData = trackingSetting.isTrackingEnabled;
-
-    chrome.storage.local.set({
-      [mailboxEmail]: {
-        mailboxId: newMailboxId,
-        isTrackingEnabled: trackingData,
-        userId: newUserId,
-      },
-    });
-
-    if (trackingSetting) {
-      setMailboxSetting(trackingData);
-    }
   };
 
   const fetchNotificationSetting = async () => {
@@ -100,18 +160,7 @@ const Popup = () => {
     setDesktopNotification(!desktopNotification);
   };
 
-  const pageCheck = () => {
-    chrome.storage.local.get(['activeUrl'], (result) => {
-      const activeUrl = result?.activeUrl;
-
-      if (activeUrl?.includes('mail.google.com')) {
-        setIsMessageVisible(true);
-      }
-    });
-  };
-
   useEffect(() => {
-    pageCheck();
     fetchSetting();
     fetchNotificationSetting();
   }, []);
@@ -926,7 +975,7 @@ const Popup = () => {
                   gap: '8px',
                 }}
               >
-                {isMessageVisible && mailboxSetting && (
+                {mailboxSetting && (
                   <div
                     style={{
                       display: 'flex',
@@ -974,9 +1023,7 @@ const Popup = () => {
                         fontStyle: 'normal',
                       }}
                     >
-                      <span>
-                        Email tracking for {mailboxEmail} is turned on
-                      </span>
+                      <span>{emailTrackingSentence}</span>
                     </div>
                   </div>
                 )}
