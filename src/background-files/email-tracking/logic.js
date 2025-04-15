@@ -571,6 +571,29 @@ function getUserInfo(source) {
       user.sourceId2 = linkedinMainInfoArray.publicIdentifier;
       user.source_page = `https://www.linkedin.com/in/${user.sourceId2}/`;
     }
+    if (
+      linkedinMainInfoArray.profilePicture &&
+      linkedinMainInfoArray.profilePicture.displayImageReference &&
+      linkedinMainInfoArray.profilePicture.displayImageReference.vectorImage
+    ) {
+      const picture =
+        linkedinMainInfoArray.profilePicture.displayImageReference.vectorImage;
+      for (let iNo = 0; iNo < picture.artifacts.length; iNo++) {
+        if (picture.artifacts[iNo].width === 100) {
+          user.logo = picture.artifacts[iNo].fileIdentifyingUrlPathSegment;
+        }
+        if (picture.artifacts[iNo].width === 800) {
+          user.logo1 = picture.artifacts[iNo].fileIdentifyingUrlPathSegment;
+        }
+      }
+      if (!user.logo && picture.artifacts && picture.artifacts.length > 0) {
+        user.logo = picture.artifacts[0].fileIdentifyingUrlPathSegment;
+      }
+      if (picture.rootUrl && user.logo.indexOf('https') === -1) {
+        user.logo = picture.rootUrl + user.logo;
+        user.logo1 = picture.rootUrl + user.logo1;
+      }
+    }
   } else {
     let miniProfile;
     if (linkedinMainInfoArray.miniProfile) {
@@ -601,6 +624,76 @@ function getUserInfo(source) {
 
       if (miniProfile.objectUrn) {
         user.source_id = miniProfile.objectUrn.replace('urn:li:member:', '');
+      }
+
+      if (miniProfile.picture && miniProfile.picture.artifacts) {
+        for (let iNo = 0; iNo < miniProfile.picture.artifacts.length; iNo++) {
+          if (miniProfile.picture.artifacts[iNo].width === 100) {
+            user.logo =
+              miniProfile.picture.artifacts[iNo].fileIdentifyingUrlPathSegment;
+            break;
+          }
+        }
+        if (
+          !user.logo &&
+          miniProfile.picture.artifacts &&
+          miniProfile.picture.artifacts.length > 0
+        ) {
+          user.logo =
+            miniProfile.picture.artifacts[0].fileIdentifyingUrlPathSegment;
+        }
+        if (miniProfile.picture.rootUrl && user.logo.indexOf('https') === -1) {
+          user.logo = miniProfile.picture.rootUrl + user.logo;
+        }
+      }
+    }
+  }
+
+  if (!user.logo) {
+    this.data = [];
+    let rootUrl;
+    const urls = getAllP(
+      '$id',
+      linkedinPerson,
+      `${linkedinMainInfoArray.miniProfile},picture,com.linkedin.common.VectorImage`,
+    );
+    if (urls) {
+      for (key in urls) {
+        if (
+          urls[key].rootUrl &&
+          urls[key].rootUrl.indexOf('profile-displayphoto-shrink') !== -1
+        ) {
+          rootUrl = urls[key].rootUrl;
+          break;
+        }
+      }
+    }
+
+    this.data = [];
+    const logos = getAllP(
+      '$type',
+      linkedinPerson,
+      'com.linkedin.common.VectorArtifact',
+    );
+    if (logos) {
+      for (key in logos) {
+        if (
+          logos[key].height &&
+          logos[key].width &&
+          logos[key].height === 800 &&
+          logos[key].width === 800 &&
+          logos[key].fileIdentifyingUrlPathSegment &&
+          logos[key].$id &&
+          logos[key].$id.indexOf(linkedinMainInfoArray.miniProfile) === 0
+        ) {
+          const resp = logos[key].fileIdentifyingUrlPathSegment;
+          if (rootUrl) {
+            user.logo = rootUrl + resp;
+          } else {
+            user.logo = resp;
+          }
+          break;
+        }
       }
     }
   }
