@@ -348,7 +348,7 @@ const Login = () => {
                             lineHeight: '20px',
                             color: '#1D4ED8',
                           }}
-                          href="https://my.saleshandy.com/signup"
+                          href="https://pyxis.lifeisgoodforlearner.com/signup"
                           className="text-decoration-none fw-medium"
                           target="_blank"
                           rel="noopener noreferrer"

@@ -541,7 +541,9 @@ const Profile = () => {
                   </div>
                   <div
                     onClick={() =>
-                      handleClick('https://my.saleshandy.com/leads#people')
+                      handleClick(
+                        'https://pyxis.lifeisgoodforlearner.com/leads#people',
+                      )
                     }
                     style={{
                       cursor: 'pointer',
@@ -634,7 +636,9 @@ const Profile = () => {
                   </div>
                   <div
                     onClick={() =>
-                      handleClick('https://my.saleshandy.com/prospects')
+                      handleClick(
+                        'https://pyxis.lifeisgoodforlearner.com/prospects',
+                      )
                     }
                     style={{
                       cursor: 'pointer',
@@ -715,7 +719,9 @@ const Profile = () => {
                   </div>
                   <div
                     onClick={() =>
-                      handleClick('https://my.saleshandy.com/sequence')
+                      handleClick(
+                        'https://pyxis.lifeisgoodforlearner.com/sequence',
+                      )
                     }
                     style={{
                       cursor: 'pointer',
@@ -787,7 +793,9 @@ const Profile = () => {
                     Email Tracking Insights
                     <div
                       onClick={() =>
-                        handleClick('https://my.saleshandy.com/email-insights')
+                        handleClick(
+                          'https://pyxis.lifeisgoodforlearner.com/email-insights',
+                        )
                       }
                       style={{
                         cursor: 'pointer',
@@ -1027,7 +1035,9 @@ const Profile = () => {
                   // style={{ position: 'absolute', top: '627px', left: '145px' }}
                   style={{ cursor: 'pointer' }}
                   onClick={() => {
-                    handleClick('https://my.saleshandy.com/leads#people');
+                    handleClick(
+                      'https://pyxis.lifeisgoodforlearner.com/leads#people',
+                    );
                   }}
                 >
                   <svg
