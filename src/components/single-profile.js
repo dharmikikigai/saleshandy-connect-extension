@@ -11,8 +11,9 @@ import ContactStatusTag from './contact-status-tag/contact-status-tag';
 import prospectsInstance from '../config/server/finder/prospects';
 import SingleProfileSkeleton from './single-profile-skeleton';
 import NoResult from './no-result';
+import mailboxInstance from '../config/server/tracker/mailbox';
 
-const BULK_ACTION_TIMEOUT = 12000;
+const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
 
 const SingleProfile = () => {
@@ -572,12 +573,21 @@ const SingleProfile = () => {
     };
   }, [isPollingEnabled]);
 
+  const metaCall = async () => {
+    const metaData = (await mailboxInstance.getMetaData())?.payload;
+
+    if (metaData) {
+      chrome.storage.local.set({ saleshandyMetaData: metaData });
+    }
+  };
+
   useEffect(() => {
     if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
       // Only refresh prospects when polling is actually stopped
       fetchProspect(prospect.linkedin_url);
       setIsRevealing(false);
       pollingAttemptsRef.current = 0;
+      metaCall();
     }
   }, [isPollingEnabled]);
 
@@ -633,14 +643,14 @@ const SingleProfile = () => {
                     gap: '8px',
                   }}
                 >
-                  {singleProfile?.profile_pic ? (
+                  {singleProfile?.profile_pic || singleProfile?.logo ? (
                     <img
                       style={{
                         width: '32px',
                         height: '32px',
                         borderRadius: '50%',
                       }}
-                      src={singleProfile?.profile_pic}
+                      src={singleProfile?.profile_pic || singleProfile?.logo}
                       alt="userImage"
                     />
                   ) : (

@@ -13,7 +13,7 @@ const handleClose = () => {
 
 const handleClick = () => {
   window.open(
-    'https://my.saleshandy.com/settings/billing/subscriptions/lead-finder',
+    'https://pyxis.lifeisgoodforlearner.com/settings/billing/subscriptions/lead-finder',
     '_blank',
   );
 };

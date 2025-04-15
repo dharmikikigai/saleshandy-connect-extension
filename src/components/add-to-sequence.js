@@ -18,51 +18,6 @@ const getStatusDotColor = (status) => {
   }
 };
 
-// const sequenceOptions = [
-//   {
-//     label: 'Recent Sequences',
-//     options: [
-//       { value: 'sequence_2', label: 'Another Sequence', status: 1 },
-//       { value: 'sequence_3', label: 'Sequence 3', status: 2 },
-//       // Add more if needed
-//     ],
-//   },
-//   {
-//     value: 'abhishek_first',
-//     label: "Abhishek's First Sequence 🚀 (Current Sequence)",
-//     status: 3,
-//   },
-//   { value: 'sequence_2', label: 'Another Sequence' },
-// ];
-
-// const clientSequenceOptions = [
-//   {
-//     value: 'abhishek_first',
-//     label: "Abhishek's First Sequence 🚀 (Current Sequence)",
-//     status: 3,
-//   },
-//   { value: 'sequence_2', label: 'Another Sequence' },
-// ];
-
-// const recentSequence = [
-//   {
-//     value: 'abhishek_first',
-//     label: "Abhishek's First Sequence",
-//   },
-//   { value: 'sequence_2', label: 'Another Sequence' },
-// ];
-
-// const stepOptions = [
-//   { value: 'step_1', label: 'Step 1: Email' },
-//   { value: 'step_2', label: 'Step 2: Follow-up' },
-// ];
-
-// const tagOptions = [
-//   { value: 'tag1', label: 'Tag 1' },
-//   { value: 'tag2', label: 'Tag 2' },
-//   { value: 'tag3', label: 'Tag 3' },
-// ];
-
 // Custom option render in sequence name dropdown
 const customOptionSequenceName = (props) => {
   const { data, innerRef, innerProps, isFocused } = props;
@@ -121,17 +76,7 @@ const customOptionSequenceName = (props) => {
 
 // Title for sequence name dropdown
 const formatGroupLabel = (data) => (
-  // const isCurrentSequenceGroup = data.label !== 'Current Sequence';
-
   <div>
-    {/* {isCurrentSequenceGroup && (
-          <div
-            style={{
-              borderTop: '1px solid #D1D5DB',
-              margin: '8px 0',
-            }}
-          />
-        )} */}
     <div
       style={{
         padding: '4px 12px',

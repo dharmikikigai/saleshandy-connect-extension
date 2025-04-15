@@ -543,7 +543,9 @@ const Popup = () => {
               {/* View Lead Finder link svg */}
               <div
                 onClick={() =>
-                  handleClick('https://my.saleshandy.com/leads#people')
+                  handleClick(
+                    'https://pyxis.lifeisgoodforlearner.com/leads#people',
+                  )
                 }
                 style={{
                   cursor: 'pointer',
@@ -639,7 +641,9 @@ const Popup = () => {
               {/* View Prospects link svg */}
               <div
                 onClick={() =>
-                  handleClick('https://my.saleshandy.com/prospects')
+                  handleClick(
+                    'https://pyxis.lifeisgoodforlearner.com/prospects',
+                  )
                 }
                 style={{
                   cursor: 'pointer',
@@ -723,7 +727,7 @@ const Popup = () => {
               {/* Sequence link svg */}
               <div
                 onClick={() =>
-                  handleClick('https://my.saleshandy.com/sequence')
+                  handleClick('https://pyxis.lifeisgoodforlearner.com/sequence')
                 }
                 style={{
                   cursor: 'pointer',
@@ -869,7 +873,9 @@ const Popup = () => {
             {/* Email Tracking link svg */}
             <div
               onClick={() =>
-                handleClick('https://my.saleshandy.com/email-insights')
+                handleClick(
+                  'https://pyxis.lifeisgoodforlearner.com/email-insights',
+                )
               }
               onMouseEnter={() => setEmailReportTooltip(true)}
               onMouseLeave={() => setEmailReportTooltip(false)}
