@@ -4,7 +4,6 @@ import { useRecoilState } from 'recoil';
 import { profilePageState } from './state';
 import Main from './main';
 import './responsive-screen.css';
-import mailboxInstance from '../config/server/tracker/mailbox';
 
 const handleClose = () => {
   chrome.runtime.sendMessage({
@@ -38,23 +37,6 @@ const Header = () => {
       }
     });
   };
-
-  const metaCall = async () => {
-    const metaData = (await mailboxInstance.getMetaData())?.payload;
-
-    if (metaData) {
-      chrome.storage.local.set({ saleshandyMetaData: metaData });
-
-      const credits = metaData.leadFinderCredits;
-      setLeadFinderCredits(credits);
-    }
-  };
-
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message.method === 'meta-call-cs') {
-      metaCall();
-    }
-  });
 
   useEffect(() => {
     getLeadFinderCredits();

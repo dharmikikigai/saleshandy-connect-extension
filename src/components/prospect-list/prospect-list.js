@@ -29,6 +29,7 @@ import AddTagsModal from './add-tags';
 import AddToSequenceModal from './add-to-sequence-modal';
 import Header from '../header';
 import ProspectFilterModal from './prospect-filter-modal';
+import mailboxInstance from '../../config/server/tracker/mailbox';
 
 const CustomButton = ({
   variant,
@@ -155,9 +156,7 @@ const ProspectList = () => {
           link: linkedinUrls,
         };
         const response = await prospectsInstance.getProspects(payload);
-        chrome.runtime.sendMessage({
-          method: 'meta-call',
-        });
+
         setProspectsData(response, bulkInfo);
       }
     });
@@ -361,9 +360,7 @@ const ProspectList = () => {
         link: linkedinUrls,
       };
       const response = await prospectsInstance.getProspects(payload);
-      chrome.runtime.sendMessage({
-        method: 'meta-call',
-      });
+
       setRevealingProspects({});
       const updatedProspects = [...prospects];
       response.payload.profiles.forEach((profile) => {
@@ -686,6 +683,14 @@ const ProspectList = () => {
     };
   }, [isPollingEnabled, revealingProspects]);
 
+  const metaCall = async () => {
+    const metaData = (await mailboxInstance.getMetaData())?.payload;
+
+    if (metaData) {
+      chrome.storage.local.set({ saleshandyMetaData: metaData });
+    }
+  };
+
   // Separate useEffect for handling polling completion
   useEffect(() => {
     if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
@@ -693,6 +698,7 @@ const ProspectList = () => {
       refreshProspects();
       setIsFirstPollRequest(true);
       pollingAttemptsRef.current = 0;
+      metaCall();
     }
   }, [isPollingEnabled]);
 

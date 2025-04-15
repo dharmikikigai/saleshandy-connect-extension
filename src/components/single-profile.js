@@ -11,6 +11,7 @@ import ContactStatusTag from './contact-status-tag/contact-status-tag';
 import prospectsInstance from '../config/server/finder/prospects';
 import SingleProfileSkeleton from './single-profile-skeleton';
 import NoResult from './no-result';
+import mailboxInstance from '../config/server/tracker/mailbox';
 
 const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
@@ -73,10 +74,6 @@ const SingleProfile = () => {
           };
 
           const response = await prospectsInstance.getProspects(payload);
-
-          chrome.runtime.sendMessage({
-            method: 'meta-call',
-          });
 
           if (response) {
             if (!response.payload) {
@@ -576,12 +573,21 @@ const SingleProfile = () => {
     };
   }, [isPollingEnabled]);
 
+  const metaCall = async () => {
+    const metaData = (await mailboxInstance.getMetaData())?.payload;
+
+    if (metaData) {
+      chrome.storage.local.set({ saleshandyMetaData: metaData });
+    }
+  };
+
   useEffect(() => {
     if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
       // Only refresh prospects when polling is actually stopped
       fetchProspect(prospect.linkedin_url);
       setIsRevealing(false);
       pollingAttemptsRef.current = 0;
+      metaCall();
     }
   }, [isPollingEnabled]);
 
