@@ -12,7 +12,7 @@ import prospectsInstance from '../config/server/finder/prospects';
 import SingleProfileSkeleton from './single-profile-skeleton';
 import NoResult from './no-result';
 
-const BULK_ACTION_TIMEOUT = 7000;
+const BULK_ACTION_TIMEOUT = 12000;
 const MAX_POLLING_LIMIT = 20;
 
 const SingleProfile = () => {

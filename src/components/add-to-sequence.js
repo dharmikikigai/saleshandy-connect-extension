@@ -136,8 +136,10 @@ const formatGroupLabel = (data) => (
       style={{
         padding: '4px 12px',
         fontSize: '12px',
-        fontWeight: 600,
         color: '#6B7280',
+        textTransform: 'none',
+        fontWeight: '500',
+        lineHeight: '16px',
       }}
     >
       {data.label}
@@ -610,8 +612,8 @@ const AddToSequence = ({
                       fontSize: '12px',
                       fontWeight: '500',
                       color: '#9ca3af',
+                      paddingLeft: '0px',
                       // textTransform: 'uppercase',
-                      padding: '0px 16px',
                       // backgroundColor: '#f9fafb',
                     }),
                   }}
@@ -926,6 +928,8 @@ const AddToSequence = ({
                 lineHeight: '20px',
                 background: '#1D4ED8',
                 gap: '8px',
+                maxHeight: '32px',
+                alignItems: 'center',
                 width: '100px',
               }}
               onClick={handleOnSave}

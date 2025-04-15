@@ -32,23 +32,15 @@ const Main = () => {
       return;
     }
 
-    chrome.storage.local.get(['saleshandyMetaData'], async (result) => {
-      const saleshandyMetaData = result?.saleshandyMetaData;
+    const metaData = (await mailboxInstance.getMetaData())?.payload;
 
-      if (saleshandyMetaData || saleshandyMetaData?.user) {
-        return;
+    if (metaData) {
+      chrome.storage.local.set({ saleshandyMetaData: metaData });
+
+      if (metaData.user?.isUserRestricted) {
+        setIsFeatureAvailable(true);
       }
-
-      const metaData = (await mailboxInstance.getMetaData())?.payload;
-
-      if (metaData) {
-        chrome.storage.local.set({ saleshandyMetaData: metaData });
-
-        if (metaData.user?.isUserRestricted) {
-          setIsFeatureAvailable(true);
-        }
-      }
-    });
+    }
   };
 
   const authCheck = () => {

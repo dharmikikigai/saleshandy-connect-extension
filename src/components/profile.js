@@ -43,6 +43,11 @@ const Profile = () => {
           const findFour = document.getElementById('single-profile-container');
           if (findFour) {
             findFour.style.display = 'none';
+          } else {
+            const findFive = document.getElementById('no-result-container');
+            if (findFive) {
+              findFive.style.display = 'none';
+            }
           }
         }
       }
@@ -478,6 +483,9 @@ const Profile = () => {
                     onClick={() =>
                       handleClick('https://my.saleshandy.com/leads#people')
                     }
+                    style={{
+                      cursor: 'pointer',
+                    }}
                   >
                     <svg
                       width="17"
@@ -568,6 +576,9 @@ const Profile = () => {
                     onClick={() =>
                       handleClick('https://my.saleshandy.com/prospects')
                     }
+                    style={{
+                      cursor: 'pointer',
+                    }}
                   >
                     <svg
                       width="17"
@@ -646,6 +657,9 @@ const Profile = () => {
                     onClick={() =>
                       handleClick('https://my.saleshandy.com/sequence')
                     }
+                    style={{
+                      cursor: 'pointer',
+                    }}
                   >
                     <svg
                       width="17"
@@ -715,6 +729,9 @@ const Profile = () => {
                       onClick={() =>
                         handleClick('https://my.saleshandy.com/email-insights')
                       }
+                      style={{
+                        cursor: 'pointer',
+                      }}
                     >
                       <svg
                         width="15"
@@ -895,7 +912,11 @@ const Profile = () => {
                   How to use Extension
                 </div>
                 <div
-                // style={{ position: 'absolute', top: '627px', left: '145px' }}
+                  // style={{ position: 'absolute', top: '627px', left: '145px' }}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    handleClick('https://my.saleshandy.com/leads#people');
+                  }}
                 >
                   <svg
                     width="17"

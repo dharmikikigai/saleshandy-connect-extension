@@ -6,21 +6,9 @@
 
 /* Size between 125% and above */
 @media (min-height: 309px) and (max-height: 741.6px) {
-  #saleshandy-window {
-    height: 90vh !important;
-  }
   .single-profile-container {
     height: 90vh !important;
     overflow-y: auto;
-  }
-  #saleshandy-window::-webkit-scrollbar {
-    width: 5px;
-    height: 7px;
-  }
-
-  #saleshandy-window::-webkit-scrollbar-thumb {
-    border-radius: 4px;
-    background-color: #e5e7eb;
   }
 }
 /* Size between less than 80%*/
