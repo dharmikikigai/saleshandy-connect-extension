@@ -124,7 +124,7 @@ const NoResult = () => (
               <span>
                 Results matching this query could not <br />
                 be displayed, Please try searching for
-                <span>another profile</span>
+                <span> another profile</span>
               </span>
             </div>
           </div>
