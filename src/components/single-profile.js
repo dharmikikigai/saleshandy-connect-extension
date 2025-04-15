@@ -633,14 +633,14 @@ const SingleProfile = () => {
                     gap: '8px',
                   }}
                 >
-                  {singleProfile?.profile_pic ? (
+                  {singleProfile?.profile_pic || singleProfile?.logo ? (
                     <img
                       style={{
                         width: '32px',
                         height: '32px',
                         borderRadius: '50%',
                       }}
-                      src={singleProfile?.profile_pic}
+                      src={singleProfile?.profile_pic || singleProfile?.logo}
                       alt="userImage"
                     />
                   ) : (

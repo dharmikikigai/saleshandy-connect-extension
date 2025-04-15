@@ -8,6 +8,7 @@ import minusIcon from '../../assets/icons/minus.svg';
 import email from '../../assets/icons/email.svg';
 import emailPhone from '../../assets/icons/emailPhone.svg';
 import send from '../../assets/icons/send.svg';
+import send2 from '../../assets/icons/send2.svg';
 import chevronDown from '../../assets/icons/chevronDown.svg';
 import chevronUp from '../../assets/icons/chevronUp.svg';
 import mail from '../../assets/icons/mail.svg';
@@ -17,6 +18,7 @@ import checkbox from '../../assets/icons/checkbox.svg';
 import checkboxChecked from '../../assets/icons/checkboxChecked.svg';
 import circleCheck from '../../assets/icons/circleCheck.svg';
 import tagIcon from '../../assets/icons/tag.svg';
+import tag2 from '../../assets/icons/tag2.svg';
 import copy from '../../assets/icons/copy.svg';
 import filter from '../../assets/icons/filter.svg';
 import filterBlue from '../../assets/icons/filter-blue.svg';
@@ -29,6 +31,8 @@ import AddTagsModal from './add-tags';
 import AddToSequenceModal from './add-to-sequence-modal';
 import Header from '../header';
 import ProspectFilterModal from './prospect-filter-modal';
+import NoProspectFound from './no-prospect-found';
+import RateLimitReached from '../rate-limit-reached';
 
 const CustomButton = ({
   variant,
@@ -116,182 +120,221 @@ const ProspectList = () => {
   const [dateFilterCustomValue, setDateFilterCustomValue] = useState(null);
   const [applyFiltersLoading, setApplyFiltersLoading] = useState(false);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
+  const [isRateLimitReached, setIsRateLimitReached] = useState(false);
 
   const setProspectsData = (data, rawData) => {
-    if (
-      data.payload &&
-      data.payload.profiles &&
-      data.payload.profiles.length > 0
-    ) {
-      const prospectsData = rawData.map((item) => {
-        const prospect = data.payload.profiles.find(
-          (profile) =>
-            profile.linkedin_url ===
-            `https://www.linkedin.com/in/${item.source_id_2}`,
-        );
-        if (prospect) {
-          return {
-            ...prospect,
-            description: item.description,
-            logo: item.logo,
-          };
-        }
-        return item;
-      });
-      setProspects(prospectsData);
+    try {
+      if (
+        data.payload &&
+        data.payload.profiles &&
+        data.payload.profiles.length > 0
+      ) {
+        const prospectsData = rawData.map((item) => {
+          const prospect = data.payload.profiles.find(
+            (profile) =>
+              profile.linkedin_url ===
+              `https://www.linkedin.com/in/${item.source_id_2}`,
+          );
+          if (prospect) {
+            return {
+              ...prospect,
+              description: item.description,
+              logo: item.logo,
+            };
+          }
+          return item;
+        });
+        setProspects(prospectsData);
+      }
+    } catch (error) {
+      console.error('Error in setProspectsData:', error);
     }
   };
 
   const fetchProspects = async () => {
-    chrome.storage.local.get(['bulkInfo'], async (result) => {
-      const bulkInfo = result?.bulkInfo?.people;
-      if (bulkInfo && bulkInfo.length > 0) {
-        const linkedinUrls = bulkInfo.map(
-          (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
-        );
-        const payload = {
-          start: 1,
-          take: linkedinUrls.length,
-          link: linkedinUrls,
-        };
-        const response = await prospectsInstance.getProspects(payload);
-        setProspectsData(response, bulkInfo);
-      }
-    });
+    try {
+      chrome.storage.local.get(['bulkInfo'], async (result) => {
+        try {
+          const bulkInfo = result?.bulkInfo?.people;
+          if (bulkInfo && bulkInfo.length > 0) {
+            const linkedinUrls = bulkInfo.map(
+              (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
+            );
+            const payload = {
+              start: 1,
+              take: linkedinUrls.length,
+              link: linkedinUrls,
+            };
+            const response = await prospectsInstance.getProspects(payload);
+            if (response?.payload?.profiles) {
+              setProspectsData(response, bulkInfo);
+            }
+            if (response?.type === 'rate-limit') {
+              setIsRateLimitReached(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error in fetchProspects callback:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error in fetchProspects:', error);
+    }
   };
 
   const handleApplyTags = async () => {
-    const tagIds = [];
-    const newTags = [];
+    try {
+      const tagIds = [];
+      const newTags = [];
 
-    selectedTags.forEach((tag) => {
-      // eslint-disable-next-line no-underscore-dangle
-      if (tag.__isNew__) {
-        newTags.push(tag.value);
-      } else {
-        tagIds.push(tag.value);
-      }
-    });
+      selectedTags.forEach((tag) => {
+        // eslint-disable-next-line no-underscore-dangle
+        if (tag.__isNew__) {
+          newTags.push(tag.value);
+        } else {
+          tagIds.push(tag.value);
+        }
+      });
 
-    const payload = {
-      leadIds: selectedProspects,
-      revealType: selectedRevealType,
-      tagIds,
-      newTags,
-    };
-    setRevealProspectLoading({
-      ignore: false,
-      apply: true,
-      save: false,
-    });
-    const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
-    if (bulkRevealRes) {
-      const { message, status } = bulkRevealRes.payload;
-      if (status === 0) {
-        console.log('error', message);
-      } else if (status === 2) {
-        console.log('warning', message);
-      } else {
-        const newRevealingProspects = {
-          ...revealingProspects,
-          ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
-        };
-        setRevealingProspects(newRevealingProspects);
-        setIsPollingEnabled(true);
+      const payload = {
+        leadIds: selectedProspects,
+        revealType: selectedRevealType,
+        tagIds,
+        newTags,
+      };
+      setRevealProspectLoading({
+        ignore: false,
+        apply: true,
+        save: false,
+      });
+      const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
+        payload,
+      );
+      if (bulkRevealRes) {
+        const { message, status } = bulkRevealRes.payload;
+        if (status === 0) {
+          console.log('error', message);
+        } else if (status === 2) {
+          console.log('warning', message);
+        } else {
+          const newRevealingProspects = {
+            ...revealingProspects,
+            ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+          };
+          setRevealingProspects(newRevealingProspects);
+          setIsPollingEnabled(true);
+        }
       }
+    } catch (error) {
+      console.error('Error in handleApplyTags:', error);
+    } finally {
+      setRevealProspectLoading({
+        ignore: false,
+        apply: false,
+        save: false,
+      });
+      setSelectedProspects([]);
+      setSelectedTags([]);
+      setShowTagsModal(false);
     }
-    setRevealProspectLoading({
-      ignore: false,
-      apply: false,
-      save: false,
-    });
-    setSelectedProspects([]);
-    setSelectedTags([]);
-    setShowTagsModal(false);
   };
 
   const handleIgnoreTags = async () => {
-    const payload = {
-      leadIds: selectedProspects,
-      revealType: selectedRevealType,
-    };
-    setRevealProspectLoading({
-      ignore: true,
-      apply: false,
-      save: false,
-    });
-    const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
-    if (bulkRevealRes) {
-      const { message, status } = bulkRevealRes.payload;
-      if (status === 0) {
-        console.log('error', message);
-      } else if (status === 2) {
-        console.log('warning', message);
-      } else {
-        // if (bulkRevealRes?.payload?.shouldPoll) {
-        const newRevealingProspects = {
-          ...revealingProspects,
-          ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
-        };
-        setRevealingProspects(newRevealingProspects);
-        setIsPollingEnabled(true);
-        // }
+    try {
+      const payload = {
+        leadIds: selectedProspects,
+        revealType: selectedRevealType,
+      };
+      setRevealProspectLoading({
+        ignore: true,
+        apply: false,
+        save: false,
+      });
+      const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
+        payload,
+      );
+      if (bulkRevealRes) {
+        const { message, status } = bulkRevealRes.payload;
+        if (status === 0) {
+          console.log('error', message);
+        } else if (status === 2) {
+          console.log('warning', message);
+        } else {
+          // if (bulkRevealRes?.payload?.shouldPoll) {
+          const newRevealingProspects = {
+            ...revealingProspects,
+            ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+          };
+          setRevealingProspects(newRevealingProspects);
+          setIsPollingEnabled(true);
+          // }
+        }
       }
+    } catch (error) {
+      console.error('Error in handleIgnoreTags:', error);
+    } finally {
+      setRevealProspectLoading({
+        ignore: false,
+        apply: false,
+        save: false,
+      });
+      setSelectedProspects([]);
+      setSelectedTags([]);
+      setShowTagsModal(false);
     }
-    setRevealProspectLoading({
-      ignore: false,
-      apply: false,
-      save: false,
-    });
-    setSelectedProspects([]);
-    setSelectedTags([]);
-    setShowTagsModal(false);
   };
 
   const handleAddToSequence = async (data) => {
-    const payload = {
-      leadIds: selectedProspects,
-      revealType: 'email',
-      tagIds: data.tagIds,
-      newTags: data.newTags,
-      sequenceId: data.sequenceId,
-      stepId: data.stepId,
-    };
-    setRevealProspectLoading({
-      ignore: false,
-      apply: false,
-      save: true,
-    });
-    const bulkRevealRes = await prospectsInstance.bulkRevealProspects(payload);
-    if (bulkRevealRes) {
-      const { message, status } = bulkRevealRes.payload;
-      if (status === 0) {
-        console.log('error', message);
-      } else if (status === 2) {
-        console.log('warning', message);
-      } else {
-        // if (bulkRevealRes?.payload?.shouldPoll) {
-        const newRevealingProspects = {
-          ...revealingProspects,
-          ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
-        };
-        setRevealingProspects(newRevealingProspects);
-        setIsPollingEnabled(true);
-        // }
-        console.log(
-          'success',
-          message ||
-            'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
-        );
+    try {
+      const payload = {
+        leadIds: selectedProspects,
+        revealType: 'email',
+        tagIds: data.tagIds,
+        newTags: data.newTags,
+        sequenceId: data.sequenceId,
+        stepId: data.stepId,
+      };
+      setRevealProspectLoading({
+        ignore: false,
+        apply: false,
+        save: true,
+      });
+      const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
+        payload,
+      );
+      if (bulkRevealRes) {
+        const { message, status } = bulkRevealRes.payload;
+        if (status === 0) {
+          console.log('error', message);
+        } else if (status === 2) {
+          console.log('warning', message);
+        } else {
+          // if (bulkRevealRes?.payload?.shouldPoll) {
+          const newRevealingProspects = {
+            ...revealingProspects,
+            ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+          };
+          setRevealingProspects(newRevealingProspects);
+          setIsPollingEnabled(true);
+          // }
+          console.log(
+            'success',
+            message ||
+              'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
+          );
+        }
       }
+    } catch (error) {
+      console.error('Error in handleAddToSequence:', error);
+    } finally {
+      setRevealProspectLoading({
+        ignore: false,
+        apply: false,
+        save: false,
+      });
+      setSelectedProspects([]);
+      setShowAddToSequenceModal(false);
     }
-    setRevealProspectLoading({
-      ignore: false,
-      apply: false,
-      save: false,
-    });
-    setSelectedProspects([]);
-    setShowAddToSequenceModal(false);
   };
 
   const handleViewContact = (type) => {
@@ -300,75 +343,83 @@ const ProspectList = () => {
   };
 
   const handleFetchLead = async () => {
-    const allRevealingProspectIds = Object.keys(revealingProspects)
-      .filter((id) => revealingProspects[id] === true)
-      .map(Number);
-    const payload = {
-      leadIds: allRevealingProspectIds,
-      revealType: selectedRevealType,
-      isBulkAction: true,
-    };
-    const response = await prospectsInstance.leadStatus(payload);
-    if (
-      response &&
-      response.payload &&
-      response.payload.profiles &&
-      response.payload.profiles.length > 0
-    ) {
-      const updatedRevealingProspects = { ...revealingProspects };
-      const updatedProspects = [...prospects];
-      response.payload.profiles.forEach((profile) => {
-        if (profile.isRevealed && !profile.isRevealing) {
-          updatedRevealingProspects[profile.id] = false;
+    try {
+      const allRevealingProspectIds = Object.keys(revealingProspects)
+        .filter((id) => revealingProspects[id] === true)
+        .map(Number);
+      const payload = {
+        leadIds: allRevealingProspectIds,
+        revealType: selectedRevealType,
+        isBulkAction: true,
+      };
+      const response = await prospectsInstance.leadStatus(payload);
+      if (
+        response &&
+        response.payload &&
+        response.payload.profiles &&
+        response.payload.profiles.length > 0
+      ) {
+        const updatedRevealingProspects = { ...revealingProspects };
+        const updatedProspects = [...prospects];
+        response.payload.profiles.forEach((profile) => {
+          if (profile.isRevealed && !profile.isRevealing) {
+            updatedRevealingProspects[profile.id] = false;
+            const prospectIndex = updatedProspects.findIndex(
+              (p) => p.id === profile.id,
+            );
+            if (prospectIndex !== -1) {
+              updatedProspects[prospectIndex] = profile;
+            }
+          }
+        });
+        const remainingProspects = Object.keys(
+          updatedRevealingProspects,
+        ).filter((id) => updatedRevealingProspects[id]);
+        if (remainingProspects.length > 0) {
+          setRevealingProspects(updatedRevealingProspects);
+          setProspects(updatedProspects);
+        } else {
+          setIsPollingEnabled(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleFetchLead:', error);
+    }
+  };
+
+  const refreshProspects = async () => {
+    try {
+      const linkedinUrls = [];
+      Object.keys(revealingProspects).forEach((id) => {
+        // Convert id to number for comparison if prospects have numeric IDs
+        const prospect = prospects.find(
+          (p) => p.id === Number(id) || p.id === id,
+        );
+        if (prospect) {
+          linkedinUrls.push(prospect.linkedin_url);
+        }
+      });
+      if (linkedinUrls.length > 0) {
+        const payload = {
+          start: 1,
+          take: linkedinUrls.length,
+          link: linkedinUrls,
+        };
+        const response = await prospectsInstance.getProspects(payload);
+        setRevealingProspects({});
+        const updatedProspects = [...prospects];
+        response.payload.profiles.forEach((profile) => {
           const prospectIndex = updatedProspects.findIndex(
             (p) => p.id === profile.id,
           );
           if (prospectIndex !== -1) {
             updatedProspects[prospectIndex] = profile;
           }
-        }
-      });
-      const remainingProspects = Object.keys(updatedRevealingProspects).filter(
-        (id) => updatedRevealingProspects[id],
-      );
-      if (remainingProspects.length > 0) {
-        setRevealingProspects(updatedRevealingProspects);
+        });
         setProspects(updatedProspects);
-      } else {
-        setIsPollingEnabled(false);
       }
-    }
-  };
-
-  const refreshProspects = async () => {
-    const linkedinUrls = [];
-    Object.keys(revealingProspects).forEach((id) => {
-      // Convert id to number for comparison if prospects have numeric IDs
-      const prospect = prospects.find(
-        (p) => p.id === Number(id) || p.id === id,
-      );
-      if (prospect) {
-        linkedinUrls.push(prospect.linkedin_url);
-      }
-    });
-    if (linkedinUrls.length > 0) {
-      const payload = {
-        start: 1,
-        take: linkedinUrls.length,
-        link: linkedinUrls,
-      };
-      const response = await prospectsInstance.getProspects(payload);
-      setRevealingProspects({});
-      const updatedProspects = [...prospects];
-      response.payload.profiles.forEach((profile) => {
-        const prospectIndex = updatedProspects.findIndex(
-          (p) => p.id === profile.id,
-        );
-        if (prospectIndex !== -1) {
-          updatedProspects[prospectIndex] = profile;
-        }
-      });
-      setProspects(updatedProspects);
+    } catch (error) {
+      console.error('Error in refreshProspects:', error);
     }
   };
 
@@ -425,23 +476,27 @@ const ProspectList = () => {
 
   // Function to handle scroll and load more saved leads
   const handleScroll = () => {
-    console.log('activeTab', activeTab);
-    if (activeTab !== 'saved') return;
+    try {
+      if (activeTab !== 'saved') return;
 
-    const container = document.getElementById('prospect-list-items-container');
-    if (!container) return;
+      const container = document.getElementById(
+        'prospect-list-items-container',
+      );
+      if (!container) return;
 
-    console.log('container', container);
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const scrollThreshold = 100; // pixels from bottom to trigger load
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const scrollThreshold = 100; // pixels from bottom to trigger load
 
-    // Check if we're near the bottom and not already loading
-    if (
-      scrollHeight - scrollTop - clientHeight < scrollThreshold &&
-      !savedLeadsPagination.isLoading &&
-      savedLeadsPagination.hasMore
-    ) {
-      getSavedLeads(true);
+      // Check if we're near the bottom and not already loading
+      if (
+        scrollHeight - scrollTop - clientHeight < scrollThreshold &&
+        !savedLeadsPagination.isLoading &&
+        savedLeadsPagination.hasMore
+      ) {
+        getSavedLeads(true);
+      }
+    } catch (error) {
+      console.error('Error in handleScroll:', error);
     }
   };
 
@@ -451,26 +506,30 @@ const ProspectList = () => {
   };
 
   const copyToClipboard = (text) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        console.log('text copied');
-      })
-      .catch((err) => {
-        console.error('Failed to copy text: ', err);
-        // Fallback method for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand('copy');
+    try {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
           console.log('text copied');
-        } catch (fallbackErr) {
-          console.error('Fallback: Oops, unable to copy', fallbackErr);
-        }
-        document.body.removeChild(textArea);
-      });
+        })
+        .catch((err) => {
+          console.error('Failed to copy text: ', err);
+          // Fallback method for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            console.log('text copied');
+          } catch (fallbackErr) {
+            console.error('Fallback: Oops, unable to copy', fallbackErr);
+          }
+          document.body.removeChild(textArea);
+        });
+    } catch (error) {
+      console.error('Error in copyToClipboard:', error);
+    }
   };
 
   const closeProspectFilterModal = () => {
@@ -587,106 +646,136 @@ const ProspectList = () => {
   };
 
   const clearFilters = () => {
-    setSelectedTagFilters([]);
-    setDateFilterValue(null);
-    setApplyFiltersLoading(false);
-    setSavedProspects([]);
-    setSavedCount(0);
-    setIsFilterApplied(false);
-    // Reset pagination state
-    setSavedLeadsPagination({
-      start: 1,
-      next: 10,
-      total: 0,
-      hasMore: false,
-      isLoading: false,
-    });
-    getSavedLeads();
+    try {
+      setSelectedTagFilters([]);
+      setDateFilterValue(null);
+      setApplyFiltersLoading(false);
+      setSavedProspects([]);
+      setSavedCount(0);
+      setIsFilterApplied(false);
+      // Reset pagination state
+      setSavedLeadsPagination({
+        start: 1,
+        next: 10,
+        total: 0,
+        hasMore: false,
+        isLoading: false,
+      });
+      getSavedLeads();
+    } catch (error) {
+      console.error('Error in clearFilters:', error);
+    }
   };
 
   useEffect(() => {
-    fetchProspects();
-    getSavedLeads();
-    setIsAgency(true);
-    // setMetaData();  TODO for header
+    try {
+      fetchProspects();
+      getSavedLeads();
+      setIsAgency(true);
+      // setMetaData();  TODO for header
+    } catch (error) {
+      console.error('Error in initial useEffect:', error);
+    }
   }, []);
 
   // Add effect to listen for local storage changes
   useEffect(() => {
-    const handleStorageChange = (changes) => {
-      if (changes.bulkInfo) {
-        console.log('bulkInfo changed in storage, refreshing prospects');
-        fetchProspects();
-      }
-    };
+    try {
+      const handleStorageChange = (changes) => {
+        if (changes.bulkInfo) {
+          fetchProspects();
+        }
+      };
 
-    // Add listener for storage changes
-    chrome.storage.onChanged.addListener(handleStorageChange);
+      // Add listener for storage changes
+      chrome.storage.onChanged.addListener(handleStorageChange);
 
-    // Clean up listener on component unmount
-    return () => {
-      chrome.storage.onChanged.removeListener(handleStorageChange);
-    };
+      // Clean up listener on component unmount
+      return () => {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      };
+    } catch (error) {
+      console.error('Error in storage change useEffect:', error);
+    }
   }, []);
 
   // Add effect to handle body scroll lock
   useEffect(() => {
-    if (showTagsModal) {
-      document.body.classList.add('modal-open');
-    } else {
-      document.body.classList.remove('modal-open');
+    try {
+      if (showTagsModal) {
+        document.body.classList.add('modal-open');
+      } else {
+        document.body.classList.remove('modal-open');
+      }
+      return () => {
+        document.body.classList.remove('modal-open');
+      };
+    } catch (error) {
+      console.error('Error in modal scroll lock useEffect:', error);
     }
-    return () => {
-      document.body.classList.remove('modal-open');
-    };
   }, [showTagsModal]);
 
   // Add scroll event listener for infinite scroll
   useEffect(() => {
-    const container = document.getElementById('prospect-list-items-container');
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-    }
-
-    return () => {
+    try {
+      const container = document.getElementById(
+        'prospect-list-items-container',
+      );
       if (container) {
-        container.removeEventListener('scroll', handleScroll);
+        container.addEventListener('scroll', handleScroll);
       }
-    };
+
+      return () => {
+        if (container) {
+          container.removeEventListener('scroll', handleScroll);
+        }
+      };
+    } catch (error) {
+      console.error('Error in scroll event listener useEffect:', error);
+    }
   }, [activeTab, savedLeadsPagination.isLoading, savedLeadsPagination.hasMore]);
 
   useEffect(() => {
-    let intervalId = null;
+    try {
+      let intervalId = null;
 
-    if (isPollingEnabled) {
-      intervalId = setInterval(() => {
-        pollingAttemptsRef.current++;
-        if (pollingAttemptsRef.current >= MAX_POLLING_LIMIT) {
-          setIsPollingEnabled(false);
-        }
-        const shouldContinuePolling =
-          isFirstPollRequest || pollingAttemptsRef.current < MAX_POLLING_LIMIT;
+      if (isPollingEnabled) {
+        intervalId = setInterval(() => {
+          pollingAttemptsRef.current++;
+          if (pollingAttemptsRef.current >= MAX_POLLING_LIMIT) {
+            setIsPollingEnabled(false);
+          }
+          const shouldContinuePolling =
+            isFirstPollRequest ||
+            pollingAttemptsRef.current < MAX_POLLING_LIMIT;
 
-        if (shouldContinuePolling) {
-          handleFetchLead();
-        }
-      }, BULK_ACTION_TIMEOUT);
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+          if (shouldContinuePolling) {
+            handleFetchLead();
+          }
+        }, BULK_ACTION_TIMEOUT);
       }
-    };
+
+      return () => {
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+      };
+    } catch (error) {
+      console.error('Error in polling useEffect:', error);
+    }
   }, [isPollingEnabled, revealingProspects]);
 
   // Separate useEffect for handling polling completion
   useEffect(() => {
-    if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
-      // Only refresh prospects when polling is actually stopped
-      refreshProspects();
-      setIsFirstPollRequest(true);
-      pollingAttemptsRef.current = 0;
+    try {
+      if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
+        // Only refresh prospects when polling is actually stopped
+        refreshProspects();
+        setIsFirstPollRequest(true);
+        pollingAttemptsRef.current = 0;
+      }
+    } catch (error) {
+      console.error('Error in polling completion useEffect:', error);
     }
   }, [isPollingEnabled]);
 
@@ -746,6 +835,39 @@ const ProspectList = () => {
       ))}
     </div>
   );
+
+  const getExpandIcon = (prospect) => {
+    if (
+      !prospect.id ||
+      !prospect.isRevealed ||
+      (prospect.id &&
+        prospect.isRevealed &&
+        (prospect.emails.length > 1 ||
+          prospect.phones.length > 0 ||
+          prospect.sequences.length > 0 ||
+          prospect.tags.length > 0))
+    ) {
+      return (
+        <div
+          className={`prospect-item-expand-icon ${
+            !prospect.id ? 'disabled' : 'cursor-pointer'
+          }`}
+          onClick={() =>
+            setExpendedProspect(
+              expendedProspect === prospect?.id ? null : prospect?.id,
+            )
+          }
+        >
+          <img
+            src={expendedProspect === prospect?.id ? chevronUp : chevronDown}
+            alt="chevron-down"
+          />
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   const getProspectDescription = (prospect) => {
     if (!prospect.id || (prospect.isRevealed && prospect.isCreditRefunded)) {
@@ -889,6 +1011,75 @@ const ProspectList = () => {
     return null;
   };
 
+  const getProspectListTabs = () => (
+    <div className="prospect-tabs">
+      <div
+        className={`prospect-tab ${activeTab === 'leads' ? 'active' : ''}`}
+        onClick={() => switchTabTo('leads')}
+      >
+        <span>Leads Available</span>
+      </div>
+      <div
+        className={`prospect-tab saved-tab ${
+          activeTab === 'saved' ? 'active' : ''
+        }`}
+        onClick={() => switchTabTo('saved')}
+      >
+        <span>Saved</span>
+        <span className="prospect-saved-count"> {savedCount}</span>
+        {activeTab === 'saved' && (
+          <div className="prospect-tab-filter">
+            <div
+              className={`filter-container ${
+                isFilterApplied ? 'filter-applied' : ''
+              }`}
+            >
+              <div className="tooltip-container">
+                <div
+                  className="filter-icon-container"
+                  onClick={() => setShowProspectFilterModal(true)}
+                >
+                  <img
+                    src={isFilterApplied ? filterBlue : filter}
+                    alt="filter"
+                  />
+                </div>
+                <div className="custom-tooltip tooltip-bottom">Filter</div>
+              </div>
+              {isFilterApplied && (
+                <div className="clear-filter" onClick={clearFilters}>
+                  <img src={cross} alt="cross" />
+                </div>
+              )}
+            </div>
+            <ProspectFilterModal
+              showModal={showProspectFilterModal}
+              onClose={closeProspectFilterModal}
+              selectedTags={selectedTagFilters}
+              setSelectedTags={setSelectedTagFilters}
+              dateFilterValue={dateFilterValue}
+              setDateFilterValue={setDateFilterValue}
+              dateFilterCustomValue={dateFilterCustomValue}
+              setDateFilterCustomValue={setDateFilterCustomValue}
+              applyFilters={applyFilters}
+              clearFilters={clearFilters}
+              isLoading={applyFiltersLoading}
+            />
+          </div>
+        )}
+      </div>
+      <div
+        className={`prospect-tab-highlight ${
+          activeTab === 'leads' ? 'leads' : 'saved'
+        }`}
+      />
+    </div>
+  );
+
+  if (isRateLimitReached) {
+    return <RateLimitReached />;
+  }
+
   if (loading) {
     // skeleton ui
     return (
@@ -909,79 +1100,21 @@ const ProspectList = () => {
         <Header />
         <div className="prospect-tabs-container" id="prospect-list-container">
           {visibleProspects.length === 0 ? (
-            <>
-              {getProspectTabsSkeleton()}
-              <div className="prospect-tab-actions-skeleton" />
-              {getProspectListItemsSkeleton()}
-            </>
+            isFilterApplied ? (
+              <>
+                {getProspectListTabs()}
+                <NoProspectFound />
+              </>
+            ) : (
+              <>
+                {getProspectTabsSkeleton()}
+                <div className="prospect-tab-actions-skeleton" />
+                {getProspectListItemsSkeleton()}
+              </>
+            )
           ) : (
             <>
-              <div className="prospect-tabs">
-                <div
-                  className={`prospect-tab ${
-                    activeTab === 'leads' ? 'active' : ''
-                  }`}
-                  onClick={() => switchTabTo('leads')}
-                >
-                  <span>Leads Available</span>
-                </div>
-                <div
-                  className={`prospect-tab saved-tab ${
-                    activeTab === 'saved' ? 'active' : ''
-                  }`}
-                  onClick={() => switchTabTo('saved')}
-                >
-                  <span>Saved</span>
-                  <span className="prospect-saved-count"> {savedCount}</span>
-                  {activeTab === 'saved' && (
-                    <div className="prospect-tab-filter">
-                      <div
-                        className={`filter-container ${
-                          isFilterApplied ? 'filter-applied' : ''
-                        }`}
-                      >
-                        <div className="tooltip-container">
-                          <div
-                            className="filter-icon-container"
-                            onClick={() => setShowProspectFilterModal(true)}
-                          >
-                            <img
-                              src={isFilterApplied ? filterBlue : filter}
-                              alt="filter"
-                            />
-                          </div>
-                          <div className="custom-tooltip tooltip-bottom">
-                            Filter
-                          </div>
-                        </div>
-                        {isFilterApplied && (
-                          <div className="clear-filter" onClick={clearFilters}>
-                            <img src={cross} alt="cross" />
-                          </div>
-                        )}
-                      </div>
-                      <ProspectFilterModal
-                        showModal={showProspectFilterModal}
-                        onClose={closeProspectFilterModal}
-                        selectedTags={selectedTagFilters}
-                        setSelectedTags={setSelectedTagFilters}
-                        dateFilterValue={dateFilterValue}
-                        setDateFilterValue={setDateFilterValue}
-                        dateFilterCustomValue={dateFilterCustomValue}
-                        setDateFilterCustomValue={setDateFilterCustomValue}
-                        applyFilters={applyFilters}
-                        clearFilters={clearFilters}
-                        isLoading={applyFiltersLoading}
-                      />
-                    </div>
-                  )}
-                </div>
-                <div
-                  className={`prospect-tab-highlight ${
-                    activeTab === 'leads' ? 'leads' : 'saved'
-                  }`}
-                />
-              </div>
+              {getProspectListTabs()}
               <div className="prospect-tab-actions">
                 <div className="action-checkbox">
                   <div
@@ -1073,31 +1206,7 @@ const ProspectList = () => {
                         >
                           <div className="prospect-name">
                             <span>{prospect?.name}</span>
-                            {(prospect?.emails?.length > 0 ||
-                              prospect?.phones?.length > 0 ||
-                              !prospect?.isRevealed) && (
-                              <div
-                                className={`prospect-item-expand-icon ${
-                                  !prospect.id ? 'disabled' : 'cursor-pointer'
-                                }`}
-                                onClick={() =>
-                                  setExpendedProspect(
-                                    expendedProspect === prospect?.id
-                                      ? null
-                                      : prospect?.id,
-                                  )
-                                }
-                              >
-                                <img
-                                  src={
-                                    expendedProspect === prospect?.id
-                                      ? chevronUp
-                                      : chevronDown
-                                  }
-                                  alt="chevron-down"
-                                />
-                              </div>
-                            )}
+                            {getExpandIcon(prospect)}
                           </div>
                           {getProspectDescription(prospect)}
                         </div>
@@ -1143,8 +1252,8 @@ const ProspectList = () => {
                                   </span>
                                 </div>
                               )))}
-                        {prospect.phones.length > 0 &&
-                          prospect.phones.map((phone) => (
+                        {prospect?.phones?.length > 0 &&
+                          prospect?.phones?.map((phone) => (
                             <div
                               className="prospect-item-expanded-phone"
                               key={phone.number}
@@ -1172,6 +1281,42 @@ const ProspectList = () => {
                               )}
                             </div>
                           ))}
+                        {prospect?.sequences?.length > 0 && (
+                          <div className="prospect-item-expanded-sequences">
+                            <div className="prospect-item-expanded-sequences-title">
+                              <img src={send2} alt="send" />
+                              <span>Already in 1 Sequence:</span>
+                            </div>
+                            <div className="prospect-item-expanded-sequences-list">
+                              {prospect?.sequences?.map((sequence) => (
+                                <div
+                                  className="prospect-item-expanded-sequences-item"
+                                  key={sequence.sequenceId}
+                                >
+                                  <span>{sequence.sequenceName}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {prospect?.tags?.length > 0 && (
+                          <div className="prospect-item-expanded-tags">
+                            <div className="prospect-item-expanded-tags-title">
+                              <img src={tag2} alt="tag" />
+                              <span>Tags</span>
+                            </div>
+                            <div className="prospect-item-expanded-tags-list">
+                              {prospect?.tags?.map((tag) => (
+                                <div
+                                  className="prospect-item-expanded-tags-item"
+                                  key={tag.id}
+                                >
+                                  <span>{tag.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
