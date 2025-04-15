@@ -19,6 +19,8 @@ import circleCheck from '../../assets/icons/circleCheck.svg';
 import tagIcon from '../../assets/icons/tag.svg';
 import copy from '../../assets/icons/copy.svg';
 import filter from '../../assets/icons/filter.svg';
+import filterBlue from '../../assets/icons/filter-blue.svg';
+import cross from '../../assets/icons/cross.svg';
 import NogenderAvatar from '../no-gender-avatar';
 
 import SkeletonLoading from '../skeleton-loading/skeleton-loading';
@@ -27,12 +29,6 @@ import AddTagsModal from './add-tags';
 import AddToSequenceModal from './add-to-sequence-modal';
 import Header from '../header';
 import ProspectFilterModal from './prospect-filter-modal';
-
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.method === 'bulk-prospect-reload') {
-    console.log('refreshProspects');
-  }
-});
 
 const CustomButton = ({
   variant,
@@ -79,6 +75,15 @@ const ProspectList = () => {
     save: false,
   });
 
+  // Add pagination state for saved leads
+  const [savedLeadsPagination, setSavedLeadsPagination] = useState({
+    start: 1,
+    next: 10,
+    total: 0,
+    hasMore: false,
+    isLoading: false,
+  });
+
   const [isPollingEnabled, setIsPollingEnabled] = useState(false);
   const [isFirstPollRequest, setIsFirstPollRequest] = useState(true);
   const pollingAttemptsRef = useRef(0);
@@ -90,7 +95,11 @@ const ProspectList = () => {
   const visibleProspects = activeTab === 'leads' ? prospects : savedProspects;
 
   const selectableProspects = visibleProspects.filter(
-    (prospect) => prospect.id && !prospect.isRevealing,
+    (prospect) =>
+      prospect.id &&
+      !prospect.isRevealing &&
+      (!prospect.isRevealed ||
+        (prospect.isRevealed && !prospect.isCreditRefunded)),
   );
 
   const isAllEmailRevealed = selectableProspects.every(
@@ -104,6 +113,9 @@ const ProspectList = () => {
   const [showProspectFilterModal, setShowProspectFilterModal] = useState(false);
   const [selectedTagFilters, setSelectedTagFilters] = useState([]);
   const [dateFilterValue, setDateFilterValue] = useState(null);
+  const [dateFilterCustomValue, setDateFilterCustomValue] = useState(null);
+  const [applyFiltersLoading, setApplyFiltersLoading] = useState(false);
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
 
   const setProspectsData = (data, rawData) => {
     if (
@@ -132,7 +144,7 @@ const ProspectList = () => {
 
   const fetchProspects = async () => {
     chrome.storage.local.get(['bulkInfo'], async (result) => {
-      const bulkInfo = result?.bulkInfo.people;
+      const bulkInfo = result?.bulkInfo?.people;
       if (bulkInfo && bulkInfo.length > 0) {
         const linkedinUrls = bulkInfo.map(
           (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
@@ -360,27 +372,82 @@ const ProspectList = () => {
     }
   };
 
-  const getSavedLeads = async () => {
+  const getSavedLeads = async (isLoadMore = false) => {
     try {
+      // If loading more, use the next value from pagination
+      const start = isLoadMore ? savedLeadsPagination.next : 1;
+
+      // Set loading state
+      if (isLoadMore) {
+        setSavedLeadsPagination((prev) => ({ ...prev, isLoading: true }));
+      }
+
       const payload = {
-        start: 1,
-        take: 25,
+        start,
+        take: 10,
       };
+
       const response = await prospectsInstance.getSavedLeads(payload);
+
       if (
         response &&
         response.payload &&
         response.payload.profiles &&
         response.payload.profiles.length > 0
       ) {
-        setSavedProspects(response.payload.profiles);
+        // If loading more, append to existing prospects
+        if (isLoadMore) {
+          setSavedProspects((prev) => [...prev, ...response.payload.profiles]);
+        } else {
+          setSavedProspects(response.payload.profiles);
+        }
       }
-      if (response?.payload?.pagination?.total) {
-        setSavedCount(response?.payload?.pagination?.total);
+
+      // Update pagination state
+      if (response?.payload?.pagination) {
+        const { total, next } = response.payload.pagination;
+        setSavedCount(total);
+
+        setSavedLeadsPagination((prev) => ({
+          ...prev,
+          start,
+          next,
+          total,
+          hasMore: next <= total,
+          isLoading: false,
+        }));
       }
     } catch (e) {
       console.log('error', e);
+      setSavedLeadsPagination((prev) => ({ ...prev, isLoading: false }));
     }
+  };
+
+  // Function to handle scroll and load more saved leads
+  const handleScroll = () => {
+    console.log('activeTab', activeTab);
+    if (activeTab !== 'saved') return;
+
+    const container = document.getElementById('prospect-list-items-container');
+    if (!container) return;
+
+    console.log('container', container);
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const scrollThreshold = 100; // pixels from bottom to trigger load
+
+    // Check if we're near the bottom and not already loading
+    if (
+      scrollHeight - scrollTop - clientHeight < scrollThreshold &&
+      !savedLeadsPagination.isLoading &&
+      savedLeadsPagination.hasMore
+    ) {
+      getSavedLeads(true);
+    }
+  };
+
+  const switchTabTo = (tab) => {
+    setActiveTab(tab);
+    setSelectedProspects([]);
   };
 
   const copyToClipboard = (text) => {
@@ -406,13 +473,135 @@ const ProspectList = () => {
       });
   };
 
-  const applyFilters = () => {
-    console.log('applyFilters', selectedTagFilters, dateFilterValue);
+  const closeProspectFilterModal = () => {
+    setShowProspectFilterModal(false);
+  };
+
+  const applyFilters = async () => {
+    try {
+      setApplyFiltersLoading(true);
+      const tagFilter = selectedTagFilters.map((tag) => tag.value).join(',');
+      const payload = {
+        start: 1,
+        take: 25,
+        tags: tagFilter,
+      };
+
+      if (dateFilterValue) {
+        let startDate;
+        let endDate;
+
+        if (dateFilterValue.value === 'Custom' && dateFilterCustomValue) {
+          [startDate, endDate] = dateFilterCustomValue;
+        } else {
+          startDate = dateFilterValue.startDate;
+          endDate = dateFilterValue.endDate;
+        }
+
+        if (startDate && endDate) {
+          let formattedStartDate;
+          let formattedEndDate;
+
+          if (startDate.toISO && typeof startDate.toISO === 'function') {
+            const startDateMidnight = startDate.startOf('day');
+            const endDateMidnight = endDate.startOf('day');
+
+            formattedStartDate = startDateMidnight
+              .toLocal()
+              .toISO()
+              .replace('Z', '+05:30');
+            formattedEndDate = endDateMidnight
+              .toLocal()
+              .toISO()
+              .replace('Z', '+05:30');
+          } else if (
+            startDate.toISOString &&
+            typeof startDate.toISOString === 'function'
+          ) {
+            const startDateMidnight = new Date(startDate);
+            startDateMidnight.setHours(0, 0, 0, 0);
+
+            const endDateMidnight = new Date(endDate);
+            endDateMidnight.setHours(0, 0, 0, 0);
+
+            const formatDateToLocalISO = (date) => {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}T00:00:00.000+05:30`;
+            };
+
+            formattedStartDate = formatDateToLocalISO(startDateMidnight);
+            formattedEndDate = formatDateToLocalISO(endDateMidnight);
+          } else {
+            const startDateMidnight = new Date(startDate);
+            startDateMidnight.setHours(0, 0, 0, 0);
+
+            const endDateMidnight = new Date(endDate);
+            endDateMidnight.setHours(0, 0, 0, 0);
+
+            const formatDateToLocalISO = (date) => {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}T00:00:00.000+05:30`;
+            };
+
+            formattedStartDate = formatDateToLocalISO(startDateMidnight);
+            formattedEndDate = formatDateToLocalISO(endDateMidnight);
+          }
+
+          const createdDateString = `${formattedStartDate},${formattedEndDate}`;
+          payload.createdDate = encodeURIComponent(createdDateString);
+        }
+      }
+
+      const response = await prospectsInstance.getSavedLeads(payload);
+      if (response && response.payload && response.payload.profiles) {
+        setSavedProspects(response.payload.profiles);
+        setIsFilterApplied(true);
+
+        // Reset pagination state for filtered results
+        if (response?.payload?.pagination) {
+          const { total, next } = response.payload.pagination;
+          setSavedCount(total);
+
+          setSavedLeadsPagination({
+            start: 1,
+            next,
+            total,
+            hasMore: next <= total,
+            isLoading: false,
+          });
+        }
+      }
+      if (response?.payload?.pagination?.total) {
+        setSavedCount(response?.payload?.pagination?.total);
+      }
+    } catch (e) {
+      console.log('error', e);
+    } finally {
+      setApplyFiltersLoading(false);
+      setShowProspectFilterModal(false);
+    }
   };
 
   const clearFilters = () => {
     setSelectedTagFilters([]);
     setDateFilterValue(null);
+    setApplyFiltersLoading(false);
+    setSavedProspects([]);
+    setSavedCount(0);
+    setIsFilterApplied(false);
+    // Reset pagination state
+    setSavedLeadsPagination({
+      start: 1,
+      next: 10,
+      total: 0,
+      hasMore: false,
+      isLoading: false,
+    });
+    getSavedLeads();
   };
 
   useEffect(() => {
@@ -420,6 +609,24 @@ const ProspectList = () => {
     getSavedLeads();
     setIsAgency(true);
     // setMetaData();  TODO for header
+  }, []);
+
+  // Add effect to listen for local storage changes
+  useEffect(() => {
+    const handleStorageChange = (changes) => {
+      if (changes.bulkInfo) {
+        console.log('bulkInfo changed in storage, refreshing prospects');
+        fetchProspects();
+      }
+    };
+
+    // Add listener for storage changes
+    chrome.storage.onChanged.addListener(handleStorageChange);
+
+    // Clean up listener on component unmount
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
   }, []);
 
   // Add effect to handle body scroll lock
@@ -433,6 +640,20 @@ const ProspectList = () => {
       document.body.classList.remove('modal-open');
     };
   }, [showTagsModal]);
+
+  // Add scroll event listener for infinite scroll
+  useEffect(() => {
+    const container = document.getElementById('prospect-list-items-container');
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [activeTab, savedLeadsPagination.isLoading, savedLeadsPagination.hasMore]);
 
   useEffect(() => {
     let intervalId = null;
@@ -527,7 +748,7 @@ const ProspectList = () => {
   );
 
   const getProspectDescription = (prospect) => {
-    if (!prospect.id || (prospect.isRevealed && prospect.emails.length === 0)) {
+    if (!prospect.id || (prospect.isRevealed && prospect.isCreditRefunded)) {
       return (
         <div className="prospect-email-unavailable">
           <img
@@ -540,11 +761,17 @@ const ProspectList = () => {
           </span>
           <div className="tooltip-container">
             <img src={alertCircle} alt="alert" />
-            <div className="custom-tooltip tooltip-bottom">
-              Email is not available your
-              <br />
-              credit is refunded
-            </div>
+            {!prospect.id ? (
+              <div className="custom-tooltip tooltip-bottom">
+                Email is not available
+              </div>
+            ) : (
+              <div className="custom-tooltip tooltip-bottom">
+                Email is not available your
+                <br />
+                credit is refunded
+              </div>
+            )}
           </div>
         </div>
       );
@@ -649,6 +876,19 @@ const ProspectList = () => {
     );
   };
 
+  // Add a function to render the loading spinner at the bottom of the list
+  const renderLoadingSpinner = () => {
+    if (activeTab === 'saved' && savedLeadsPagination.isLoading) {
+      return (
+        <div className="loading-spinner-container">
+          <div className="spinner" />
+          <span>Loading more prospects...</span>
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (loading) {
     // skeleton ui
     return (
@@ -681,7 +921,7 @@ const ProspectList = () => {
                   className={`prospect-tab ${
                     activeTab === 'leads' ? 'active' : ''
                   }`}
-                  onClick={() => setActiveTab('leads')}
+                  onClick={() => switchTabTo('leads')}
                 >
                   <span>Leads Available</span>
                 </div>
@@ -689,19 +929,50 @@ const ProspectList = () => {
                   className={`prospect-tab saved-tab ${
                     activeTab === 'saved' ? 'active' : ''
                   }`}
-                  onClick={() => setActiveTab('saved')}
+                  onClick={() => switchTabTo('saved')}
                 >
                   <span>Saved</span>
                   <span className="prospect-saved-count"> {savedCount}</span>
                   {activeTab === 'saved' && (
-                    <div
-                      className="tooltip-container prospect-tab-filter"
-                      onClick={() => setShowProspectFilterModal(true)}
-                    >
-                      <img src={filter} alt="filter" />
-                      <div className="custom-tooltip tooltip-bottom">
-                        Filter
+                    <div className="prospect-tab-filter">
+                      <div
+                        className={`filter-container ${
+                          isFilterApplied ? 'filter-applied' : ''
+                        }`}
+                      >
+                        <div className="tooltip-container">
+                          <div
+                            className="filter-icon-container"
+                            onClick={() => setShowProspectFilterModal(true)}
+                          >
+                            <img
+                              src={isFilterApplied ? filterBlue : filter}
+                              alt="filter"
+                            />
+                          </div>
+                          <div className="custom-tooltip tooltip-bottom">
+                            Filter
+                          </div>
+                        </div>
+                        {isFilterApplied && (
+                          <div className="clear-filter" onClick={clearFilters}>
+                            <img src={cross} alt="cross" />
+                          </div>
+                        )}
                       </div>
+                      <ProspectFilterModal
+                        showModal={showProspectFilterModal}
+                        onClose={closeProspectFilterModal}
+                        selectedTags={selectedTagFilters}
+                        setSelectedTags={setSelectedTagFilters}
+                        dateFilterValue={dateFilterValue}
+                        setDateFilterValue={setDateFilterValue}
+                        dateFilterCustomValue={dateFilterCustomValue}
+                        setDateFilterCustomValue={setDateFilterCustomValue}
+                        applyFilters={applyFilters}
+                        clearFilters={clearFilters}
+                        isLoading={applyFiltersLoading}
+                      />
                     </div>
                   )}
                 </div>
@@ -735,7 +1006,10 @@ const ProspectList = () => {
                 <div className="action-divider" />
                 {getActionButtons()}
               </div>
-              <div className="prospect-list-items-container">
+              <div
+                id="prospect-list-items-container"
+                className="prospect-list-items-container"
+              >
                 {visibleProspects.map((prospect, index) => (
                   <div className="prospect-item-container" key={index}>
                     <div
@@ -750,12 +1024,18 @@ const ProspectList = () => {
                         ) : (
                           <div
                             className={`cursor-pointer ${
-                              !prospect.id ? 'checkbox-disabled' : ''
+                              !prospect.id ||
+                              (prospect.id &&
+                                prospect.isRevealed &&
+                                prospect.isCreditRefunded)
+                                ? 'checkbox-disabled'
+                                : ''
                             }`}
-                            {...(prospect.id && {
-                              onClick: () =>
-                                toggleProspectSelection(prospect.id),
-                            })}
+                            {...(prospect.id &&
+                              !prospect.isCreditRefunded && {
+                                onClick: () =>
+                                  toggleProspectSelection(prospect.id),
+                              })}
                           >
                             <img
                               src={
@@ -792,30 +1072,32 @@ const ProspectList = () => {
                           }`}
                         >
                           <div className="prospect-name">
-                            <span>{prospect.name}</span>
-                            {prospect.id &&
-                              (prospect.emails.length > 0 ||
-                                prospect.phones.length > 0) && (
-                                <div
-                                  className="prospect-item-expand-icon"
-                                  onClick={() =>
-                                    setExpendedProspect(
-                                      expendedProspect === prospect.id
-                                        ? null
-                                        : prospect.id,
-                                    )
+                            <span>{prospect?.name}</span>
+                            {(prospect?.emails?.length > 0 ||
+                              prospect?.phones?.length > 0 ||
+                              !prospect?.isRevealed) && (
+                              <div
+                                className={`prospect-item-expand-icon ${
+                                  !prospect.id ? 'disabled' : 'cursor-pointer'
+                                }`}
+                                onClick={() =>
+                                  setExpendedProspect(
+                                    expendedProspect === prospect?.id
+                                      ? null
+                                      : prospect?.id,
+                                  )
+                                }
+                              >
+                                <img
+                                  src={
+                                    expendedProspect === prospect?.id
+                                      ? chevronUp
+                                      : chevronDown
                                   }
-                                >
-                                  <img
-                                    src={
-                                      expendedProspect === prospect.id
-                                        ? chevronUp
-                                        : chevronDown
-                                    }
-                                    alt="chevron-down"
-                                  />
-                                </div>
-                              )}
+                                  alt="chevron-down"
+                                />
+                              </div>
+                            )}
                           </div>
                           {getProspectDescription(prospect)}
                         </div>
@@ -894,6 +1176,8 @@ const ProspectList = () => {
                     )}
                   </div>
                 ))}
+                {/* Add loading spinner at the bottom of the list */}
+                {renderLoadingSpinner()}
               </div>
             </>
           )}
@@ -918,17 +1202,6 @@ const ProspectList = () => {
         isAgency={isAgency}
         handleAddToSequence={handleAddToSequence}
         isLoading={revealProspectLoading}
-      />
-
-      <ProspectFilterModal
-        showModal={showProspectFilterModal}
-        onClose={() => setShowProspectFilterModal(false)}
-        selectedTags={selectedTagFilters}
-        setSelectedTags={setSelectedTagFilters}
-        dateFilterValue={dateFilterValue}
-        setDateFilterValue={setDateFilterValue}
-        applyFilters={applyFilters}
-        clearFilters={clearFilters}
       />
     </>
   );
