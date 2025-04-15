@@ -18,6 +18,9 @@ const Profile = () => {
   const [mailboxEmail, setMailboxEmail] = useState('');
   const [newUserId, setUserId] = useState();
   const [mailboxList, setMailboxList] = useState([]);
+  const [emailInsightTooltip, setEmailInsightTooltip] = useState(false);
+  const [emailReportTooltip, setEmailReportTooltip] = useState(false);
+  const [emailAccountTooltip, setEmailAccountTooltip] = useState(false);
   const [emailTrackingSentence, setEmailTrackingSentence] = useState('');
 
   const handledLogout = () => {
@@ -96,6 +99,7 @@ const Profile = () => {
             setMailboxSetting(true);
             setUserId(anyTrackingEnabled[0].userId);
             setMailboxList(trackingEmails);
+            console.debug('tracking', trackingEmails);
 
             let sentence;
 
@@ -104,9 +108,28 @@ const Profile = () => {
             } else if (trackingEmails.length === 2) {
               sentence = `Email tracking is turned on for ${trackingEmails[0]} and ${trackingEmails[1]}`;
             } else {
-              sentence = `Email tracking is turned on for ${
-                trackingEmails[0]
-              }, ${trackingEmails[1]} [+${trackingEmails.length - 2} more]`;
+              sentence = (
+                <>
+                  Email tracking is turned on for {trackingEmails[0]},<br />
+                  {trackingEmails[1]}{' '}
+                  <div
+                    style={{
+                      color: '#0137FC',
+                      cursor: 'pointer',
+                      display: 'inline-block',
+                      position: 'relative',
+                    }}
+                    onMouseEnter={() => setEmailAccountTooltip(true)}
+                    onMouseLeave={() => setEmailAccountTooltip(false)}
+                    onClick={() => {
+                      setEmailAccountTooltip(!emailAccountTooltip);
+                      console.debug('click ');
+                    }}
+                  >
+                    [+{trackingEmails.length - 2} more]
+                  </div>
+                </>
+              );
             }
 
             setEmailTrackingSentence(sentence);
@@ -783,12 +806,11 @@ const Profile = () => {
                       display: 'flex',
                       gap: '4px',
                     }}
+                    onMouseEnter={() => setEmailInsightTooltip(true)}
+                    onMouseLeave={() => setEmailInsightTooltip(false)}
                   >
                     Email Tracking Insights
                     <div
-                      onClick={() =>
-                        handleClick('https://my.saleshandy.com/email-insights')
-                      }
                       style={{
                         cursor: 'pointer',
                       }}
@@ -819,10 +841,54 @@ const Profile = () => {
                           fill="#6B7280"
                         />
                       </svg>
+                      {emailInsightTooltip && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '32.65rem', // adjust this based on your layout
+                            left: '44%',
+                            transform: 'translateX(-50%)',
+                            padding: '8px',
+                            backgroundColor: '#333',
+                            color: 'white',
+                            borderRadius: '5px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            lineHeight: '16px',
+                            width: '200px',
+                            zIndex: 1,
+                          }}
+                        >
+                          If turned on it tracks opens, clicks for emails sent
+                          from, Gmail through this browser
+                          <div
+                            style={{
+                              position: 'absolute',
+                              bottom: '64px',
+                              left: '51%',
+                              transform: 'rotate(180deg)',
+                              width: '0',
+                              height: '0',
+                              borderLeft: '5px solid transparent',
+                              borderRight: '5px solid transparent',
+                              borderTop: '5px solid #333',
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div>
+                  <div
+                    onClick={() =>
+                      handleClick('https://my.saleshandy.com/email-insights')
+                    }
+                    onMouseEnter={() => setEmailReportTooltip(true)}
+                    onMouseLeave={() => setEmailReportTooltip(false)}
+                    style={{
+                      cursor: 'pointer',
+                    }}
+                  >
                     <svg
                       width="17"
                       height="17"
@@ -849,6 +915,41 @@ const Profile = () => {
                         fill="#D1D5DB"
                       />
                     </svg>
+                    {emailReportTooltip && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '32.65rem', // adjust this based on your layout
+                          left: '65.65%',
+                          transform: 'translateX(-50%)',
+                          padding: '8px',
+                          backgroundColor: '#333',
+                          color: 'white',
+                          borderRadius: '5px',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          lineHeight: '16px',
+                          textAlign: 'center',
+                          width: '200px',
+                          zIndex: 1,
+                        }}
+                      >
+                        View email insight reports
+                        <div
+                          style={{
+                            position: 'absolute',
+                            bottom: '32px',
+                            left: '92%',
+                            transform: 'rotate(180deg)',
+                            width: '0',
+                            height: '0',
+                            borderLeft: '5px solid transparent',
+                            borderRight: '5px solid transparent',
+                            borderTop: '5px solid #333',
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -938,6 +1039,46 @@ const Profile = () => {
                       }}
                     >
                       <span>{emailTrackingSentence}</span>
+                      {emailAccountTooltip && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '32.65rem', // adjust this based on your layout
+                            left: '65%',
+                            transform: 'translateX(-50%)',
+                            padding: '8px',
+                            backgroundColor: '#333',
+                            color: 'white',
+                            borderRadius: '5px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            lineHeight: '16px',
+                            width: '200px',
+                            height: 'auto',
+                            wordWrap: 'break-word',
+                            zIndex: 1,
+                          }}
+                        >
+                          {mailboxList.map((emails) => (
+                            <>
+                              {emails}
+                              <br />
+                            </>
+                          ))}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              bottom: '-5px',
+                              left: '61%',
+                              width: '0',
+                              height: '0',
+                              borderLeft: '5px solid transparent',
+                              borderRight: '5px solid transparent',
+                              borderTop: '5px solid #333',
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

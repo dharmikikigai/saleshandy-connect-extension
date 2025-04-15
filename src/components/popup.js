@@ -15,6 +15,7 @@ const Popup = () => {
   const [refreshTooltip, setRefreshTooltip] = useState(false);
   const [emailInsightTooltip, setEmailInsightTooltip] = useState(false);
   const [emailReportTooltip, setEmailReportTooltip] = useState(false);
+  const [emailAccountTooltip, setEmailAccountTooltip] = useState(false);
   const [mailboxSetting, setMailboxSetting] = useState(false);
   const [desktopNotification, setDesktopNotification] = useState(false);
   const [newMailboxId, setMailboxId] = useState();
@@ -72,9 +73,28 @@ const Popup = () => {
             } else if (trackingEmails.length === 2) {
               sentence = `Email tracking is turned on for ${trackingEmails[0]} and ${trackingEmails[1]}`;
             } else {
-              sentence = `Email tracking is turned on for ${
-                trackingEmails[0]
-              }, ${trackingEmails[1]} [+${trackingEmails.length - 2} more]`;
+              sentence = (
+                <>
+                  Email tracking is turned on for {trackingEmails[0]},<br />
+                  {trackingEmails[1]}{' '}
+                  <div
+                    style={{
+                      color: '#0137FC',
+                      cursor: 'pointer',
+                      display: 'inline-block',
+                      position: 'relative',
+                    }}
+                    onMouseEnter={() => setEmailAccountTooltip(true)}
+                    onMouseLeave={() => setEmailAccountTooltip(false)}
+                    onClick={() => {
+                      setEmailAccountTooltip(!emailAccountTooltip);
+                      console.debug('click ');
+                    }}
+                  >
+                    [+{trackingEmails.length - 2} more]
+                  </div>
+                </>
+              );
             }
 
             setEmailTrackingSentence(sentence);
@@ -1024,6 +1044,46 @@ const Popup = () => {
                       }}
                     >
                       <span>{emailTrackingSentence}</span>
+                      {emailAccountTooltip && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '16.85rem', // adjust this based on your layout
+                            left: '61%',
+                            transform: 'translateX(-50%)',
+                            padding: '8px',
+                            backgroundColor: '#333',
+                            color: 'white',
+                            borderRadius: '5px',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            lineHeight: '16px',
+                            width: '200px',
+                            height: 'auto',
+                            wordWrap: 'break-word',
+                            zIndex: 1,
+                          }}
+                        >
+                          {mailboxList.map((emails) => (
+                            <>
+                              {emails}
+                              <br />
+                            </>
+                          ))}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              bottom: '-5px',
+                              left: '75%',
+                              width: '0',
+                              height: '0',
+                              borderLeft: '5px solid transparent',
+                              borderRight: '5px solid transparent',
+                              borderTop: '5px solid #333',
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
