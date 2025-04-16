@@ -208,11 +208,12 @@ const Profile = () => {
       code = '1';
     }
 
-    await mailboxInstance.updateNotificationSetting({
+    const data = await mailboxInstance.updateNotificationSetting({
       settings: [{ code: 'desktop_notification', value: code }],
     });
-
-    setDesktopNotification(!desktopNotification);
+    if (data) {
+      setDesktopNotification(!desktopNotification);
+    }
   };
 
   const handleClick = (link) => {
@@ -1198,7 +1199,10 @@ const Profile = () => {
                 </div>
               </div>
               {/* Logout */}
-              <div onClick={handledLogout} style={{ width: '100%' }}>
+              <div
+                onClick={handledLogout}
+                style={{ width: '100%', cursor: 'pointer' }}
+              >
                 <div
                   style={{
                     fontWeight: '500',

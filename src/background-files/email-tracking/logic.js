@@ -451,6 +451,10 @@ function findDescrP(source, reg) {
 }
 
 function getUserInfo(source) {
+  let linkedinPerson;
+  let linkedinMainInfoArray;
+  const user = {};
+
   function getLinkedinMainInfoArray(field, data, type, parent) {
     for (key in data) {
       if (
@@ -483,8 +487,6 @@ function getUserInfo(source) {
   }
 
   let data = [];
-  let linkedinMainInfoArray;
-  const user = {};
 
   if (typeof source === 'object') {
     data = source;

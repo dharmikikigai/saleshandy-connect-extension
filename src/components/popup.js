@@ -172,11 +172,12 @@ const Popup = () => {
       code = '1';
     }
 
-    await mailboxInstance.updateNotificationSetting({
+    const data = await mailboxInstance.updateNotificationSetting({
       settings: [{ code: 'desktop_notification', value: code }],
     });
-
-    setDesktopNotification(!desktopNotification);
+    if (data) {
+      setDesktopNotification(!desktopNotification);
+    }
   };
 
   useEffect(() => {
