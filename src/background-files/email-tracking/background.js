@@ -28,8 +28,17 @@ async function onBeaconClickActivity(tab) {
   await fetchAndSetActiveUrl();
 
   chrome.tabs.sendMessage(tab.id, { method: 'injectYTVideo' });
-  chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
-  chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+
+  chrome.cookies.get(
+    { url: 'https://www.linkedin.com', name: 'li_at' },
+    (cookie) => {
+      if (cookie) {
+        chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+      } else {
+        console.log('User is not logged in');
+      }
+    },
+  );
 }
 
 async function updateMailboxEmail(tabId) {
@@ -45,7 +54,16 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
       await fetchAndSetActiveUrl();
 
       if (currentUrl.includes('linkedin.com')) {
-        chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+        chrome.cookies.get(
+          { url: 'https://www.linkedin.com', name: 'li_at' },
+          (cookie) => {
+            if (cookie) {
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+            } else {
+              console.log('User is not logged in');
+            }
+          },
+        );
       }
       if (currentUrl.includes('mail.google.com')) {
         updateMailboxEmail(tab.id);
@@ -62,7 +80,16 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     await fetchAndSetActiveUrl();
 
     if (currentUrl.includes('linkedin.com')) {
-      chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+      chrome.cookies.get(
+        { url: 'https://www.linkedin.com', name: 'li_at' },
+        (cookie) => {
+          if (cookie) {
+            chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+          } else {
+            console.log('User is not logged in');
+          }
+        },
+      );
     }
     if (currentUrl.includes('mail.google.com')) {
       updateMailboxEmail(tab.id);
