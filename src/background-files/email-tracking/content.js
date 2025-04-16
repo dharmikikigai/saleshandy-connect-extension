@@ -1,5 +1,12 @@
 const FLOATING_WINDOW_ID = 'saleshandy-iframe';
 
+function reloadIframe() {
+  const iframe = document.getElementById(FLOATING_WINDOW_ID);
+  if (iframe) {
+    iframe.src = chrome.runtime.getURL('frame.html');
+  }
+}
+
 function injectFloatingWindow() {
   const existingModal = document.getElementById(FLOATING_WINDOW_ID);
   if (existingModal) {
@@ -219,6 +226,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.method === 'closeDiv') {
     closeDiv();
     sendResponse({ status: 'success', message: 'div closed' });
+  }
+
+  if (request.method === 'reloadIframe') {
+    reloadIframe();
+    sendResponse({ status: 'success', message: 'iframe reloaded' });
   }
 
   if (request.method === 'getPersonData') {

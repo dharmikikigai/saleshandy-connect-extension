@@ -26,6 +26,7 @@ const Main = () => {
   const [showProfilePageState, setShowProfilePageState] = useRecoilState(
     profilePageState,
   );
+  const [userMetaData, setUserMetaData] = useState(null);
 
   const getMetaData = async () => {
     if (!chrome?.storage?.local) {
@@ -36,6 +37,7 @@ const Main = () => {
 
     if (metaData) {
       chrome.storage.local.set({ saleshandyMetaData: metaData });
+      setUserMetaData(metaData);
 
       if (metaData.user?.isUserRestricted) {
         setIsFeatureAvailable(true);
@@ -151,11 +153,16 @@ const Main = () => {
   }
 
   if (isSingleViewActive) {
-    return <SingleProfile />;
+    return <SingleProfile userMetaData={userMetaData} />;
   }
 
   if (isBulkPagViewActive || isBulkViewActive) {
-    return <ProspectList />;
+    return (
+      <ProspectList
+        pageType={isBulkPagViewActive ? 'pagination' : 'continuous'}
+        userMetaData={userMetaData}
+      />
+    );
   }
 
   if (isCommonPeopleScreenActive) {

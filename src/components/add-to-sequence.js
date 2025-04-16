@@ -156,6 +156,7 @@ const AddToSequence = ({
   setIsExpanded,
   btnLoadingStatus,
   isAgency,
+  isFreePlanUser,
 }) => {
   // const [isExpanded, setIsExpanded] = useState(false);
   // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
@@ -206,7 +207,7 @@ const AddToSequence = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        cursor: 'pointer',
+        cursor: isFreePlanUser ? 'not-allowed' : 'pointer',
       }}
     >
       {/* Header */}
@@ -217,7 +218,11 @@ const AddToSequence = ({
           justifyContent: 'space-between',
           height: '16px',
         }}
-        onClick={() => setIsExpanded('sequence')}
+        {...(!isFreePlanUser && {
+          onClick: () => {
+            setIsExpanded('sequence');
+          },
+        })}
       >
         <div
           style={{

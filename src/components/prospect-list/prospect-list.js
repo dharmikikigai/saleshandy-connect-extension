@@ -1,5 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 import React, { useState, useEffect, useRef } from 'react';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './prospect-list.css';
@@ -43,6 +44,7 @@ const CustomButton = ({
   children,
   disabled = false,
   loading = false,
+  dataTooltipId = null,
 }) => {
   const baseClass =
     variant === 'primary' ? 'btn-primary' : 'btn-outline-primary';
@@ -54,6 +56,9 @@ const CustomButton = ({
       }`}
       onClick={onClick}
       disabled={disabled || loading}
+      {...(dataTooltipId && {
+        'data-tooltip-id': dataTooltipId,
+      })}
     >
       {loading ? <div className="spinner" /> : children}
     </button>
@@ -63,8 +68,9 @@ const CustomButton = ({
 const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
 
-const ProspectList = () => {
-  // const [isLoading, setIsLoading] = useState(true);
+const ProspectList = ({ pageType, userMetaData }) => {
+  const [isProspectsLoading, setIsProspectsLoading] = useState(false);
+  const [localProspects, setLocalProspects] = useState([]);
   const [prospects, setProspects] = useState([]);
   const [savedProspects, setSavedProspects] = useState([]);
   const [savedCount, setSavedCount] = useState(0);
@@ -168,10 +174,12 @@ const ProspectList = () => {
       chrome.storage.local.get(['bulkInfo'], async (result) => {
         try {
           const bulkInfo = result?.bulkInfo?.people;
+          setLocalProspects(bulkInfo);
           if (bulkInfo && bulkInfo.length > 0) {
             const linkedinUrls = bulkInfo.map(
               (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
             );
+            setIsProspectsLoading(true);
             const payload = {
               start: 1,
               take: linkedinUrls.length,
@@ -184,9 +192,11 @@ const ProspectList = () => {
             if (response?.type === 'rate-limit') {
               setIsRateLimitReached(true);
             }
+            setIsProspectsLoading(false);
           }
         } catch (error) {
           console.error('Error in fetchProspects callback:', error);
+          setIsProspectsLoading(false);
         }
       });
     } catch (error) {
@@ -993,8 +1003,9 @@ const ProspectList = () => {
     <CustomButton
       variant="outline"
       className={isExpanded ? 'action-button' : 'action-icon-button'}
-      disabled={selectedProspects.length === 0}
+      disabled={selectedProspects.length === 0 || userMetaData?.isFreePlanUser}
       onClick={() => setShowAddToSequenceModal(true)}
+      dataTooltipId={userMetaData?.isFreePlanUser ? 'is-free-plan-user' : null}
     >
       <img src={send} alt="send" />
       {isExpanded ? 'Sequence' : ''}
@@ -1005,8 +1016,9 @@ const ProspectList = () => {
     <CustomButton
       variant="outline"
       className="action-icon-button"
-      disabled={selectedProspects.length === 0}
+      disabled={selectedProspects.length === 0 || userMetaData?.isFreePlanUser}
       onClick={handleAddTagsForRevealedProspects}
+      dataTooltipId={userMetaData?.isFreePlanUser ? 'is-free-plan-user' : null}
     >
       <img src={tagIcon} alt="tag" />
     </CustomButton>
@@ -1136,6 +1148,7 @@ const ProspectList = () => {
       </div>
     );
   }
+  console.log('localProspects', localProspects);
   // actual ui
   return (
     <>
@@ -1190,191 +1203,195 @@ const ProspectList = () => {
                 <div className="action-divider" />
                 {getActionButtons()}
               </div>
-              <div
-                id="prospect-list-items-container"
-                className="prospect-list-items-container"
-              >
-                {visibleProspects.map((prospect, index) => (
-                  <div className="prospect-item-container" key={index}>
-                    <div
-                      className={`prospect-item ${
-                        expendedProspect === prospect.id ? 'expanded' : ''
-                      }`}
-                    >
-                      <div className="prospect-item-checkbox">
-                        {prospect.isRevealing ||
-                        revealingProspects[prospect.id] ? (
-                          <div className="spinner" />
-                        ) : (
-                          <div
-                            className={`cursor-pointer ${
-                              !prospect.id ||
-                              (prospect.id &&
-                                prospect.isRevealed &&
-                                prospect.isCreditRefunded)
-                                ? 'checkbox-disabled'
-                                : ''
-                            }`}
-                            {...(prospect.id &&
-                              !prospect.isCreditRefunded && {
-                                onClick: () =>
-                                  toggleProspectSelection(prospect.id),
-                              })}
-                          >
-                            <img
-                              src={
-                                prospect.id &&
-                                selectedProspects.includes(prospect.id)
-                                  ? checkboxChecked
-                                  : checkbox
-                              }
-                              alt="checkbox"
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <div className="prospect-item-info">
-                        <div className="prospect-image">
-                          {prospect.profile_pic || prospect.logo ? (
-                            <img
-                              src={
-                                prospect.profile_pic
-                                  ? prospect.profile_pic
-                                  : prospect.logo
-                              }
-                              alt="profile"
-                            />
+              {isProspectsLoading && pageType === 'pagination' ? (
+                <>{getProspectListItemsSkeleton()}</>
+              ) : (
+                <div
+                  id="prospect-list-items-container"
+                  className="prospect-list-items-container"
+                >
+                  {visibleProspects.map((prospect, index) => (
+                    <div className="prospect-item-container" key={index}>
+                      <div
+                        className={`prospect-item ${
+                          expendedProspect === prospect.id ? 'expanded' : ''
+                        }`}
+                      >
+                        <div className="prospect-item-checkbox">
+                          {prospect.isRevealing ||
+                          revealingProspects[prospect.id] ? (
+                            <div className="spinner" />
                           ) : (
-                            <NogenderAvatar />
+                            <div
+                              className={`cursor-pointer ${
+                                !prospect.id ||
+                                (prospect.id &&
+                                  prospect.isRevealed &&
+                                  prospect.isCreditRefunded)
+                                  ? 'checkbox-disabled'
+                                  : ''
+                              }`}
+                              {...(prospect.id &&
+                                !prospect.isCreditRefunded && {
+                                  onClick: () =>
+                                    toggleProspectSelection(prospect.id),
+                                })}
+                            >
+                              <img
+                                src={
+                                  prospect.id &&
+                                  selectedProspects.includes(prospect.id)
+                                    ? checkboxChecked
+                                    : checkbox
+                                }
+                                alt="checkbox"
+                              />
+                            </div>
                           )}
                         </div>
-                        <div
-                          className={`prospect-item-details ${
-                            !prospect.id || prospect.isRevealed
-                              ? 'prospect-item-details-unavailable'
-                              : ''
-                          }`}
-                        >
-                          <div className="prospect-name">
-                            <span>{prospect?.name}</span>
-                            {getExpandIcon(prospect)}
+                        <div className="prospect-item-info">
+                          <div className="prospect-image">
+                            {prospect.profile_pic || prospect.logo ? (
+                              <img
+                                src={
+                                  prospect.profile_pic
+                                    ? prospect.profile_pic
+                                    : prospect.logo
+                                }
+                                alt="profile"
+                              />
+                            ) : (
+                              <NogenderAvatar />
+                            )}
                           </div>
-                          {getProspectDescription(prospect)}
+                          <div
+                            className={`prospect-item-details ${
+                              !prospect.id || prospect.isRevealed
+                                ? 'prospect-item-details-unavailable'
+                                : ''
+                            }`}
+                          >
+                            <div className="prospect-name">
+                              <span>{prospect?.name}</span>
+                              {getExpandIcon(prospect)}
+                            </div>
+                            {getProspectDescription(prospect)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {expendedProspect === prospect.id && (
-                      <div className="prospect-item-expanded">
-                        {prospect.emails.length > 0 &&
-                          (prospect.isRevealed
-                            ? prospect.emails.slice(1).map((e, i) => (
-                                <div
-                                  className="prospect-item-expanded-email"
-                                  key={i}
-                                >
-                                  <img src={mail} alt="email" />
-                                  <span className="prospect-description-revealed-email">
-                                    {e.email}
-                                  </span>
-                                  <img src={circleCheck} alt="circle-check" />
+                      {expendedProspect === prospect.id && (
+                        <div className="prospect-item-expanded">
+                          {prospect.emails.length > 0 &&
+                            (prospect.isRevealed
+                              ? prospect.emails.slice(1).map((e, i) => (
                                   <div
-                                    className="copy-icon"
-                                    onClick={() => copyToClipboard(e.email)}
+                                    className="prospect-item-expanded-email"
+                                    key={i}
                                   >
-                                    <img src={copy} alt="copy" />
+                                    <img src={mail} alt="email" />
+                                    <span className="prospect-description-revealed-email">
+                                      {e.email}
+                                    </span>
+                                    <img src={circleCheck} alt="circle-check" />
+                                    <div
+                                      className="copy-icon"
+                                      onClick={() => copyToClipboard(e.email)}
+                                    >
+                                      <img src={copy} alt="copy" />
+                                    </div>
                                   </div>
-                                </div>
-                              ))
-                            : prospect.emails.map((e, i) => (
-                                <div
-                                  className="prospect-item-expanded-email"
-                                  key={i}
-                                >
-                                  <img src={mail} alt="email" />
+                                ))
+                              : prospect.emails.map((e, i) => (
+                                  <div
+                                    className="prospect-item-expanded-email"
+                                    key={i}
+                                  >
+                                    <img src={mail} alt="email" />
+                                    <span>
+                                      {e.email ? (
+                                        e.email
+                                      ) : (
+                                        <span className="list-dots">
+                                          &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                          @{e}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                )))}
+                          {prospect?.phones?.length > 0 &&
+                            prospect?.phones?.map((phone) => (
+                              <div
+                                className="prospect-item-expanded-phone"
+                                key={phone.number}
+                              >
+                                <img src={phoneSignal} alt="phone-signal" />
+                                {phone?.number?.includes('X') ? (
                                   <span>
-                                    {e.email ? (
-                                      e.email
-                                    ) : (
-                                      <span className="list-dots">
-                                        &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                        @{e}
-                                      </span>
-                                    )}
+                                    {phone?.number?.slice(0, 3)}
+                                    <span className="list-dots">
+                                      &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                    </span>
                                   </span>
-                                </div>
-                              )))}
-                        {prospect?.phones?.length > 0 &&
-                          prospect?.phones?.map((phone) => (
-                            <div
-                              className="prospect-item-expanded-phone"
-                              key={phone.number}
-                            >
-                              <img src={phoneSignal} alt="phone-signal" />
-                              {phone?.number?.includes('X') ? (
-                                <span>
-                                  {phone?.number?.slice(0, 3)}
-                                  <span className="list-dots">
-                                    &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                  </span>
-                                </span>
-                              ) : (
-                                <>
-                                  <span>{phone?.number}</span>
+                                ) : (
+                                  <>
+                                    <span>{phone?.number}</span>
+                                    <div
+                                      className="copy-icon"
+                                      onClick={() =>
+                                        copyToClipboard(phone?.number)
+                                      }
+                                    >
+                                      <img src={copy} alt="copy" />
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          {prospect?.sequences?.length > 0 && (
+                            <div className="prospect-item-expanded-sequences">
+                              <div className="prospect-item-expanded-sequences-title">
+                                <img src={send2} alt="send" />
+                                <span>Already in 1 Sequence:</span>
+                              </div>
+                              <div className="prospect-item-expanded-sequences-list">
+                                {prospect?.sequences?.map((sequence) => (
                                   <div
-                                    className="copy-icon"
-                                    onClick={() =>
-                                      copyToClipboard(phone?.number)
-                                    }
+                                    className="prospect-item-expanded-sequences-item"
+                                    key={sequence.sequenceId}
                                   >
-                                    <img src={copy} alt="copy" />
+                                    <span>{sequence.sequenceName}</span>
                                   </div>
-                                </>
-                              )}
+                                ))}
+                              </div>
                             </div>
-                          ))}
-                        {prospect?.sequences?.length > 0 && (
-                          <div className="prospect-item-expanded-sequences">
-                            <div className="prospect-item-expanded-sequences-title">
-                              <img src={send2} alt="send" />
-                              <span>Already in 1 Sequence:</span>
+                          )}
+                          {prospect?.tags?.length > 0 && (
+                            <div className="prospect-item-expanded-tags">
+                              <div className="prospect-item-expanded-tags-title">
+                                <img src={tag2} alt="tag" />
+                                <span>Tags</span>
+                              </div>
+                              <div className="prospect-item-expanded-tags-list">
+                                {prospect?.tags?.map((tag) => (
+                                  <div
+                                    className="prospect-item-expanded-tags-item"
+                                    key={tag.id}
+                                  >
+                                    <span>{tag.name}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <div className="prospect-item-expanded-sequences-list">
-                              {prospect?.sequences?.map((sequence) => (
-                                <div
-                                  className="prospect-item-expanded-sequences-item"
-                                  key={sequence.sequenceId}
-                                >
-                                  <span>{sequence.sequenceName}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {prospect?.tags?.length > 0 && (
-                          <div className="prospect-item-expanded-tags">
-                            <div className="prospect-item-expanded-tags-title">
-                              <img src={tag2} alt="tag" />
-                              <span>Tags</span>
-                            </div>
-                            <div className="prospect-item-expanded-tags-list">
-                              {prospect?.tags?.map((tag) => (
-                                <div
-                                  className="prospect-item-expanded-tags-item"
-                                  key={tag.id}
-                                >
-                                  <span>{tag.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {/* Add loading spinner at the bottom of the list */}
-                {renderLoadingSpinner()}
-              </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {/* Add loading spinner at the bottom of the list */}
+                  {renderLoadingSpinner()}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1403,6 +1420,27 @@ const ProspectList = () => {
           isLoading={revealProspectLoading}
         />
       )}
+
+      <ReactTooltip
+        id="is-free-plan-user"
+        place="bottom"
+        content={
+          <>
+            Please upgrade your plan
+            <br />
+            to start adding prospects
+          </>
+        }
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+        }}
+      />
     </>
   );
 };
