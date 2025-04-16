@@ -16,7 +16,7 @@ import mailboxInstance from '../config/server/tracker/mailbox';
 const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
 
-const SingleProfile = () => {
+const SingleProfile = ({ userMetaData }) => {
   // useState
   const [isEmailCopyiconDisplay, setIsEmailCopyIconDisplay] = useState(false);
   const [isViewEmailPhoneHover, setIsViewEmailPhoneHover] = useState(false);
@@ -206,23 +206,20 @@ const SingleProfile = () => {
 
   const fetchAgencyClients = async () => {
     try {
-      chrome.storage.local.get(['saleshandyMetaData'], async (result) => {
-        const isAgencyUser =
-          result?.saleshandyMetaData?.user?.isAgencyficationActive;
-        if (isAgencyUser) {
-          setIsAgency(true);
-          const res = await prospectsInstance.getAgencyClients();
-          if (res?.payload?.clients?.length > 0) {
-            const clients = res?.payload?.clients?.map((client) => ({
-              value: client.id,
-              label: `${client.firstName} ${client.lastName}`,
-            }));
-            setClientOptions(clients);
-          }
-        } else {
-          setIsAgency(false);
+      const isAgencyUser = userMetaData?.user?.isAgencyficationActive;
+      if (isAgencyUser) {
+        setIsAgency(true);
+        const res = await prospectsInstance.getAgencyClients();
+        if (res?.payload?.clients?.length > 0) {
+          const clients = res?.payload?.clients?.map((client) => ({
+            value: client.id,
+            label: `${client.firstName} ${client.lastName}`,
+          }));
+          setClientOptions(clients);
         }
-      });
+      } else {
+        setIsAgency(false);
+      }
     } catch (err) {
       console.error('Error fetching agency clients:', err);
     }
@@ -1438,7 +1435,21 @@ const SingleProfile = () => {
                   }}
                 >
                   {singleProfile?.id && (
-                    <div style={{ display: 'flex', padding: '0px 16px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        padding: '0px 16px',
+                        opacity: userMetaData?.isFreePlanUser ? '0.35' : '1',
+                        cursor: userMetaData?.isFreePlanUser
+                          ? 'not-allowed'
+                          : 'default',
+                      }}
+                      data-tooltip-id={
+                        userMetaData?.isFreePlanUser
+                          ? 'is-free-plan-user'
+                          : null
+                      }
+                    >
                       <AddToSequence
                         sequenceOptionLabels={sequenceOptions}
                         stepOptions={stepOptions}
@@ -1459,11 +1470,26 @@ const SingleProfile = () => {
                         setIsExpanded={handleExpandedSection}
                         btnLoadingStatus={btnLoadingStatus.addToSequence}
                         isAgency={isAgency}
+                        isFreePlanUser={userMetaData?.isFreePlanUser}
                       />
                     </div>
                   )}
                   {singleProfile.id && singleProfile.isRevealed && (
-                    <div style={{ display: 'flex', padding: '0px 16px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        padding: '0px 16px',
+                        opacity: userMetaData?.isFreePlanUser ? '0.35' : '1',
+                        cursor: userMetaData?.isFreePlanUser
+                          ? 'not-allowed'
+                          : 'default',
+                      }}
+                      data-tooltip-id={
+                        userMetaData?.isFreePlanUser
+                          ? 'is-free-plan-user'
+                          : null
+                      }
+                    >
                       <AddTagsSelect
                         tagOptions={tagOptions}
                         selectedTags={selectedTags}
@@ -1472,6 +1498,7 @@ const SingleProfile = () => {
                         setIsExpanded={handleExpandedSection}
                         saveTags={saveTags}
                         btnLoadingStatus={btnLoadingStatus.saveTags}
+                        isFreePlanUser={userMetaData?.isFreePlanUser}
                       />
                     </div>
                   )}
@@ -1520,6 +1547,26 @@ const SingleProfile = () => {
         id="my-tooltip-Email-Copy"
         place="bottom"
         content={isCopied ? 'Copied' : 'Copy'}
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+        }}
+      />
+      <ReactTooltip
+        id="is-free-plan-user"
+        place="bottom"
+        content={
+          <>
+            Please upgrade your plan
+            <br />
+            to start adding prospects
+          </>
+        }
         style={{
           fontSize: '12px',
           fontWeight: '500',

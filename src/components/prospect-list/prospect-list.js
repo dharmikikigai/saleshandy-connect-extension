@@ -1,5 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 import React, { useState, useEffect, useRef } from 'react';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './prospect-list.css';
@@ -43,6 +44,7 @@ const CustomButton = ({
   children,
   disabled = false,
   loading = false,
+  dataTooltipId = null,
 }) => {
   const baseClass =
     variant === 'primary' ? 'btn-primary' : 'btn-outline-primary';
@@ -54,6 +56,9 @@ const CustomButton = ({
       }`}
       onClick={onClick}
       disabled={disabled || loading}
+      {...(dataTooltipId && {
+        'data-tooltip-id': dataTooltipId,
+      })}
     >
       {loading ? <div className="spinner" /> : children}
     </button>
@@ -63,7 +68,7 @@ const CustomButton = ({
 const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
 
-const ProspectList = ({ pageType }) => {
+const ProspectList = ({ pageType, userMetaData }) => {
   const [isProspectsLoading, setIsProspectsLoading] = useState(false);
   const [localProspects, setLocalProspects] = useState([]);
   const [prospects, setProspects] = useState([]);
@@ -998,8 +1003,9 @@ const ProspectList = ({ pageType }) => {
     <CustomButton
       variant="outline"
       className={isExpanded ? 'action-button' : 'action-icon-button'}
-      disabled={selectedProspects.length === 0}
+      disabled={selectedProspects.length === 0 || userMetaData?.isFreePlanUser}
       onClick={() => setShowAddToSequenceModal(true)}
+      dataTooltipId={userMetaData?.isFreePlanUser ? 'is-free-plan-user' : null}
     >
       <img src={send} alt="send" />
       {isExpanded ? 'Sequence' : ''}
@@ -1010,8 +1016,9 @@ const ProspectList = ({ pageType }) => {
     <CustomButton
       variant="outline"
       className="action-icon-button"
-      disabled={selectedProspects.length === 0}
+      disabled={selectedProspects.length === 0 || userMetaData?.isFreePlanUser}
       onClick={handleAddTagsForRevealedProspects}
+      dataTooltipId={userMetaData?.isFreePlanUser ? 'is-free-plan-user' : null}
     >
       <img src={tagIcon} alt="tag" />
     </CustomButton>
@@ -1413,6 +1420,27 @@ const ProspectList = ({ pageType }) => {
           isLoading={revealProspectLoading}
         />
       )}
+
+      <ReactTooltip
+        id="is-free-plan-user"
+        place="bottom"
+        content={
+          <>
+            Please upgrade your plan
+            <br />
+            to start adding prospects
+          </>
+        }
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+        }}
+      />
     </>
   );
 };

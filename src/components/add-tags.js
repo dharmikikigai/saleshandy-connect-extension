@@ -109,6 +109,7 @@ const AddTagsSelect = ({
   setIsExpanded,
   saveTags,
   btnLoadingStatus,
+  isFreePlanUser,
 }) => (
   <div
     style={{
@@ -121,7 +122,7 @@ const AddTagsSelect = ({
       display: 'flex',
       flexDirection: 'column',
       gap: '16px',
-      cursor: 'pointer',
+      cursor: isFreePlanUser ? 'not-allowed' : 'pointer',
     }}
   >
     <div
@@ -130,7 +131,11 @@ const AddTagsSelect = ({
         justifyContent: 'space-between',
         alignItems: 'center',
       }}
-      onClick={() => setIsExpanded('tags')}
+      {...(!isFreePlanUser && {
+        onClick: () => {
+          setIsExpanded('tags');
+        },
+      })}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <svg
