@@ -155,7 +155,11 @@ const Main = () => {
   }
 
   if (isBulkPagViewActive || isBulkViewActive) {
-    return <ProspectList />;
+    return (
+      <ProspectList
+        pageType={isBulkPagViewActive ? 'pagination' : 'continuous'}
+      />
+    );
   }
 
   if (isCommonPeopleScreenActive) {
