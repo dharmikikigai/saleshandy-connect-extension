@@ -21,7 +21,6 @@ const Popup = () => {
   const [newMailboxId, setMailboxId] = useState();
   const [mailboxEmail, setMailboxEmail] = useState('');
   const [newUserId, setUserId] = useState();
-  // eslint-disable-next-line no-unused-vars
   const [mailboxList, setMailboxList] = useState([]);
   const [emailTrackingSentence, setEmailTrackingSentence] = useState('');
 
@@ -1072,7 +1071,7 @@ const Popup = () => {
                         >
                           {mailboxList.map((emails) => (
                             <>
-                              {emails}
+                              {emails},
                               <br />
                             </>
                           ))}
