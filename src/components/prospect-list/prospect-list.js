@@ -370,6 +370,17 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   const handleViewContact = (type) => {
     setSelectedRevealType(type);
+    const newSelectedProspects = selectableProspects
+      .filter(
+        (prospect) =>
+          selectedProspects.includes(prospect.id) &&
+          ((type === 'email' && !prospect.isRevealed) ||
+            (type === 'emailphone' &&
+              ((prospect.isRevealed && prospect.reReveal) ||
+                !prospect.isRevealed))),
+      )
+      .map((prospect) => prospect.id);
+    setSelectedProspects(newSelectedProspects);
     setShowTagsModal(true);
   };
 
@@ -972,32 +983,42 @@ const ProspectList = ({ pageType, userMetaData }) => {
     );
   };
 
-  const getViewContactButton = (type) => (
-    <div className="tooltip-container">
-      <CustomButton
-        variant={type === 'email' ? 'primary' : 'outline'}
-        className={type === 'email' ? 'action-button' : 'action-icon-button'}
-        onClick={() => handleViewContact(type)}
-        disabled={selectedProspects.length === 0}
-      >
-        <img src={type === 'email' ? email : emailPhone} alt="email" />
-        {type === 'email' ? 'View Email' : ''}
-      </CustomButton>
-      <div className="custom-tooltip tooltip-bottom">
-        {type === 'email' ? (
-          '1 Credit Required for each'
-        ) : (
-          <>
-            View Email + Phone:
-            <br />
-            2 Credit Required
-            <br />
-            for each
-          </>
-        )}
+  const getViewContactButton = (type) => {
+    const isAllRevealed = selectableProspects
+      .filter((prospect) => selectedProspects.includes(prospect.id))
+      .every(
+        (prospect) =>
+          (type === 'email' && prospect.isRevealed) ||
+          (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
+      );
+    const shouldDisable = selectedProspects.length === 0 || isAllRevealed;
+    return (
+      <div className="tooltip-container">
+        <CustomButton
+          variant={type === 'email' ? 'primary' : 'outline'}
+          className={type === 'email' ? 'action-button' : 'action-icon-button'}
+          onClick={() => handleViewContact(type)}
+          disabled={shouldDisable}
+        >
+          <img src={type === 'email' ? email : emailPhone} alt="email" />
+          {type === 'email' ? 'View Email' : ''}
+        </CustomButton>
+        <div className="custom-tooltip tooltip-bottom">
+          {type === 'email' ? (
+            '1 Credit Required for each'
+          ) : (
+            <>
+              View Email + Phone:
+              <br />
+              2 Credit Required
+              <br />
+              for each
+            </>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const getAddToSequenceButton = (isExpanded = false) => (
     <CustomButton
