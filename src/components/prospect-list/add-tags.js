@@ -42,6 +42,7 @@ const AddTagsModal = ({
   onApplyTags,
   onIgnoreTags,
   isLoading,
+  isTagsModalForRevealedProspects,
 }) => {
   const [tagOptions, setTagOptions] = useState([]);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
@@ -91,10 +92,13 @@ const AddTagsModal = ({
           </button>
         </div>
         <div className="custom-modal-body">
-          <span>
-            Apply a tag before disclosing emails for {selectedProspects.length}{' '}
-            leads; this will assist you in locating them later.
-          </span>
+          {!isTagsModalForRevealedProspects && (
+            <span>
+              Apply a tag before disclosing emails for{' '}
+              {selectedProspects.length} leads; this will assist you in locating
+              them later.
+            </span>
+          )}
           <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
             <CreatableSelect
               isMulti
@@ -182,15 +186,17 @@ const AddTagsModal = ({
           </div>
         </div>
         <div className="custom-modal-footer">
-          <CustomButton
-            variant="outline"
-            className="ignore-button"
-            onClick={onIgnoreTags}
-            disabled={isLoading.ignore || isLoading.apply}
-            loading={isLoading.ignore}
-          >
-            Ignore
-          </CustomButton>
+          {!isTagsModalForRevealedProspects && (
+            <CustomButton
+              variant="outline"
+              className="ignore-button"
+              onClick={onIgnoreTags}
+              disabled={isLoading.ignore || isLoading.apply}
+              loading={isLoading.ignore}
+            >
+              Ignore
+            </CustomButton>
+          )}
           <CustomButton
             variant="primary"
             className="action-button"

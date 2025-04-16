@@ -34,6 +34,7 @@ import ProspectFilterModal from './prospect-filter-modal';
 import NoProspectFound from './no-prospect-found';
 import RateLimitReached from '../rate-limit-reached';
 import mailboxInstance from '../../config/server/tracker/mailbox';
+import Toaster from '../toaster';
 
 const CustomButton = ({
   variant,
@@ -95,8 +96,6 @@ const ProspectList = () => {
 
   const [showAddToSequenceModal, setShowAddToSequenceModal] = useState(false);
 
-  const [isAgency, setIsAgency] = useState(false);
-
   const visibleProspects = activeTab === 'leads' ? prospects : savedProspects;
 
   const selectableProspects = visibleProspects.filter(
@@ -122,6 +121,18 @@ const ProspectList = () => {
   const [applyFiltersLoading, setApplyFiltersLoading] = useState(false);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [isRateLimitReached, setIsRateLimitReached] = useState(false);
+
+  const [showToaster, setShowToaster] = useState(false);
+  const [toasterData, setToasterData] = useState({
+    header: '',
+    body: '',
+    type: '',
+  });
+
+  const [
+    isTagsModalForRevealedProspects,
+    setIsTagsModalForRevealedProspects,
+  ] = useState(false);
 
   const setProspectsData = (data, rawData) => {
     try {
@@ -212,7 +223,7 @@ const ProspectList = () => {
         payload,
       );
       if (bulkRevealRes) {
-        const { message, status } = bulkRevealRes.payload;
+        const { message, status, shouldPoll, title } = bulkRevealRes.payload;
         if (status === 0) {
           console.log('error', message);
         } else if (status === 2) {
@@ -223,7 +234,13 @@ const ProspectList = () => {
             ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
           };
           setRevealingProspects(newRevealingProspects);
-          setIsPollingEnabled(true);
+          setIsPollingEnabled(shouldPoll);
+          setToasterData({
+            header: title || 'Lead reveal initiated',
+            body: message,
+            type: 'success',
+          });
+          setShowToaster(true);
         }
       }
     } catch (error) {
@@ -255,20 +272,24 @@ const ProspectList = () => {
         payload,
       );
       if (bulkRevealRes) {
-        const { message, status } = bulkRevealRes.payload;
+        const { message, status, shouldPoll, title } = bulkRevealRes.payload;
         if (status === 0) {
           console.log('error', message);
         } else if (status === 2) {
           console.log('warning', message);
         } else {
-          // if (bulkRevealRes?.payload?.shouldPoll) {
           const newRevealingProspects = {
             ...revealingProspects,
             ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
           };
           setRevealingProspects(newRevealingProspects);
-          setIsPollingEnabled(true);
-          // }
+          setIsPollingEnabled(shouldPoll);
+          setToasterData({
+            header: title || 'Lead reveal initiated',
+            body: message,
+            type: 'success',
+          });
+          setShowToaster(true);
         }
       }
     } catch (error) {
@@ -304,25 +325,24 @@ const ProspectList = () => {
         payload,
       );
       if (bulkRevealRes) {
-        const { message, status } = bulkRevealRes.payload;
+        const { message, status, shouldPoll, title } = bulkRevealRes.payload;
         if (status === 0) {
           console.log('error', message);
         } else if (status === 2) {
           console.log('warning', message);
         } else {
-          // if (bulkRevealRes?.payload?.shouldPoll) {
           const newRevealingProspects = {
             ...revealingProspects,
             ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
           };
           setRevealingProspects(newRevealingProspects);
-          setIsPollingEnabled(true);
-          // }
-          console.log(
-            'success',
-            message ||
-              'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
-          );
+          setIsPollingEnabled(shouldPoll);
+          setToasterData({
+            header: title || 'Added to Sequence Successfully',
+            body: message,
+            type: 'success',
+          });
+          setShowToaster(true);
         }
       }
     } catch (error) {
@@ -382,6 +402,12 @@ const ProspectList = () => {
         } else {
           setIsPollingEnabled(false);
         }
+        setToasterData({
+          header: response?.payload?.title || 'Leads Revealed Successfully',
+          body: response?.payload?.message,
+          type: 'success',
+        });
+        setShowToaster(true);
       }
     } catch (error) {
       console.error('Error in handleFetchLead:', error);
@@ -672,8 +698,6 @@ const ProspectList = () => {
     try {
       fetchProspects();
       getSavedLeads();
-      setIsAgency(true);
-      // setMetaData();  TODO for header
     } catch (error) {
       console.error('Error in initial useEffect:', error);
     }
@@ -783,6 +807,7 @@ const ProspectList = () => {
         setIsFirstPollRequest(true);
         pollingAttemptsRef.current = 0;
         metaCall();
+        clearFilters();
       }
     } catch (error) {
       console.error('Error in polling completion useEffect:', error);
@@ -803,6 +828,11 @@ const ProspectList = () => {
         ? []
         : selectableProspects.map((prospect) => prospect.id),
     );
+  };
+
+  const handleAddTagsForRevealedProspects = () => {
+    setIsTagsModalForRevealedProspects(true);
+    setShowTagsModal(true);
   };
 
   const loading = false;
@@ -976,6 +1006,7 @@ const ProspectList = () => {
       variant="outline"
       className="action-icon-button"
       disabled={selectedProspects.length === 0}
+      onClick={handleAddTagsForRevealedProspects}
     >
       <img src={tagIcon} alt="tag" />
     </CustomButton>
@@ -1062,19 +1093,21 @@ const ProspectList = () => {
                 </div>
               )}
             </div>
-            <ProspectFilterModal
-              showModal={showProspectFilterModal}
-              onClose={closeProspectFilterModal}
-              selectedTags={selectedTagFilters}
-              setSelectedTags={setSelectedTagFilters}
-              dateFilterValue={dateFilterValue}
-              setDateFilterValue={setDateFilterValue}
-              dateFilterCustomValue={dateFilterCustomValue}
-              setDateFilterCustomValue={setDateFilterCustomValue}
-              applyFilters={applyFilters}
-              clearFilters={clearFilters}
-              isLoading={applyFiltersLoading}
-            />
+            {showProspectFilterModal && (
+              <ProspectFilterModal
+                showModal={showProspectFilterModal}
+                onClose={closeProspectFilterModal}
+                selectedTags={selectedTagFilters}
+                setSelectedTags={setSelectedTagFilters}
+                dateFilterValue={dateFilterValue}
+                setDateFilterValue={setDateFilterValue}
+                dateFilterCustomValue={dateFilterCustomValue}
+                setDateFilterCustomValue={setDateFilterCustomValue}
+                applyFilters={applyFilters}
+                clearFilters={clearFilters}
+                isLoading={applyFiltersLoading}
+              />
+            )}
           </div>
         )}
       </div>
@@ -1109,6 +1142,14 @@ const ProspectList = () => {
       <div className="prospect-list-container">
         <Header />
         <div className="prospect-tabs-container" id="prospect-list-container">
+          {showToaster && (
+            <Toaster
+              header={toasterData.header}
+              body={toasterData.body}
+              type={toasterData.type}
+              onClose={() => setShowToaster(false)}
+            />
+          )}
           {visibleProspects.length === 0 ? (
             isFilterApplied ? (
               <>
@@ -1340,24 +1381,28 @@ const ProspectList = () => {
       </div>
 
       {/* Add Tags Modal */}
-      <AddTagsModal
-        showModal={showTagsModal}
-        onClose={() => setShowTagsModal(false)}
-        selectedTags={selectedTags}
-        selectedProspects={selectedProspects}
-        setSelectedTags={setSelectedTags}
-        onApplyTags={handleApplyTags}
-        onIgnoreTags={handleIgnoreTags}
-        isLoading={revealProspectLoading}
-      />
+      {showTagsModal && (
+        <AddTagsModal
+          showModal={showTagsModal}
+          onClose={() => setShowTagsModal(false)}
+          selectedTags={selectedTags}
+          selectedProspects={selectedProspects}
+          setSelectedTags={setSelectedTags}
+          onApplyTags={handleApplyTags}
+          onIgnoreTags={handleIgnoreTags}
+          isLoading={revealProspectLoading}
+          isTagsModalForRevealedProspects={isTagsModalForRevealedProspects}
+        />
+      )}
 
-      <AddToSequenceModal
-        showModal={showAddToSequenceModal}
-        onClose={() => setShowAddToSequenceModal(false)}
-        isAgency={isAgency}
-        handleAddToSequence={handleAddToSequence}
-        isLoading={revealProspectLoading}
-      />
+      {showAddToSequenceModal && (
+        <AddToSequenceModal
+          showModal={showAddToSequenceModal}
+          onClose={() => setShowAddToSequenceModal(false)}
+          handleAddToSequence={handleAddToSequence}
+          isLoading={revealProspectLoading}
+        />
+      )}
     </>
   );
 };

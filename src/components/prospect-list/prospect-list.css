@@ -721,6 +721,7 @@ body.modal-open {
 
 .spinner-white {
   border: 2px solid white;
+  border-bottom: 2px solid transparent;
 }
 
 @keyframes spin {
