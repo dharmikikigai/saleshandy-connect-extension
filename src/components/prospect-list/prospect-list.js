@@ -35,6 +35,7 @@ import NoProspectFound from './no-prospect-found';
 import RateLimitReached from '../rate-limit-reached';
 import mailboxInstance from '../../config/server/tracker/mailbox';
 import Toaster from '../toaster';
+import ProspectAddTag from './prospect-add-tag';
 
 const CustomButton = ({
   variant,
@@ -128,11 +129,9 @@ const ProspectList = () => {
     body: '',
     type: '',
   });
-
-  const [
-    isTagsModalForRevealedProspects,
-    setIsTagsModalForRevealedProspects,
-  ] = useState(false);
+  const [showProspectAddTagModal, setShowProspectAddTagModal] = useState(false);
+  const [prospectAddTagLoading, setProspectAddTagLoading] = useState(false);
+  const [prospectSelectedTags, setProspectSelectedTags] = useState([]);
 
   const setProspectsData = (data, rawData) => {
     try {
@@ -694,6 +693,22 @@ const ProspectList = () => {
     }
   };
 
+  const handleApplyProspectTags = async () => {
+    try {
+      const payload = {
+        leadIds: selectedProspects,
+        tagIds: prospectSelectedTags.map((tag) => tag.value),
+      };
+      setProspectAddTagLoading(true);
+      const response = await prospectsInstance.saveTagsForBulkLeads(payload);
+      if (response && response.payload) {
+        setShowProspectAddTagModal(false);
+      }
+    } catch (error) {
+      console.error('Error in handleApplyProspectTags:', error);
+    }
+  };
+
   useEffect(() => {
     try {
       fetchProspects();
@@ -831,8 +846,7 @@ const ProspectList = () => {
   };
 
   const handleAddTagsForRevealedProspects = () => {
-    setIsTagsModalForRevealedProspects(true);
-    setShowTagsModal(true);
+    setShowProspectAddTagModal(true);
   };
 
   const loading = false;
@@ -1002,14 +1016,26 @@ const ProspectList = () => {
   );
 
   const getTagButton = () => (
-    <CustomButton
-      variant="outline"
-      className="action-icon-button"
-      disabled={selectedProspects.length === 0}
-      onClick={handleAddTagsForRevealedProspects}
-    >
-      <img src={tagIcon} alt="tag" />
-    </CustomButton>
+    <>
+      <CustomButton
+        variant="outline"
+        className="action-icon-button"
+        disabled={selectedProspects.length === 0}
+        onClick={handleAddTagsForRevealedProspects}
+      >
+        <img src={tagIcon} alt="tag" />
+      </CustomButton>
+      {showProspectAddTagModal && (
+        <ProspectAddTag
+          showModal={showProspectAddTagModal}
+          onClose={() => setShowProspectAddTagModal(false)}
+          selectedTags={prospectSelectedTags}
+          setSelectedTags={setProspectSelectedTags}
+          onApplyTags={handleApplyProspectTags}
+          isLoading={prospectAddTagLoading}
+        />
+      )}
+    </>
   );
 
   const getActionButtons = () => {
@@ -1391,7 +1417,6 @@ const ProspectList = () => {
           onApplyTags={handleApplyTags}
           onIgnoreTags={handleIgnoreTags}
           isLoading={revealProspectLoading}
-          isTagsModalForRevealedProspects={isTagsModalForRevealedProspects}
         />
       )}
 
