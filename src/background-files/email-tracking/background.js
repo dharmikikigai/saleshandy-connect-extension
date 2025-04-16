@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import io from '../gmail/socket.io';
 
 async function getAndSetAuthToken() {
@@ -54,6 +55,15 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
   });
 });
 
+let lastUrl = '';
+
+function cleanUrl(url) {
+  // Clean the URL by removing query parameters
+  const urlObj = new URL(url);
+  urlObj.search = ''; // Remove query parameters
+  return urlObj.toString();
+}
+
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const currentUrl = tab.url;
 
@@ -66,6 +76,17 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
     if (currentUrl.includes('mail.google.com')) {
       updateMailboxEmail(tab.id);
+    }
+  }
+
+  if (currentUrl.includes('linkedin.com') && changeInfo.status === 'complete') {
+    const cleanedUrl = cleanUrl(currentUrl);
+
+    // Only log if the cleaned URL is different from the last one
+    if (cleanedUrl !== lastUrl) {
+      lastUrl = cleanedUrl; // Update last URL with cleaned URL
+      chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
+      chrome.storage.local.remove(['personInfo']);
     }
   }
 });
@@ -85,10 +106,6 @@ async function openLinkedinOnInstall() {
     },
   );
 }
-
-chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
-  chrome.tabs.sendMessage(details.tabId, { method: 'closeDiv' });
-});
 
 const SOCKET_DISCONNECT_REASONS = {
   PING_TIMEOUT: 'ping timeout',
