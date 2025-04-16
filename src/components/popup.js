@@ -1023,7 +1023,7 @@ const Popup = () => {
                     onChange={handleTrackingSetting}
                     size={Switch.Size.Small}
                     disabled={!authenticated}
-                    tooltip="Hare Krishna"
+                    tooltip={authenticated ? '' : 'Login to change the setting'}
                   />
                 </div>
               </div>
@@ -1181,7 +1181,9 @@ const Popup = () => {
                       onChange={handleNotificationSetting}
                       size={Switch.Size.Small}
                       disabled={!authenticated}
-                      tooltip={authenticated ? '' : ''}
+                      tooltip={
+                        authenticated ? '' : 'Login to change the setting'
+                      }
                     />
                   </div>
                 </div>

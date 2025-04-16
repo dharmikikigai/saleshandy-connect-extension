@@ -888,7 +888,9 @@ const Profile = () => {
 
                   <div
                     onClick={() =>
-                      handleClick('https://my.saleshandy.com/email-insights')
+                      handleClick(
+                        'https://pyxis.lifeisgoodforlearner.com/email-insights',
+                      )
                     }
                     onMouseEnter={() => setEmailReportTooltip(true)}
                     onMouseLeave={() => setEmailReportTooltip(false)}
