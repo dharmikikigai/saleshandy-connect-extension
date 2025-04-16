@@ -1067,7 +1067,7 @@ const Profile = () => {
                         >
                           {mailboxList.map((emails) => (
                             <>
-                              {emails}
+                              {emails},
                               <br />
                             </>
                           ))}
