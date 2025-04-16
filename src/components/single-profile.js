@@ -122,15 +122,17 @@ const SingleProfile = () => {
       const response = await prospectsInstance.revealProspect(payload);
 
       if (response) {
-        const { message, status } = response.payload;
+        const { message, status, shouldPoll, title } = response.payload;
         if (status === 0) {
           console.log('error', message);
         } else if (status === 2) {
           console.log('warning', message);
         } else {
-          setIsPollingEnabled(true);
+          if (shouldPoll) {
+            setIsPollingEnabled(true);
+          }
           setToasterData({
-            header: 'Lead reveal initiated',
+            header: title || 'Lead reveal initiated',
             body: message,
             type: 'success',
           });
@@ -174,7 +176,7 @@ const SingleProfile = () => {
       ) {
         setIsPollingEnabled(false);
         setToasterData({
-          header: 'Email is revealed',
+          header: response?.payload?.title || 'Email is revealed',
           body: response?.payload?.message,
           type: 'success',
         });
@@ -348,15 +350,17 @@ const SingleProfile = () => {
       const response = await prospectsInstance.revealProspect(payload);
 
       if (response) {
-        const { message, status } = response.payload;
+        const { message, status, shouldPoll, title } = response.payload;
         if (status === 0) {
           console.log('error', message);
         } else if (status === 2) {
           console.log('warning', message);
         } else {
-          setIsPollingEnabled(true);
+          if (shouldPoll) {
+            setIsPollingEnabled(true);
+          }
           setToasterData({
-            header: 'Added to Sequence Successfully',
+            header: title || 'Added to Sequence Successfully',
             body: message,
             type: 'success',
           });
@@ -609,6 +613,14 @@ const SingleProfile = () => {
             className="single-profile-container"
             id="single-profile-container"
           >
+            {showToaster && (
+              <Toaster
+                header={toasterData.header}
+                body={toasterData.body}
+                type={toasterData.type}
+                onClose={() => setShowToaster(false)}
+              />
+            )}
             <div
               className="user-profile-btn"
               style={{
@@ -627,14 +639,6 @@ const SingleProfile = () => {
                   padding: '0px 16px',
                 }}
               >
-                {showToaster && (
-                  <Toaster
-                    header={toasterData.header}
-                    body={toasterData.body}
-                    type={toasterData.type}
-                    onClose={() => setShowToaster(false)}
-                  />
-                )}
                 {/* User-Details */}
                 <div
                   style={{
