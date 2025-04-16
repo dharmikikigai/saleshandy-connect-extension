@@ -142,7 +142,6 @@ const AddToSequenceModal = ({
   showModal,
   onClose,
   handleAddToSequence,
-  isAgency,
   isLoading,
 }) => {
   const [tagOptions, setTagOptions] = useState([]);
@@ -157,6 +156,7 @@ const AddToSequenceModal = ({
   const [selectedSequence, setSelectedSequence] = useState(null);
   const [stepOptions, setStepOptions] = useState([]);
   const [selectedStep, setSelectedStep] = useState(null);
+  const [isAgency, setIsAgency] = useState(false);
 
   const fetchTags = async () => {
     try {
@@ -184,20 +184,29 @@ const AddToSequenceModal = ({
 
   const fetchAgencyClients = async () => {
     try {
-      const res = await prospectsInstance.getAgencyClients();
-      if (
-        res &&
-        res.payload &&
-        res.payload.clients &&
-        Array.isArray(res.payload.clients) &&
-        res.payload.clients.length > 0
-      ) {
-        const clients = res.payload.clients.map((client) => ({
-          value: client.id,
-          label: `${client.firstName} ${client.lastName}`,
-        }));
-        setClientOptions(clients);
-      }
+      chrome.storage.local.get(['saleshandyMetaData'], async (result) => {
+        const isAgencyUser =
+          result?.saleshandyMetaData?.user?.isAgencyficationActive;
+        if (isAgencyUser) {
+          setIsAgency(true);
+          const res = await prospectsInstance.getAgencyClients();
+          if (
+            res &&
+            res.payload &&
+            res.payload.clients &&
+            Array.isArray(res.payload.clients) &&
+            res.payload.clients.length > 0
+          ) {
+            const clients = res.payload.clients.map((client) => ({
+              value: client.id,
+              label: `${client.firstName} ${client.lastName}`,
+            }));
+            setClientOptions(clients);
+          }
+        } else {
+          setIsAgency(false);
+        }
+      });
     } catch (error) {
       console.error('Error fetching agency clients:', error);
     }
@@ -327,9 +336,7 @@ const AddToSequenceModal = ({
     if (showModal) {
       fetchTags();
       fetchSequences();
-      if (isAgency) {
-        fetchAgencyClients();
-      }
+      fetchAgencyClients();
     }
   }, [showModal]);
 

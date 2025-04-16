@@ -113,6 +113,10 @@ const Toaster = ({ header = '', body = '', type = 'success', onClose }) => {
         padding: '8px 12px',
         position: 'absolute',
         width: '300px',
+        zIndex: 9999,
+        marginTop: '16px',
+        marginLeft: '16px',
+        marginRight: '16px',
       }}
     >
       <div
