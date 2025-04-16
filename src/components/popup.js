@@ -23,6 +23,7 @@ const Popup = () => {
   const [newUserId, setUserId] = useState();
   const [mailboxList, setMailboxList] = useState([]);
   const [emailTrackingSentence, setEmailTrackingSentence] = useState('');
+  const [authenticated, setAuthenticated] = useState(false);
 
   const fetchSetting = () => {
     chrome.storage.local.get(['activeUrl'], async (result) => {
@@ -180,9 +181,40 @@ const Popup = () => {
     }
   };
 
+  const authCheck = () => {
+    chrome.storage.local.get(['authToken'], (result) => {
+      const authenticationToken = result?.authToken;
+
+      let checkFurther = true;
+
+      chrome.storage.local.get(['logoutTriggered'], (result1) => {
+        const logoutTriggered = result1?.logoutTriggered;
+
+        if (logoutTriggered && logoutTriggered === 'true') {
+          setAuthenticated(false);
+          checkFurther = false;
+        }
+
+        if (checkFurther) {
+          if (
+            authenticationToken !== undefined &&
+            authenticationToken !== null &&
+            authenticationToken !== ''
+          ) {
+            setAuthenticated(true);
+
+            fetchSetting();
+            fetchNotificationSetting();
+          } else {
+            setAuthenticated(false);
+          }
+        }
+      });
+    });
+  };
+
   useEffect(() => {
-    fetchSetting();
-    fetchNotificationSetting();
+    authCheck();
   }, []);
 
   return (
@@ -990,6 +1022,8 @@ const Popup = () => {
                     checked={mailboxSetting}
                     onChange={handleTrackingSetting}
                     size={Switch.Size.Small}
+                    disabled={!authenticated}
+                    tooltip="Hare Krishna"
                   />
                 </div>
               </div>
@@ -1146,6 +1180,8 @@ const Popup = () => {
                       checked={desktopNotification}
                       onChange={handleNotificationSetting}
                       size={Switch.Size.Small}
+                      disabled={!authenticated}
+                      tooltip={authenticated ? '' : ''}
                     />
                   </div>
                 </div>
