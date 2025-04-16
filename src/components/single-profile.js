@@ -35,6 +35,7 @@ const SingleProfile = () => {
   const [sequenceTags, setSequenceTags] = useState([]);
 
   // new state
+  const [localPersonInfo, setLocalPersonInfo] = useState({});
   const [prospect, setProspect] = useState({});
   const singleleadsData = [prospect];
   const [revealType, setRevealType] = useState(null);
@@ -63,6 +64,7 @@ const SingleProfile = () => {
     try {
       chrome.storage.local.get(['personInfo'], async (result) => {
         const localData = result.personInfo;
+        setLocalPersonInfo(localData);
         if (localData && localData.sourceId2) {
           const linkedinUrl = `https://www.linkedin.com/in/${localData.sourceId2}`;
           setIsLoading(true);
@@ -164,12 +166,7 @@ const SingleProfile = () => {
       isBulkAction: true,
     };
     const response = await prospectsInstance.leadStatus(payload);
-    if (
-      response &&
-      response.payload &&
-      response.payload.profiles &&
-      response.payload.profiles.length > 0
-    ) {
+    if (response?.payload?.profiles?.length > 0) {
       if (
         response.payload.profiles[0].isRevealed &&
         !response.payload.profiles[0].isRevealing
@@ -190,12 +187,7 @@ const SingleProfile = () => {
   const fetchTags = async () => {
     try {
       const res = await prospectsInstance.getTags();
-      if (
-        res &&
-        res.payload &&
-        Array.isArray(res.payload) &&
-        res.payload.length > 0
-      ) {
+      if (res?.payload?.length > 0) {
         const tags = res.payload.map((tag) => ({
           value: tag.id,
           label: tag.name,
@@ -220,14 +212,8 @@ const SingleProfile = () => {
         if (isAgencyUser) {
           setIsAgency(true);
           const res = await prospectsInstance.getAgencyClients();
-          if (
-            res &&
-            res.payload &&
-            res.payload.clients &&
-            Array.isArray(res.payload.clients) &&
-            res.payload.clients.length > 0
-          ) {
-            const clients = res.payload.clients.map((client) => ({
+          if (res?.payload?.clients?.length > 0) {
+            const clients = res?.payload?.clients?.map((client) => ({
               value: client.id,
               label: `${client.firstName} ${client.lastName}`,
             }));
@@ -245,16 +231,10 @@ const SingleProfile = () => {
   const fetchSequences = async () => {
     try {
       const res = await prospectsInstance.getSequences();
-      if (
-        res &&
-        res.payload &&
-        Array.isArray(res.payload) &&
-        res.payload.length > 0
-      ) {
-        // setSequences(res.payload);
+      if (res?.payload?.length > 0) {
         const recentSequences = [];
         const remainingSequences = [];
-        res.payload.forEach((sequence) => {
+        res?.payload?.forEach((sequence) => {
           if (sequence.isRecent) {
             recentSequences.push({
               value: sequence.id,
@@ -292,16 +272,10 @@ const SingleProfile = () => {
   const fetchClientSequences = async () => {
     try {
       const res = await prospectsInstance.getSequences(selectedClient?.value);
-      if (
-        res &&
-        res.payload &&
-        Array.isArray(res.payload) &&
-        res.payload.length > 0
-      ) {
-        // setSequences(res.payload);
+      if (res?.payload?.length > 0) {
         const recentSequences = [];
         const remainingSequences = [];
-        res.payload.forEach((sequence) => {
+        res?.payload?.forEach((sequence) => {
           if (sequence.isRecent) {
             recentSequences.push({
               value: sequence.id,
@@ -556,8 +530,8 @@ const SingleProfile = () => {
     if (selectedSequence) {
       const { steps } = selectedSequence;
 
-      if (steps && Array.isArray(steps) && steps.length > 0) {
-        const customStepOptions = steps.map((step) => ({
+      if (steps?.length > 0) {
+        const customStepOptions = steps?.map((step) => ({
           value: step.id,
           label: `Step ${step.number}`,
         }));
@@ -615,11 +589,11 @@ const SingleProfile = () => {
     }
   }, [isPollingEnabled]);
 
-  if (isLoading) {
+  if (isLoading || !localPersonInfo?.sourceId2) {
     return <SingleProfileSkeleton />;
   }
 
-  if (!prospect?.id) {
+  if (localPersonInfo?.sourceId2 && !prospect?.id) {
     return <NoResult />;
   }
 

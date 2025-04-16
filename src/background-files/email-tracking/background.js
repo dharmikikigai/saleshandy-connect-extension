@@ -86,7 +86,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (cleanedUrl !== lastUrl) {
       lastUrl = cleanedUrl; // Update last URL with cleaned URL
       chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
-      chrome.storage.local.remove(['personInfo']);
+      chrome.storage.local.remove(['personInfo', 'bulkInfo']);
     }
   }
 });
