@@ -161,8 +161,8 @@ const CommonSearch = () => (
               <span>
                 Start your search by entering a profile name, job title, or
                 country, like <br />
-                "Piyush Patel" or "CTO & USA." <br /> Access contact info, add
-                to sequence <br />
+                "Dhruv Patel" or "CTO & USA." <br /> Access contact info, add to
+                sequence <br />
                 and apply tags directly from here.
               </span>
             </div>
