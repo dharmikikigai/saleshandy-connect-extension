@@ -458,13 +458,14 @@ const Profile = () => {
                     >
                       Leave a review on G2.com & <br />{' '}
                       <a
-                        href="saleshandy.com"
+                        href="https://docs.google.com/forms/d/e/1FAIpQLSdnObefoF5Bct-e8kV8gs3EfRHI1thjHXcVnLqgGtkVw34tlw/viewform"
                         target="_blank"
                         style={{
                           textDecoration: 'none',
                           color: '#1D4ED8',
                           fontWeight: '500',
                         }}
+                        rel="noreferrer"
                       >
                         {' '}
                         Submit a screenshot{' '}
@@ -475,6 +476,11 @@ const Profile = () => {
                   </div>
                   <button
                     type="button"
+                    onClick={() =>
+                      handleClick(
+                        'https://www.g2.com/products/saleshandy/reviews/start',
+                      )
+                    }
                     style={{
                       height: '32px',
                       width: '165px',
