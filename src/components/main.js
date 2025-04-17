@@ -9,8 +9,11 @@ import { profilePageState } from './state';
 import mailboxInstance from '../config/server/tracker/mailbox';
 import SingleProfile from './single-profile';
 import ProspectList from './prospect-list/prospect-list';
+import SingleProfileSkeleton from './single-profile-skeleton';
 
 const Main = () => {
+  const [authCheckLoading, setAuthCheckLoading] = useState(true);
+  const [pageCheckLoading, setPageCheckLoading] = useState(true);
   const [isSaleshandyLoggedIn, setIsSaleshandyLoggedIn] = useState(false);
   const [isSingleViewActive, setIsSingleViewActive] = useState(false);
   const [isBulkPagViewActive, setIsBulkPagViewActive] = useState(false);
@@ -77,6 +80,8 @@ const Main = () => {
           }
         }
       });
+
+      setAuthCheckLoading(false);
     });
   };
 
@@ -132,6 +137,8 @@ const Main = () => {
         setIsFeatureAvailable(false);
         setIsCommonPeopleScreenActive(false);
       }
+
+      setPageCheckLoading(false);
     });
   };
 
@@ -139,6 +146,10 @@ const Main = () => {
     authCheck();
     pageCheck();
   }, []);
+
+  if (authCheckLoading || pageCheckLoading) {
+    return <SingleProfileSkeleton />;
+  }
 
   if (!isSaleshandyLoggedIn) {
     return <Login />;
