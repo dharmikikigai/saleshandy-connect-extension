@@ -145,7 +145,7 @@ function injectBeaconOnLinkedInUrl() {
 function openIframe() {
   if (!document.getElementById('saleshandy-welcome-video')) {
     const iframe = document.createElement('iframe');
-    iframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+    iframe.src = 'https://www.youtube.com/embed/m55aDMo6nTA';
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
@@ -157,7 +157,7 @@ function openIframe() {
     videoContainer.style.bottom = '20px';
     videoContainer.style.left = '20px';
     videoContainer.style.width = '480px';
-    videoContainer.style.height = '258px';
+    videoContainer.style.height = '300px';
     videoContainer.style.borderRadius = '12px';
     videoContainer.style.overflow = 'hidden';
     videoContainer.style.zIndex = '9999';
