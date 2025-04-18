@@ -18,7 +18,10 @@ async function fetchAndSetActiveUrl() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currentTab = tabs[0];
     if (currentTab) {
-      chrome.storage.local.set({ activeUrl: currentTab.url });
+      chrome.storage.local.set({ activeAllUrl: currentTab.url });
+      if (currentTab.url.includes('linkedin.com')) {
+        chrome.storage.local.set({ activeUrl: currentTab.url });
+      }
     }
   });
 }
@@ -46,13 +49,13 @@ async function updateMailboxEmail(tabId) {
   chrome.tabs.sendMessage(tabId, { method: 'updateMailboxEmail' });
 }
 
-chrome.tabs.onActivated.addListener((activeInfo) => {
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  await fetchAndSetActiveUrl();
   chrome.tabs.get(activeInfo.tabId, async (tab) => {
     const currentUrl = tab.url;
 
     if (tab.status === 'complete') {
       await getAndSetAuthToken();
-      await fetchAndSetActiveUrl();
 
       if (currentUrl.includes('linkedin.com')) {
         chrome.cookies.get(
@@ -85,9 +88,10 @@ function cleanUrl(url) {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const currentUrl = tab.url;
 
+  await fetchAndSetActiveUrl();
+
   if (changeInfo.status === 'complete') {
     await getAndSetAuthToken();
-    await fetchAndSetActiveUrl();
 
     if (currentUrl.includes('linkedin.com')) {
       chrome.cookies.get(
@@ -383,6 +387,10 @@ function gmailReloadAfterUpdate() {
         for (; j < t; j++) {
           currentTab = currentWindow.tabs[j];
           if (currentTab.url && currentTab.url.includes('mail.google.com')) {
+            chrome.tabs.reload(currentTab.id);
+          }
+
+          if (currentTab.url && currentTab.url.includes('linkedin.com')) {
             chrome.tabs.reload(currentTab.id);
           }
         }

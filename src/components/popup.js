@@ -26,7 +26,7 @@ const Popup = () => {
   const [authenticated, setAuthenticated] = useState(false);
 
   const fetchSetting = () => {
-    chrome.storage.local.get(['activeUrl'], async (result) => {
+    chrome.storage.local.get(['activeAllUrl'], async (result) => {
       const activeUrl = result?.activeUrl;
       if (activeUrl?.includes('mail.google.com')) {
         chrome.storage.local.get(['mailboxEmail'], async (request) => {
@@ -107,7 +107,7 @@ const Popup = () => {
   };
 
   const handleTrackingSetting = async () => {
-    chrome.storage.local.get(['activeUrl'], async (result) => {
+    chrome.storage.local.get(['activeAllUrl'], async (result) => {
       const activeUrl = result?.activeUrl;
 
       if (activeUrl?.includes('mail.google.com')) {
