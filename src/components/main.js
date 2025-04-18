@@ -11,6 +11,8 @@ import SingleProfile from './single-profile';
 import ProspectList from './prospect-list/prospect-list';
 import SingleProfileSkeleton from './single-profile-skeleton';
 
+import './prospect-list/prospect-list.css';
+
 const Main = () => {
   const [authCheckLoading, setAuthCheckLoading] = useState(true);
   const [pageCheckLoading, setPageCheckLoading] = useState(true);

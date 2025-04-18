@@ -11,7 +11,6 @@ const NoResult = () => (
         width: '100%',
         height: '100%',
         padding: '0px 0px 16px 0px',
-        marginTop: '16px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -122,9 +121,11 @@ const NoResult = () => (
               }}
             >
               <span>
-                Results matching this query could not <br />
+                Results matching this query could not
+                <br />
                 be displayed, Please try searching for
-                <span> another profile</span>
+                <br />
+                another profile
               </span>
             </div>
           </div>

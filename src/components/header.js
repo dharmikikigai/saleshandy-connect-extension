@@ -113,21 +113,25 @@ const Header = () => {
                     {leadFinderCredits}
                   </span>
                 </div>
-                <div onClick={handleProfileClick}>
+                <div
+                  className="button-hover-effect"
+                  style={{
+                    cursor: 'pointer',
+                  }}
+                  onClick={handleProfileClick}
+                >
                   <img src={verticalDots} alt="verticalDots" />
                 </div>
 
-                <button
-                  type="button"
+                <div
+                  className="button-hover-effect"
                   style={{
-                    background: 'transparent',
-                    border: 'none',
                     cursor: 'pointer',
                   }}
                   onClick={handleClose}
                 >
                   <img src={minus} alt="minus" />
-                </button>
+                </div>
               </div>
             </div>
           </div>

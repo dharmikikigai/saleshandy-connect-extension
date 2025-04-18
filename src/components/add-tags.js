@@ -14,15 +14,15 @@ import { Button, Spinner } from 'react-bootstrap';
 const CustomOptionTags = (props) => {
   // eslint-disable-next-line react/destructuring-assignment
   const fullLabel = props.label;
-  const shouldShowTooltip = fullLabel.length > 10;
+  const shouldShowTooltip = fullLabel.length > 25;
   const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 10)}....`
+    ? `${fullLabel.slice(0, 25)}..`
     : fullLabel;
 
   return (
     <div
       {...(shouldShowTooltip && {
-        'data-tooltip-id': 'option-tooltip',
+        'data-tooltip-id': 'tag-option-tooltip',
         'data-tooltip-content': fullLabel,
       })}
     >
@@ -46,6 +46,7 @@ const customStyles = {
     height: '32px',
     minHeight: '32px',
     flexWrap: 'no-wrap',
+    maxWidth: '258px',
   }),
   indicatorSeparator: (base) => ({
     ...base,
@@ -112,9 +113,10 @@ const AddTagsSelect = ({
   isFreePlanUser,
 }) => (
   <div
+    className={`${isExpanded ? '' : 'add-tags-container'}`}
     style={{
       border: '1px solid #e5e7eb',
-      borderRadius: '8px',
+      borderRadius: '4px',
       padding: '12px 16px',
       width: '320px',
       backgroundColor: '#ffffff',
@@ -158,7 +160,14 @@ const AddTagsSelect = ({
             fill="#6B7280"
           />
         </svg>
-        <span style={{ fontSize: '14px', fontWeight: 500, color: '#6b7280' }}>
+        <span
+          style={{
+            fontSize: '14px',
+            fontWeight: 500,
+            lineHeight: '16px',
+            color: '#6B7280',
+          }}
+        >
           Add Tags
         </span>
       </div>
@@ -203,7 +212,6 @@ const AddTagsSelect = ({
           flexWrap: 'wrap',
           gap: '8px',
           alignItems: 'center',
-          height: '16px',
         }}
       >
         {/* {selectedTags.slice(0, 3).map((tag) => (
@@ -212,10 +220,10 @@ const AddTagsSelect = ({
             </div>
           ))} */}
 
-        {selectedTags.slice(0, 3).map((tag) => {
+        {selectedTags.slice(0, 2).map((tag) => {
           const showTooltip = tag.label.length > 10;
           const displayLabel = showTooltip
-            ? `${tag.label.slice(0, 10)}....`
+            ? `${tag.label.slice(0, 10)}..`
             : tag.label;
           return (
             <div
@@ -230,7 +238,7 @@ const AddTagsSelect = ({
             </div>
           );
         })}
-        {selectedTags.length > 3 && (
+        {selectedTags.length > 2 && (
           <div
             style={{
               ...chipStyle,
@@ -240,7 +248,7 @@ const AddTagsSelect = ({
             }}
             onClick={() => setIsExpanded('tags')}
           >
-            +{selectedTags.length - 3}
+            +{selectedTags.length - 2}
           </div>
         )}
       </div>
@@ -273,14 +281,14 @@ const AddTagsSelect = ({
             {selectedTags.map((tag) => {
               const showTooltip = tag.label.length > 10;
               const displayLabel = showTooltip
-                ? `${tag.label.slice(0, 10)}....`
+                ? `${tag.label.slice(0, 10)}..`
                 : tag.label;
               return (
                 <div
                   key={tag.value}
                   style={chipStyle}
                   {...(showTooltip && {
-                    'data-tooltip-id': 'chip-tooltip',
+                    'data-tooltip-id': 'tag-chip-tooltip',
                     'data-tooltip-content': tag.label,
                   })}
                 >
@@ -320,8 +328,9 @@ const AddTagsSelect = ({
       </>
     )}
     <ReactTooltip
-      id="option-tooltip"
+      id="tag-option-tooltip"
       place="bottom"
+      opacity="1"
       style={{
         fontSize: '12px',
         fontWeight: '500',
@@ -331,11 +340,17 @@ const AddTagsSelect = ({
         backgroundColor: '#1F2937',
         padding: '8px',
         zIndex: '99',
+        display: 'flex',
+        width: '184px',
+        textWrap: 'wrap',
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
       }}
     />
     <ReactTooltip
-      id="chip-tooltip"
+      id="tag-chip-tooltip"
       place="bottom"
+      opacity="1"
       style={{
         fontSize: '12px',
         fontWeight: '500',
@@ -345,6 +360,11 @@ const AddTagsSelect = ({
         backgroundColor: '#1F2937',
         padding: '8px',
         zIndex: '99',
+        display: 'flex',
+        width: '184px',
+        textWrap: 'wrap',
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
       }}
     />
   </div>
