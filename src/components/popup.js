@@ -1109,18 +1109,6 @@ const Popup = () => {
                               <br />
                             </>
                           ))}
-                          <div
-                            style={{
-                              position: 'absolute',
-                              bottom: '-5px',
-                              left: '75%',
-                              width: '0',
-                              height: '0',
-                              borderLeft: '5px solid transparent',
-                              borderRight: '5px solid transparent',
-                              borderTop: '5px solid #333',
-                            }}
-                          />
                         </div>
                       )}
                     </div>
