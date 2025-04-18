@@ -149,6 +149,7 @@ function openIframe() {
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
+    iframe.allowFullscreen = true;
 
     const videoContainer = document.createElement('div');
     videoContainer.id = 'saleshandy-welcome-video';
