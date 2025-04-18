@@ -18,8 +18,6 @@ const Profile = () => {
   const [mailboxEmail, setMailboxEmail] = useState('');
   const [newUserId, setUserId] = useState();
   const [mailboxList, setMailboxList] = useState([]);
-  const [emailInsightTooltip, setEmailInsightTooltip] = useState(false);
-  const [emailReportTooltip, setEmailReportTooltip] = useState(false);
   const [emailAccountTooltip, setEmailAccountTooltip] = useState(false);
   const [emailTrackingSentence, setEmailTrackingSentence] = useState('');
 
@@ -274,11 +272,15 @@ const Profile = () => {
                   padding: '0px 16px',
                 }}
               >
-                <span onClick={handledBack} style={{ cursor: 'pointer' }}>
+                <span
+                  className="button-hover-effect"
+                  onClick={handledBack}
+                  style={{ cursor: 'pointer' }}
+                >
                   <svg
-                    width="12"
-                    height="8"
-                    viewBox="0 0 12 8"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -337,7 +339,7 @@ const Profile = () => {
                     borderRadius: '50%',
                     width: '32px',
                     height: '32px',
-                    padding: '16px 15px',
+                    padding: '15px 15px',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -348,6 +350,7 @@ const Profile = () => {
                     style={{
                       fontWeight: '500',
                       fontSize: '12px',
+                      fontFamily: 'Inter',
                       lineHeight: '16px',
                       color: '#1D4ED8',
                     }}
@@ -359,6 +362,7 @@ const Profile = () => {
                   <h2
                     style={{
                       fontSize: '14px',
+                      fontFamily: 'Inter',
                       color: '#1F2937',
                       fontWeight: '600',
                       lineHeight: '20px',
@@ -370,6 +374,7 @@ const Profile = () => {
                   <p
                     style={{
                       fontSize: '12px',
+                      fontFamily: 'Inter',
                       lineHeight: '16px',
                       color: '#6B7280',
                       fontWeight: '500',
@@ -396,7 +401,7 @@ const Profile = () => {
                 <svg
                   width="16"
                   height="16"
-                  viewBox="0 0 17 17"
+                  viewBox="0 0 16 16"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
@@ -441,6 +446,7 @@ const Profile = () => {
                     <span
                       style={{
                         fontWeight: '600',
+                        fontFamily: 'Inter',
                         fontSize: '12px',
                         lineHeight: '16px',
                         color: '#1F2937',
@@ -451,6 +457,7 @@ const Profile = () => {
                     <div
                       style={{
                         fontWeight: '400',
+                        fontFamily: 'Inter',
                         fontSize: '12px',
                         lineHeight: '16px',
                         color: '#6B7280',
@@ -464,6 +471,7 @@ const Profile = () => {
                           textDecoration: 'none',
                           color: '#1D4ED8',
                           fontWeight: '500',
+                          fontFamily: 'Inter',
                         }}
                         rel="noreferrer"
                       >
@@ -490,6 +498,7 @@ const Profile = () => {
                       textAlign: 'center',
                       fontSize: '14px',
                       fontWeight: '500',
+                      fontFamily: 'Inter',
                       lineHeight: '20px',
                       border: 'none',
                     }}
@@ -501,7 +510,7 @@ const Profile = () => {
               {/* Divider */}
               <div
                 style={{
-                  border: '1.2px solid #F3F4F6',
+                  borderTop: '1px solid #F3F4F6',
                   width: '300px',
                 }}
               />
@@ -518,6 +527,7 @@ const Profile = () => {
                   style={{
                     fontWeight: '500',
                     fontSize: '12px',
+                    fontFamily: 'Inter',
                     lineHeight: '16px',
                     color: '#1F2937',
                   }}
@@ -539,9 +549,9 @@ const Profile = () => {
                     }}
                   >
                     <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 14 14"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -562,6 +572,7 @@ const Profile = () => {
                       style={{
                         fontWeight: '400',
                         fontSize: '14px',
+                        fontFamily: 'Inter',
                         lineHeight: '16px',
                         color: '#6B7280',
                       }}
@@ -570,6 +581,7 @@ const Profile = () => {
                     </div>
                   </div>
                   <div
+                    className="button-hover-effect"
                     onClick={() =>
                       handleClick(
                         'https://pyxis.lifeisgoodforlearner.com/leads#people',
@@ -580,9 +592,9 @@ const Profile = () => {
                     }}
                   >
                     <svg
-                      width="17"
-                      height="17"
-                      viewBox="0 0 17 17"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -622,9 +634,9 @@ const Profile = () => {
                     }}
                   >
                     <svg
-                      width="17"
-                      height="17"
-                      viewBox="0 0 17 17"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -657,6 +669,7 @@ const Profile = () => {
                       style={{
                         fontWeight: '400',
                         fontSize: '14px',
+                        fontFamily: 'Inter',
                         lineHeight: '16px',
                         color: '#6B7280',
                       }}
@@ -665,6 +678,7 @@ const Profile = () => {
                     </div>
                   </div>
                   <div
+                    className="button-hover-effect"
                     onClick={() =>
                       handleClick(
                         'https://pyxis.lifeisgoodforlearner.com/prospects',
@@ -675,9 +689,9 @@ const Profile = () => {
                     }}
                   >
                     <svg
-                      width="17"
-                      height="17"
-                      viewBox="0 0 17 17"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -717,9 +731,9 @@ const Profile = () => {
                     }}
                   >
                     <svg
-                      width="17"
-                      height="17"
-                      viewBox="0 0 17 17"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -740,6 +754,7 @@ const Profile = () => {
                       style={{
                         fontWeight: '400',
                         fontSize: '14px',
+                        fontFamily: 'Inter',
                         lineHeight: '16px',
                         color: '#6B7280',
                       }}
@@ -748,6 +763,7 @@ const Profile = () => {
                     </div>
                   </div>
                   <div
+                    className="button-hover-effect"
                     onClick={() =>
                       handleClick(
                         'https://pyxis.lifeisgoodforlearner.com/sequence',
@@ -758,9 +774,9 @@ const Profile = () => {
                     }}
                   >
                     <svg
-                      width="17"
-                      height="17"
-                      viewBox="0 0 17 17"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -789,7 +805,7 @@ const Profile = () => {
               {/* Divider */}
               <div
                 style={{
-                  border: '1.2px solid #F3F4F6',
+                  borderTop: '1px solid #F3F4F6',
                   width: '300px',
                 }}
               />
@@ -819,152 +835,90 @@ const Profile = () => {
                       display: 'flex',
                       gap: '4px',
                     }}
-                    onMouseEnter={() => setEmailInsightTooltip(true)}
-                    onMouseLeave={() => setEmailInsightTooltip(false)}
                   >
                     Email Tracking Insights
+                    <div className="tooltip-container">
+                      <div
+                        style={{
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                            d="M7.16536 2.38737C4.58804 2.38737 2.4987 4.47671 2.4987 7.05404C2.4987 9.63136 4.58804 11.7207 7.16536 11.7207C9.74269 11.7207 11.832 9.63136 11.832 7.05404C11.832 4.47671 9.74269 2.38737 7.16536 2.38737ZM1.33203 7.05404C1.33203 3.83238 3.9437 1.2207 7.16536 1.2207C10.387 1.2207 12.9987 3.83238 12.9987 7.05404C12.9987 10.2757 10.387 12.8874 7.16536 12.8874C3.9437 12.8874 1.33203 10.2757 1.33203 7.05404Z"
+                            fill="#6B7280"
+                          />
+                          <path
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                            d="M6.58203 4.71634C6.58203 4.39417 6.8432 4.133 7.16536 4.133H7.1712C7.49336 4.133 7.75453 4.39417 7.75453 4.71634C7.75453 5.0385 7.49336 5.29967 7.1712 5.29967H7.16536C6.8432 5.29967 6.58203 5.0385 6.58203 4.71634Z"
+                            fill="#6B7280"
+                          />
+                          <path
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                            d="M5.9987 7.05404C5.9987 6.73187 6.25986 6.4707 6.58203 6.4707H7.16536C7.48753 6.4707 7.7487 6.73187 7.7487 7.05404V8.80404C8.07086 8.80404 8.33203 9.0652 8.33203 9.38737C8.33203 9.70954 8.07086 9.9707 7.7487 9.9707H7.16536C6.8432 9.9707 6.58203 9.70954 6.58203 9.38737V7.63737C6.25986 7.63737 5.9987 7.3762 5.9987 7.05404Z"
+                            fill="#6B7280"
+                          />
+                        </svg>
+                      </div>
+                      <div className="custom-tooltip tooltip-bottom email-tracking-tooltip">
+                        This email tracking only works for the Gmail account in
+                        which you are logged in.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="tooltip-container">
                     <div
+                      className="button-hover-effect"
+                      onClick={() =>
+                        handleClick(
+                          'https://pyxis.lifeisgoodforlearner.com/email-insights',
+                        )
+                      }
                       style={{
                         cursor: 'pointer',
                       }}
                     >
                       <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 15 15"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
                           fillRule="evenodd"
                           clipRule="evenodd"
-                          d="M7.16536 2.38737C4.58804 2.38737 2.4987 4.47671 2.4987 7.05404C2.4987 9.63136 4.58804 11.7207 7.16536 11.7207C9.74269 11.7207 11.832 9.63136 11.832 7.05404C11.832 4.47671 9.74269 2.38737 7.16536 2.38737ZM1.33203 7.05404C1.33203 3.83238 3.9437 1.2207 7.16536 1.2207C10.387 1.2207 12.9987 3.83238 12.9987 7.05404C12.9987 10.2757 10.387 12.8874 7.16536 12.8874C3.9437 12.8874 1.33203 10.2757 1.33203 7.05404Z"
-                          fill="#6B7280"
+                          d="M2.75083 4.64633C3.1259 4.27126 3.63461 4.06055 4.16504 4.06055H7.49837C7.86656 4.06055 8.16504 4.35902 8.16504 4.72721C8.16504 5.0954 7.86656 5.39388 7.49837 5.39388H4.16504C3.98823 5.39388 3.81866 5.46412 3.69363 5.58914C3.56861 5.71417 3.49837 5.88374 3.49837 6.06055V12.0605C3.49837 12.2374 3.56861 12.4069 3.69363 12.532C3.81866 12.657 3.98823 12.7272 4.16504 12.7272H10.165C10.3419 12.7272 10.5114 12.657 10.6364 12.532C10.7615 12.4069 10.8317 12.2374 10.8317 12.0605V8.72721C10.8317 8.35902 11.1302 8.06055 11.4984 8.06055C11.8666 8.06055 12.165 8.35902 12.165 8.72721V12.0605C12.165 12.591 11.9543 13.0997 11.5793 13.4748C11.2042 13.8498 10.6955 14.0605 10.165 14.0605H4.16504C3.63461 14.0605 3.1259 13.8498 2.75083 13.4748C2.37575 13.0997 2.16504 12.591 2.16504 12.0605V6.06055C2.16504 5.53011 2.37575 5.02141 2.75083 4.64633Z"
+                          fill="#D1D5DB"
                         />
                         <path
                           fillRule="evenodd"
                           clipRule="evenodd"
-                          d="M6.58203 4.71634C6.58203 4.39417 6.8432 4.133 7.16536 4.133H7.1712C7.49336 4.133 7.75453 4.39417 7.75453 4.71634C7.75453 5.0385 7.49336 5.29967 7.1712 5.29967H7.16536C6.8432 5.29967 6.58203 5.0385 6.58203 4.71634Z"
-                          fill="#6B7280"
+                          d="M13.9698 2.25581C14.2301 2.51616 14.2301 2.93827 13.9698 3.19862L7.30311 9.86528C7.04276 10.1256 6.62065 10.1256 6.3603 9.86528C6.09995 9.60494 6.09995 9.18283 6.3603 8.92248L13.027 2.25581C13.2873 1.99546 13.7094 1.99546 13.9698 2.25581Z"
+                          fill="#D1D5DB"
                         />
                         <path
                           fillRule="evenodd"
                           clipRule="evenodd"
-                          d="M5.9987 7.05404C5.9987 6.73187 6.25986 6.4707 6.58203 6.4707H7.16536C7.48753 6.4707 7.7487 6.73187 7.7487 7.05404V8.80404C8.07086 8.80404 8.33203 9.0652 8.33203 9.38737C8.33203 9.70954 8.07086 9.9707 7.7487 9.9707H7.16536C6.8432 9.9707 6.58203 9.70954 6.58203 9.38737V7.63737C6.25986 7.63737 5.9987 7.3762 5.9987 7.05404Z"
-                          fill="#6B7280"
+                          d="M9.49837 2.72721C9.49837 2.35902 9.79685 2.06055 10.165 2.06055H13.4984C13.8666 2.06055 14.165 2.35902 14.165 2.72721V6.06055C14.165 6.42874 13.8666 6.72721 13.4984 6.72721C13.1302 6.72721 12.8317 6.42874 12.8317 6.06055V3.39388H10.165C9.79685 3.39388 9.49837 3.0954 9.49837 2.72721Z"
+                          fill="#D1D5DB"
                         />
                       </svg>
-                      {emailInsightTooltip && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: '32.65rem', // adjust this based on your layout
-                            left: '44%',
-                            transform: 'translateX(-50%)',
-                            padding: '8px',
-                            backgroundColor: '#333',
-                            color: 'white',
-                            borderRadius: '5px',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            lineHeight: '16px',
-                            width: '200px',
-                            zIndex: 1,
-                          }}
-                        >
-                          If turned on it tracks opens, clicks for emails sent
-                          from, Gmail through this browser
-                          <div
-                            style={{
-                              position: 'absolute',
-                              bottom: '64px',
-                              left: '51%',
-                              transform: 'rotate(180deg)',
-                              width: '0',
-                              height: '0',
-                              borderLeft: '5px solid transparent',
-                              borderRight: '5px solid transparent',
-                              borderTop: '5px solid #333',
-                            }}
-                          />
-                        </div>
-                      )}
                     </div>
-                  </div>
-
-                  <div
-                    onClick={() =>
-                      handleClick(
-                        'https://pyxis.lifeisgoodforlearner.com/email-insights',
-                      )
-                    }
-                    onMouseEnter={() => setEmailReportTooltip(true)}
-                    onMouseLeave={() => setEmailReportTooltip(false)}
-                    style={{
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <svg
-                      width="17"
-                      height="17"
-                      viewBox="0 0 17 17"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M2.75083 4.64633C3.1259 4.27126 3.63461 4.06055 4.16504 4.06055H7.49837C7.86656 4.06055 8.16504 4.35902 8.16504 4.72721C8.16504 5.0954 7.86656 5.39388 7.49837 5.39388H4.16504C3.98823 5.39388 3.81866 5.46412 3.69363 5.58914C3.56861 5.71417 3.49837 5.88374 3.49837 6.06055V12.0605C3.49837 12.2374 3.56861 12.4069 3.69363 12.532C3.81866 12.657 3.98823 12.7272 4.16504 12.7272H10.165C10.3419 12.7272 10.5114 12.657 10.6364 12.532C10.7615 12.4069 10.8317 12.2374 10.8317 12.0605V8.72721C10.8317 8.35902 11.1302 8.06055 11.4984 8.06055C11.8666 8.06055 12.165 8.35902 12.165 8.72721V12.0605C12.165 12.591 11.9543 13.0997 11.5793 13.4748C11.2042 13.8498 10.6955 14.0605 10.165 14.0605H4.16504C3.63461 14.0605 3.1259 13.8498 2.75083 13.4748C2.37575 13.0997 2.16504 12.591 2.16504 12.0605V6.06055C2.16504 5.53011 2.37575 5.02141 2.75083 4.64633Z"
-                        fill="#D1D5DB"
-                      />
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M13.9698 2.25581C14.2301 2.51616 14.2301 2.93827 13.9698 3.19862L7.30311 9.86528C7.04276 10.1256 6.62065 10.1256 6.3603 9.86528C6.09995 9.60494 6.09995 9.18283 6.3603 8.92248L13.027 2.25581C13.2873 1.99546 13.7094 1.99546 13.9698 2.25581Z"
-                        fill="#D1D5DB"
-                      />
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M9.49837 2.72721C9.49837 2.35902 9.79685 2.06055 10.165 2.06055H13.4984C13.8666 2.06055 14.165 2.35902 14.165 2.72721V6.06055C14.165 6.42874 13.8666 6.72721 13.4984 6.72721C13.1302 6.72721 12.8317 6.42874 12.8317 6.06055V3.39388H10.165C9.79685 3.39388 9.49837 3.0954 9.49837 2.72721Z"
-                        fill="#D1D5DB"
-                      />
-                    </svg>
-                    {emailReportTooltip && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '32.65rem', // adjust this based on your layout
-                          left: '65.65%',
-                          transform: 'translateX(-50%)',
-                          padding: '8px',
-                          backgroundColor: '#333',
-                          color: 'white',
-                          borderRadius: '5px',
-                          fontSize: '12px',
-                          fontWeight: '500',
-                          lineHeight: '16px',
-                          textAlign: 'center',
-                          width: '200px',
-                          zIndex: 1,
-                        }}
-                      >
-                        View email insight reports
-                        <div
-                          style={{
-                            position: 'absolute',
-                            bottom: '32px',
-                            left: '92%',
-                            transform: 'rotate(180deg)',
-                            width: '0',
-                            height: '0',
-                            borderLeft: '5px solid transparent',
-                            borderRight: '5px solid transparent',
-                            borderTop: '5px solid #333',
-                          }}
-                        />
-                      </div>
-                    )}
+                    <div className="custom-tooltip tooltip-bottom email-insight-tooltip">
+                      View email insight reports
+                    </div>
                   </div>
                 </div>
 
@@ -990,6 +944,7 @@ const Profile = () => {
                       style={{
                         fontWeight: '400',
                         fontSize: '14px',
+                        fontFamily: 'Inter',
                         lineHeight: '16px',
                         color: '#6B7280',
                       }}
@@ -1049,6 +1004,7 @@ const Profile = () => {
                         alignItems: 'center',
                         fontSize: '12px',
                         fontWeight: '400',
+                        fontFamily: 'Inter',
                         lineHeight: '16px',
                         fontStyle: 'normal',
                       }}
@@ -1067,6 +1023,7 @@ const Profile = () => {
                             borderRadius: '5px',
                             fontSize: '12px',
                             fontWeight: '500',
+                            fontFamily: 'Inter',
                             lineHeight: '16px',
                             width: '200px',
                             height: 'auto',
@@ -1113,9 +1070,9 @@ const Profile = () => {
                     }}
                   >
                     <svg
-                      width="17"
-                      height="17"
-                      viewBox="0 0 17 17"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
@@ -1136,6 +1093,7 @@ const Profile = () => {
                       style={{
                         fontWeight: '400',
                         fontSize: '14px',
+                        fontFamily: 'Inter',
                         lineHeight: '16px',
                         color: '#6B7280',
                       }}
@@ -1155,7 +1113,7 @@ const Profile = () => {
               {/* Divider */}
               <div
                 style={{
-                  border: '1.2px solid #F3F4F6',
+                  borderTop: '1px solid #F3F4F6',
                   width: '300px',
                 }}
               />
@@ -1173,6 +1131,7 @@ const Profile = () => {
                   style={{
                     fontWeight: '500',
                     fontSize: '12px',
+                    fontFamily: 'Inter',
                     lineHeight: '16px',
                     color: '#1F2937',
                   }}
@@ -1189,9 +1148,9 @@ const Profile = () => {
                   }}
                 >
                   <svg
-                    width="17"
-                    height="17"
-                    viewBox="0 0 17 17"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
@@ -1215,6 +1174,7 @@ const Profile = () => {
                   style={{
                     fontWeight: '500',
                     fontSize: '12px',
+                    fontFamily: 'Inter',
                     lineHeight: '16px',
                     color: '#1F2937',
                   }}

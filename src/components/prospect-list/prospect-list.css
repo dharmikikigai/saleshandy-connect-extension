@@ -1,3 +1,7 @@
+body {
+  font-family: 'Inter', sans-serif;
+}
+
 .prospect-list-header {
   display: flex;
   justify-content: space-between;
@@ -181,7 +185,7 @@ input[type='checkbox'] {
 }
 
 .btn-outline-primary:hover {
-  background-color: #fff;
+  background-color: #EFF6FF;
 }
 
 .ignore-button {
@@ -432,7 +436,7 @@ input[type='checkbox'] {
 }
 
 .prospect-email-unavailable-icon {
-  opacity: 0.4;
+  opacity: 0.35;
 }
 
 .prospect-email-unavailable-text {
@@ -442,7 +446,7 @@ input[type='checkbox'] {
   font-style: normal;
   font-weight: 500;
   line-height: 16px;
-  opacity: 0.4;
+  opacity: 0.35;
 }
 
 .prospect-item-expand-icon {
@@ -464,6 +468,7 @@ input[type='checkbox'] {
   background-color: #f9fafb;
   padding-left: 84px;
   padding-bottom: 12px;
+  padding-right: 16px;
 }
 
 .prospect-item-expanded span {
@@ -542,7 +547,6 @@ input[type='checkbox'] {
   right: 0;
   bottom: 0;
   padding: 16px;
-  background-color: rgba(0, 0, 0, 0.15);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -625,6 +629,10 @@ input[type='checkbox'] {
   border-top: 2px solid #f3f4f6;
 }
 
+.add-to-sequence-modal-body {
+  padding: 16px;
+}
+
 /* Prevent body scroll when modal is open */
 body.modal-open {
   overflow: hidden;
@@ -668,11 +676,11 @@ body.modal-open {
 }
 
 .custom-button.btn-outline-primary:hover {
-  background-color: rgba(29, 78, 216, 0.05);
+  background-color: #EFF6FF;
 }
 
 .custom-button.disabled {
-  opacity: 0.5;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -733,8 +741,16 @@ body.modal-open {
   }
 }
 
+.prospect-item-expanded-email,
+.prospect-item-expanded-phone,
+.prospect-description-revealed {
+  cursor: pointer;
+}
+
 .copy-icon {
   opacity: 0;
+  display: flex;
+  cursor: pointer;
 }
 
 .prospect-item-expanded-email:hover .copy-icon,
@@ -746,10 +762,11 @@ body.modal-open {
 
 .cursor-pointer {
   cursor: pointer;
+  display: flex;
 }
 
 .checkbox-disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -904,3 +921,83 @@ body.modal-open {
     transform: rotate(360deg);
   }
 }
+
+.button-hover-effect {
+  cursor: pointer;
+  display: flex;
+}
+.button-hover-effect:hover {
+  background-color: #f9fafb;
+  border-radius: 2px;
+}
+
+.email-insight-tooltip {
+  transform: translateX(-90%) !important;
+}
+
+.email-insight-tooltip::before {
+  left: 90% !important;
+}
+.email-tracking-tooltip {
+  width: 193px;
+  text-wrap: auto;
+  text-align: left;
+}
+
+.add-to-sequence-container:hover {
+  background-color: #f9fafb !important;
+}
+.add-tags-container:hover {
+  background-color: #f9fafb !important;
+}
+.revealed-tag-modal-body{
+  padding-top: 16px;
+}
+
+.react-datepicker {
+  box-shadow: none;
+  padding: 0 !important;
+}
+.reacr-datepicker__month-container {
+  width: 13.5rem;
+  min-height: 15rem;
+
+  padding: 0.75rem !important;
+
+  border-radius: 0.25rem !important;
+  border: none !important;
+}
+.react-datepicker__header {
+  background-color: transparent !important;
+}
+.react-datepicker__month {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0px !important;
+}
+.pick-date-and-time-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px 16px;
+}
+.pick-date-and-time-header p {
+  margin: 0px;
+  padding: 0px;
+}
+.pick-date-and-time-action-btns{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pick-date-and-time-action-btns button {
+  background-color: transparent;
+  border: none;
+}
+.pick-date-and-time-action-btns button:hover {
+  background-color: #f9fafb;
+}
+  

@@ -11,7 +11,6 @@ const CommonSearch = () => (
         width: '100%',
         height: '100%',
         padding: '0px 0px 16px 0px',
-        marginTop: '16px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -35,6 +34,7 @@ const CommonSearch = () => (
             width: '252px',
             padding: '32px 0px',
             gap: '32px',
+            marginTop: '90px',
           }}
         >
           <div>
@@ -153,6 +153,7 @@ const CommonSearch = () => (
                 fontWeight: '400',
                 fontSize: '14px',
                 lineHeight: '20px',
+                fontFamily: 'Inter',
                 width: '252px',
                 color: '#1F2937',
                 textAlign: 'center',

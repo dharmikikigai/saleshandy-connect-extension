@@ -13,16 +13,20 @@ import SingleProfileSkeleton from './single-profile-skeleton';
 import NoResult from './no-result';
 import mailboxInstance from '../config/server/tracker/mailbox';
 
+import mail from '../assets/icons/mail.svg';
+import circleCheck from '../assets/icons/circleCheck.svg';
+import copy from '../assets/icons/copy.svg';
+import phoneSignal from '../assets/icons/phoneSignal.svg';
+import alertCircle from '../assets/icons/alertCircle.svg';
+import RateLimitReached from './rate-limit-reached';
+
 const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
 
 const SingleProfile = ({ userMetaData }) => {
   // useState
-  const [isEmailCopyiconDisplay, setIsEmailCopyIconDisplay] = useState(false);
   const [isViewEmailPhoneHover, setIsViewEmailPhoneHover] = useState(false);
 
-  const [isPhoneCopyiconDisplay, setIsPhoneCopyIconDisplay] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
   const [showToaster, setShowToaster] = useState(false);
   const [toasterData, setToasterData] = useState({
     header: '',
@@ -59,6 +63,7 @@ const SingleProfile = ({ userMetaData }) => {
     addToSequence: false,
     saveTags: false,
   });
+  const [isRateLimitReached, setIsRateLimitReached] = useState(false);
 
   const fetchProspect = async () => {
     try {
@@ -78,10 +83,6 @@ const SingleProfile = ({ userMetaData }) => {
           const response = await prospectsInstance.getProspects(payload);
 
           if (response) {
-            if (!response.payload) {
-              throw new Error('No data received from API');
-            }
-
             if (response?.payload?.profiles?.length > 0) {
               setProspect({
                 ...response?.payload?.profiles[0],
@@ -101,6 +102,9 @@ const SingleProfile = ({ userMetaData }) => {
               }
             } else {
               setProspect({});
+            }
+            if (response?.type === 'rate-limit') {
+              setIsRateLimitReached(true);
             }
           }
           setIsLoading(false);
@@ -232,12 +236,16 @@ const SingleProfile = ({ userMetaData }) => {
         const recentSequences = [];
         const remainingSequences = [];
         res?.payload?.forEach((sequence) => {
+          const isAlreadyIn = prospect?.sequences?.find(
+            (s) => s.sequenceId === sequence.id,
+          );
           if (sequence.isRecent) {
             recentSequences.push({
               value: sequence.id,
               label: sequence.title,
               status: sequence.progress,
               steps: sequence.step,
+              isAlreadyIn: !!isAlreadyIn,
             });
           } else {
             remainingSequences.push({
@@ -245,6 +253,7 @@ const SingleProfile = ({ userMetaData }) => {
               label: sequence.title,
               status: sequence.progress,
               steps: sequence.step,
+              isAlreadyIn: !!isAlreadyIn,
             });
           }
         });
@@ -273,12 +282,16 @@ const SingleProfile = ({ userMetaData }) => {
         const recentSequences = [];
         const remainingSequences = [];
         res?.payload?.forEach((sequence) => {
+          const isAlreadyIn = prospect?.sequences?.find(
+            (s) => s.sequenceId === sequence.id,
+          );
           if (sequence.isRecent) {
             recentSequences.push({
               value: sequence.id,
               label: sequence.title,
               status: sequence.progress,
               steps: sequence.step,
+              isAlreadyIn: !!isAlreadyIn,
             });
           } else {
             remainingSequences.push({
@@ -286,6 +299,7 @@ const SingleProfile = ({ userMetaData }) => {
               label: sequence.title,
               status: sequence.progress,
               steps: sequence.step,
+              isAlreadyIn: !!isAlreadyIn,
             });
           }
         });
@@ -500,8 +514,13 @@ const SingleProfile = ({ userMetaData }) => {
     fetchProspect();
     fetchTags();
     fetchSequences();
-    fetchAgencyClients();
   }, []);
+
+  useEffect(() => {
+    if (userMetaData?.user?.isAgencyficationActive) {
+      fetchAgencyClients();
+    }
+  }, [userMetaData]);
 
   useEffect(() => {
     try {
@@ -586,6 +605,10 @@ const SingleProfile = ({ userMetaData }) => {
     }
   }, [isPollingEnabled]);
 
+  if (isRateLimitReached) {
+    return <RateLimitReached />;
+  }
+
   if (isLoading || !localPersonInfo?.sourceId2) {
     return <SingleProfileSkeleton />;
   }
@@ -617,7 +640,6 @@ const SingleProfile = ({ userMetaData }) => {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '32px',
                 marginTop: '16px',
               }}
             >
@@ -628,6 +650,7 @@ const SingleProfile = ({ userMetaData }) => {
                   flexDirection: 'column',
                   gap: '12px',
                   padding: '0px 16px',
+                  marginBottom: '32px',
                 }}
               >
                 {/* User-Details */}
@@ -737,8 +760,8 @@ const SingleProfile = ({ userMetaData }) => {
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
-                            height="17"
-                            viewBox="0 0 16 17"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="none"
                           >
                             <path
@@ -751,17 +774,17 @@ const SingleProfile = ({ userMetaData }) => {
                         </a>
                       )}
 
-                      {singleProfile?.links?.linkedin && (
+                      {singleProfile?.linkedin_url && (
                         <a
-                          href={singleProfile?.links?.linkedin}
+                          href={singleProfile?.linkedin_url}
                           target="_blank"
                           rel="noreferrer"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
-                            height="17"
-                            viewBox="0 0 16 17"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="none"
                           >
                             <path
@@ -783,8 +806,8 @@ const SingleProfile = ({ userMetaData }) => {
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
-                            height="17"
-                            viewBox="0 0 16 17"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="none"
                           >
                             <path
@@ -804,8 +827,8 @@ const SingleProfile = ({ userMetaData }) => {
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
-                            height="17"
-                            viewBox="0 0 16 17"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="none"
                           >
                             <path
@@ -827,8 +850,8 @@ const SingleProfile = ({ userMetaData }) => {
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
-                            height="17"
-                            viewBox="0 0 16 17"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="none"
                           >
                             <path
@@ -848,8 +871,8 @@ const SingleProfile = ({ userMetaData }) => {
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
-                            height="17"
-                            viewBox="0 0 16 17"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="none"
                           >
                             <path
@@ -869,8 +892,8 @@ const SingleProfile = ({ userMetaData }) => {
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
-                            height="17"
-                            viewBox="0 0 16 17"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="none"
                           >
                             <path
@@ -892,8 +915,8 @@ const SingleProfile = ({ userMetaData }) => {
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="16"
-                            height="17"
-                            viewBox="0 0 16 17"
+                            height="16"
+                            viewBox="0 0 16 16"
                             fill="none"
                           >
                             <path
@@ -919,118 +942,39 @@ const SingleProfile = ({ userMetaData }) => {
                   gap: '24px',
                 }}
               >
-                <div
-                  style={{
-                    padding: '0px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px',
-                  }}
-                >
-                  {/* View Email Btn */}
-                  {singleProfile.id && !singleProfile.isRevealed && (
-                    <Button
-                      variant="primary"
-                      className="w-100 py-2"
-                      data-tooltip-id="my-tooltip-1"
-                      style={{
-                        fontSize: '14px',
-                        padding: '6px 16px',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        height: '32px',
-                        alignItems: 'center',
-                        fontWeight: '500',
-                        lineHeight: '20px',
-                        background: '#1D4ED8',
-                        gap: '8px',
-                      }}
-                      disabled={isRevealing}
-                      onClick={hadnleViewEmailBtn}
-                    >
-                      {!isRevealing && (
-                        <div>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 17 17"
-                            fill="none"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              clipRule="evenodd"
-                              d="M3.83357 4.49544C3.46538 4.49544 3.1669 4.79392 3.1669 5.16211V11.8288C3.1669 12.197 3.46538 12.4954 3.83357 12.4954H13.1669C13.5351 12.4954 13.8336 12.197 13.8336 11.8288V5.16211C13.8336 4.79392 13.5351 4.49544 13.1669 4.49544H3.83357ZM1.83357 5.16211C1.83357 4.05754 2.729 3.16211 3.83357 3.16211H13.1669C14.2715 3.16211 15.1669 4.05754 15.1669 5.16211V11.8288C15.1669 12.9333 14.2715 13.8288 13.1669 13.8288H3.83357C2.729 13.8288 1.83357 12.9333 1.83357 11.8288V5.16211Z"
-                              fill="white"
-                            />
-                            <path
-                              // fill-rule="evenodd"
-                              // clip-rule="evenodd"
-                              d="M1.94553 4.80229C2.14977 4.49594 2.56368 4.41316 2.87003 4.61739L8.50023 8.37086L14.1304 4.61739C14.4368 4.41316 14.8507 4.49594 15.0549 4.80229C15.2592 5.10864 15.1764 5.52256 14.87 5.72679L8.87003 9.72679C8.6461 9.87608 8.35437 9.87608 8.13043 9.72679L2.13043 5.72679C1.82408 5.52256 1.7413 5.10864 1.94553 4.80229Z"
-                              fill="white"
-                            />
-                          </svg>
-                        </div>
-                      )}
-                      <span>
-                        {isRevealing && revealType === 'email' ? (
-                          <Spinner animation="border" size="sm" />
-                        ) : (
-                          'View Email'
-                        )}
-                      </span>
-                    </Button>
-                  )}
-
-                  {/* View Email + Phone Btn */}
-
-                  {singleProfile.id &&
-                    (!singleProfile.isRevealed ||
-                      (singleProfile.isRevealed && singleProfile.reReveal)) && (
+                {((singleProfile.id && !singleProfile.isRevealed) ||
+                  (singleProfile.id &&
+                    singleProfile.isRevealed &&
+                    singleProfile.reReveal)) && (
+                  <div
+                    style={{
+                      padding: '0px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px',
+                    }}
+                  >
+                    {/* View Email Btn */}
+                    {singleProfile.id && !singleProfile.isRevealed && (
                       <Button
                         variant="primary"
                         className="w-100 py-2"
-                        data-tooltip-id="my-tooltip-2"
-                        onMouseEnter={() => setIsViewEmailPhoneHover(true)}
-                        onMouseLeave={() => setIsViewEmailPhoneHover(false)}
-                        style={
-                          isRevealing && revealType === 'email'
-                            ? {
-                                cursor: 'not-allowed',
-                                opacity: '0.35',
-                                fontSize: '14px',
-                                padding: '6px 16px',
-                                borderRadius: '4px',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                fontWeight: '500',
-                                lineHeight: '20px',
-                                color: '#1D4ED8',
-                                backgroundColor: '#fff',
-                                gap: '8px',
-                              }
-                            : {
-                                fontSize: '14px',
-                                padding: '6px 16px',
-                                borderRadius: '4px',
-                                height: '32px',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                fontWeight: '500',
-                                lineHeight: '20px',
-                                color: '#1D4ED8',
-                                background: isViewEmailPhoneHover
-                                  ? '#EFF6FF'
-                                  : '#fff',
-                                border: '1px solid #1D4ED8',
-                                gap: '8px',
-                              }
-                        }
-                        disabled={isRevealing && revealType === 'email'}
-                        onClick={handleViewEmailPhoneAndFindPhoneBtn}
+                        data-tooltip-id="my-tooltip-1"
+                        style={{
+                          fontSize: '14px',
+                          padding: '6px 16px',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          height: '32px',
+                          alignItems: 'center',
+                          fontWeight: '500',
+                          lineHeight: '20px',
+                          background: '#1D4ED8',
+                          gap: '8px',
+                        }}
+                        disabled={isRevealing}
+                        onClick={hadnleViewEmailBtn}
                       >
                         {!isRevealing && (
                           <div>
@@ -1038,34 +982,119 @@ const SingleProfile = ({ userMetaData }) => {
                               xmlns="http://www.w3.org/2000/svg"
                               width="16"
                               height="16"
-                              viewBox="0 0 16 17"
+                              viewBox="0 0 16 16"
                               fill="none"
                             >
                               <path
-                                // fill-rule="evenodd"
-                                // clip-rule="evenodd"
-                                d="M13.9998 10.7879V12.7897C13.9998 13.8943 13.1044 14.7897 11.9998 14.7897H2.6665C1.56193 14.7897 0.666504 13.8943 0.666504 12.7897V6.14214V6.12269C0.666697 5.01828 1.56205 4.12305 2.6665 4.12305H5.7762C5.85288 4.5819 5.96861 5.02752 6.11987 5.45638H2.6665C2.40603 5.45638 2.18045 5.60576 2.07075 5.82352L7.33317 9.3318L8.27418 8.70445C8.62106 9.02114 8.99592 9.30769 9.39461 9.55997L7.70297 10.6877C7.47904 10.837 7.1873 10.837 6.96337 10.6877L1.99984 7.37871V12.7897C1.99984 13.1579 2.29831 13.4564 2.6665 13.4564H11.9998C12.368 13.4564 12.6665 13.1579 12.6665 12.7897V10.7329C12.9941 10.7737 13.3278 10.7948 13.6664 10.7948C13.7781 10.7948 13.8893 10.7925 13.9998 10.7879Z"
-                                fill="#1D4ED8"
+                                fillRule="evenodd"
+                                clipRule="evenodd"
+                                d="M3.83357 4.49544C3.46538 4.49544 3.1669 4.79392 3.1669 5.16211V11.8288C3.1669 12.197 3.46538 12.4954 3.83357 12.4954H13.1669C13.5351 12.4954 13.8336 12.197 13.8336 11.8288V5.16211C13.8336 4.79392 13.5351 4.49544 13.1669 4.49544H3.83357ZM1.83357 5.16211C1.83357 4.05754 2.729 3.16211 3.83357 3.16211H13.1669C14.2715 3.16211 15.1669 4.05754 15.1669 5.16211V11.8288C15.1669 12.9333 14.2715 13.8288 13.1669 13.8288H3.83357C2.729 13.8288 1.83357 12.9333 1.83357 11.8288V5.16211Z"
+                                fill="white"
                               />
                               <path
                                 // fill-rule="evenodd"
                                 // clip-rule="evenodd"
-                                d="M7.60832 2.42316C7.52541 2.42316 7.4459 2.45609 7.38728 2.51472C7.33204 2.56995 7.29961 2.64373 7.29605 2.72142C7.40354 4.39498 8.11685 5.97246 9.30306 7.15867C10.4893 8.34488 12.0667 9.05819 13.7403 9.16569C13.818 9.16212 13.8918 9.12969 13.947 9.07446C14.0056 9.01583 14.0386 8.93632 14.0386 8.85341V7.39662L12.5778 6.81231L12.1473 7.52975C11.979 7.81026 11.6237 7.91479 11.3303 7.77009C10.1843 7.20492 9.25682 6.27742 8.69164 5.13144C8.54695 4.83805 8.65147 4.48272 8.93198 4.31442L9.64943 3.88395L9.06511 2.42316H7.60832ZM6.49834 1.62578C6.79273 1.3314 7.192 1.16602 7.60832 1.16602H9.49067C9.7477 1.16602 9.97883 1.3225 10.0743 1.56114L11.0155 3.91408C11.13 4.20053 11.0198 4.52779 10.7552 4.68652L10.1067 5.07567C10.4431 5.58348 10.8783 6.01863 11.3861 6.35507L11.7752 5.70648C11.9339 5.44194 12.2612 5.33169 12.5477 5.44627L14.9006 6.38744C15.1392 6.4829 15.2957 6.71403 15.2957 6.97106V8.85341C15.2957 9.26973 15.1303 9.66901 14.8359 9.96339C14.5416 10.2578 14.1423 10.4232 13.726 10.4232C13.7133 10.4232 13.7005 10.4228 13.6878 10.422C11.699 10.3011 9.82308 9.45655 8.41413 8.04761C7.00518 6.63866 6.1606 4.76278 6.03973 2.77389C6.03896 2.7612 6.03857 2.74848 6.03857 2.73576C6.03857 2.31944 6.20396 1.92017 6.49834 1.62578Z"
-                                fill="#1D4ED8"
+                                d="M1.94553 4.80229C2.14977 4.49594 2.56368 4.41316 2.87003 4.61739L8.50023 8.37086L14.1304 4.61739C14.4368 4.41316 14.8507 4.49594 15.0549 4.80229C15.2592 5.10864 15.1764 5.52256 14.87 5.72679L8.87003 9.72679C8.6461 9.87608 8.35437 9.87608 8.13043 9.72679L2.13043 5.72679C1.82408 5.52256 1.7413 5.10864 1.94553 4.80229Z"
+                                fill="white"
                               />
                             </svg>
                           </div>
                         )}
                         <span>
-                          {isRevealing && revealType === 'emailphone' ? (
+                          {isRevealing && revealType === 'email' ? (
                             <Spinner animation="border" size="sm" />
                           ) : (
-                            'View Email + Phone'
+                            'View Email'
                           )}
                         </span>
                       </Button>
                     )}
-                </div>
+
+                    {/* View Email + Phone Btn */}
+
+                    {singleProfile.id &&
+                      (!singleProfile.isRevealed ||
+                        (singleProfile.isRevealed &&
+                          singleProfile.reReveal)) && (
+                        <Button
+                          variant="primary"
+                          className="w-100 py-2"
+                          data-tooltip-id="my-tooltip-2"
+                          onMouseEnter={() => setIsViewEmailPhoneHover(true)}
+                          onMouseLeave={() => setIsViewEmailPhoneHover(false)}
+                          style={
+                            isRevealing && revealType === 'email'
+                              ? {
+                                  cursor: 'not-allowed',
+                                  opacity: '0.35',
+                                  fontSize: '14px',
+                                  padding: '6px 16px',
+                                  borderRadius: '4px',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  fontWeight: '500',
+                                  lineHeight: '20px',
+                                  color: '#1D4ED8',
+                                  backgroundColor: '#fff',
+                                  gap: '8px',
+                                }
+                              : {
+                                  fontSize: '14px',
+                                  padding: '6px 16px',
+                                  borderRadius: '4px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  fontWeight: '500',
+                                  lineHeight: '20px',
+                                  color: '#1D4ED8',
+                                  background: isViewEmailPhoneHover
+                                    ? '#EFF6FF'
+                                    : '#fff',
+                                  border: '1px solid #1D4ED8',
+                                  gap: '8px',
+                                }
+                          }
+                          disabled={isRevealing && revealType === 'email'}
+                          onClick={handleViewEmailPhoneAndFindPhoneBtn}
+                        >
+                          {!isRevealing && (
+                            <div>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                              >
+                                <path
+                                  // fill-rule="evenodd"
+                                  // clip-rule="evenodd"
+                                  d="M13.9998 10.7879V12.7897C13.9998 13.8943 13.1044 14.7897 11.9998 14.7897H2.6665C1.56193 14.7897 0.666504 13.8943 0.666504 12.7897V6.14214V6.12269C0.666697 5.01828 1.56205 4.12305 2.6665 4.12305H5.7762C5.85288 4.5819 5.96861 5.02752 6.11987 5.45638H2.6665C2.40603 5.45638 2.18045 5.60576 2.07075 5.82352L7.33317 9.3318L8.27418 8.70445C8.62106 9.02114 8.99592 9.30769 9.39461 9.55997L7.70297 10.6877C7.47904 10.837 7.1873 10.837 6.96337 10.6877L1.99984 7.37871V12.7897C1.99984 13.1579 2.29831 13.4564 2.6665 13.4564H11.9998C12.368 13.4564 12.6665 13.1579 12.6665 12.7897V10.7329C12.9941 10.7737 13.3278 10.7948 13.6664 10.7948C13.7781 10.7948 13.8893 10.7925 13.9998 10.7879Z"
+                                  fill="#1D4ED8"
+                                />
+                                <path
+                                  // fill-rule="evenodd"
+                                  // clip-rule="evenodd"
+                                  d="M7.60832 2.42316C7.52541 2.42316 7.4459 2.45609 7.38728 2.51472C7.33204 2.56995 7.29961 2.64373 7.29605 2.72142C7.40354 4.39498 8.11685 5.97246 9.30306 7.15867C10.4893 8.34488 12.0667 9.05819 13.7403 9.16569C13.818 9.16212 13.8918 9.12969 13.947 9.07446C14.0056 9.01583 14.0386 8.93632 14.0386 8.85341V7.39662L12.5778 6.81231L12.1473 7.52975C11.979 7.81026 11.6237 7.91479 11.3303 7.77009C10.1843 7.20492 9.25682 6.27742 8.69164 5.13144C8.54695 4.83805 8.65147 4.48272 8.93198 4.31442L9.64943 3.88395L9.06511 2.42316H7.60832ZM6.49834 1.62578C6.79273 1.3314 7.192 1.16602 7.60832 1.16602H9.49067C9.7477 1.16602 9.97883 1.3225 10.0743 1.56114L11.0155 3.91408C11.13 4.20053 11.0198 4.52779 10.7552 4.68652L10.1067 5.07567C10.4431 5.58348 10.8783 6.01863 11.3861 6.35507L11.7752 5.70648C11.9339 5.44194 12.2612 5.33169 12.5477 5.44627L14.9006 6.38744C15.1392 6.4829 15.2957 6.71403 15.2957 6.97106V8.85341C15.2957 9.26973 15.1303 9.66901 14.8359 9.96339C14.5416 10.2578 14.1423 10.4232 13.726 10.4232C13.7133 10.4232 13.7005 10.4228 13.6878 10.422C11.699 10.3011 9.82308 9.45655 8.41413 8.04761C7.00518 6.63866 6.1606 4.76278 6.03973 2.77389C6.03896 2.7612 6.03857 2.74848 6.03857 2.73576C6.03857 2.31944 6.20396 1.92017 6.49834 1.62578Z"
+                                  fill="#1D4ED8"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                          <span>
+                            {isRevealing && revealType === 'emailphone' ? (
+                              <Spinner animation="border" size="sm" />
+                            ) : (
+                              'View Email + Phone'
+                            )}
+                          </span>
+                        </Button>
+                      )}
+                  </div>
+                )}
 
                 <div
                   className="all-masked"
@@ -1077,195 +1106,97 @@ const SingleProfile = ({ userMetaData }) => {
                   }}
                 >
                   {/* Emails */}
-                  {singleProfile?.emails?.map((email) => (
-                    <div
-                      key={email.email}
-                      className="email"
-                      style={{
-                        display: 'flex',
-                        gap: '8px',
-                        height: '16px',
-                        alignItems: 'center',
-                      }}
-                      onMouseEnter={() => setIsEmailCopyIconDisplay(true)}
-                      onMouseLeave={() => setIsEmailCopyIconDisplay(false)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="17"
-                        viewBox="0 0 16 17"
-                        fill="none"
-                      >
-                        <path
-                          // fill-rule="evenodd"
-                          // clip-rule="evenodd"
-                          d="M3.33325 4.49544C2.96506 4.49544 2.66659 4.79392 2.66659 5.16211V11.8288C2.66659 12.197 2.96506 12.4954 3.33325 12.4954H12.6666C13.0348 12.4954 13.3333 12.197 13.3333 11.8288V5.16211C13.3333 4.79392 13.0348 4.49544 12.6666 4.49544H3.33325ZM1.33325 5.16211C1.33325 4.05754 2.22868 3.16211 3.33325 3.16211H12.6666C13.7712 3.16211 14.6666 4.05754 14.6666 5.16211V11.8288C14.6666 12.9333 13.7712 13.8288 12.6666 13.8288H3.33325C2.22868 13.8288 1.33325 12.9333 1.33325 11.8288V5.16211Z"
-                          fill="#9CA3AF"
-                        />
-                        <path
-                          // fill-rule="evenodd"
-                          // clip-rule="evenodd"
-                          d="M1.44529 4.8028C1.64952 4.49644 2.06344 4.41366 2.36979 4.6179L7.99999 8.37136L13.6302 4.6179C13.9365 4.41366 14.3505 4.49644 14.5547 4.8028C14.7589 5.10915 14.6761 5.52306 14.3698 5.7273L8.36979 9.7273C8.14586 9.87659 7.85412 9.87659 7.63019 9.7273L1.63019 5.7273C1.32384 5.52306 1.24105 5.10915 1.44529 4.8028Z"
-                          fill="#9CA3AF"
-                        />
-                      </svg>
-                      <span
+                  {singleProfile?.emails?.length > 0 &&
+                    singleProfile?.emails?.map((email) => (
+                      <div
+                        key={email?.email}
+                        className="email prospect-item-expanded-email"
                         style={{
-                          color: '#1f2937',
-                          fontSize: '14px',
-                          fontWeight: '400',
-                          lineHeight: '16px',
+                          display: 'flex',
+                          gap: '8px',
+                          height: '16px',
+                          alignItems: 'center',
                         }}
                       >
-                        {email.email ? (
-                          <span>
-                            <span>{email.email || null}</span>
-                          </span>
-                        ) : (
-                          <>
+                        <img src={mail} alt="email" />
+                        <span
+                          style={{
+                            color: '#1f2937',
+                            fontSize: '14px',
+                            fontWeight: '400',
+                            lineHeight: '16px',
+                          }}
+                        >
+                          {email?.email ? (
                             <span>
-                              &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                            </span>
-                            @{email}
-                          </>
-                        )}
-                      </span>
-                      {/* valid icon */}
-                      {singleProfile.isRevealed === true && (
-                        <>
-                          {singleProfile.emails ? (
-                            <span>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="17"
-                                viewBox="0 0 16 17"
-                                fill="none"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M8.00016 3.16732C5.05464 3.16732 2.66683 5.55513 2.66683 8.50065C2.66683 11.4462 5.05464 13.834 8.00016 13.834C10.9457 13.834 13.3335 11.4462 13.3335 8.50065C13.3335 5.55513 10.9457 3.16732 8.00016 3.16732ZM1.3335 8.50065C1.3335 4.81875 4.31826 1.83398 8.00016 1.83398C11.6821 1.83398 14.6668 4.81875 14.6668 8.50065C14.6668 12.1826 11.6821 15.1673 8.00016 15.1673C4.31826 15.1673 1.3335 12.1826 1.3335 8.50065Z"
-                                  fill="#047857"
-                                />
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M10.4716 6.70112C10.7319 6.96147 10.7319 7.38358 10.4716 7.64393L7.8049 10.3106C7.54455 10.5709 7.12244 10.5709 6.86209 10.3106L5.52876 8.97726C5.26841 8.71691 5.26841 8.2948 5.52876 8.03445C5.78911 7.7741 6.21122 7.7741 6.47157 8.03445L7.3335 8.89638L9.52876 6.70112C9.78911 6.44077 10.2112 6.44077 10.4716 6.70112Z"
-                                  fill="#047857"
-                                />
-                              </svg>
+                              <span>{email?.email || null}</span>
                             </span>
                           ) : (
-                            <span>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M8.00016 2.66732C5.05464 2.66732 2.66683 5.05513 2.66683 8.00065C2.66683 10.9462 5.05464 13.334 8.00016 13.334C10.9457 13.334 13.3335 10.9462 13.3335 8.00065C13.3335 5.05513 10.9457 2.66732 8.00016 2.66732ZM1.3335 8.00065C1.3335 4.31875 4.31826 1.33398 8.00016 1.33398C11.6821 1.33398 14.6668 4.31875 14.6668 8.00065C14.6668 11.6826 11.6821 14.6673 8.00016 14.6673C4.31826 14.6673 1.3335 11.6826 1.3335 8.00065Z"
-                                  fill="#D97706"
-                                />
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M8.00016 4.66981C8.36835 4.66981 8.66683 4.96829 8.66683 5.33648V8.00315C8.66683 8.37134 8.36835 8.66981 8.00016 8.66981C7.63197 8.66981 7.3335 8.37134 7.3335 8.00315V5.33648C7.3335 4.96829 7.63197 4.66981 8.00016 4.66981Z"
-                                  fill="#D97706"
-                                />
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M7.3335 10.6648C7.3335 10.2966 7.63197 9.99816 8.00016 9.99816H8.00683C8.37502 9.99816 8.6735 10.2966 8.6735 10.6648C8.6735 11.033 8.37502 11.3315 8.00683 11.3315H8.00016C7.63197 11.3315 7.3335 11.033 7.3335 10.6648Z"
-                                  fill="#D97706"
-                                />
-                              </svg>
-                            </span>
+                            <>
+                              <span>
+                                &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                              </span>
+                              @{email}
+                            </>
                           )}
-                          {/* Copy icon */}
-                          <span
-                            style={{
-                              cursor: 'pointer',
-                            }}
-                            onClick={() => handleEmailCopy(email?.email)}
-                            data-tooltip-id="my-tooltip-Email-Copy"
-                          >
-                            {isEmailCopyiconDisplay && (
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="17"
-                                viewBox="0 0 16 17"
-                                fill="none"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M6.66667 6.49588C6.29848 6.49588 6 6.79435 6 7.16254V12.4959C6 12.8641 6.29848 13.1625 6.66667 13.1625H12C12.3682 13.1625 12.6667 12.8641 12.6667 12.4959V7.16254C12.6667 6.79435 12.3682 6.49588 12 6.49588H6.66667ZM4.66667 7.16254C4.66667 6.05797 5.5621 5.16254 6.66667 5.16254H12C13.1046 5.16254 14 6.05797 14 7.16254V12.4959C14 13.6004 13.1046 14.4959 12 14.4959H6.66667C5.5621 14.4959 4.66667 13.6004 4.66667 12.4959V7.16254Z"
-                                  fill="#9CA3AF"
-                                />
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M2.58579 3.09165C2.96086 2.71657 3.46957 2.50586 4 2.50586H9.33333C9.86377 2.50586 10.3725 2.71657 10.7475 3.09165C11.1226 3.46672 11.3333 3.97543 11.3333 4.50586V5.83919C11.3333 6.20738 11.0349 6.50586 10.6667 6.50586C10.2985 6.50586 10 6.20738 10 5.83919V4.50586C10 4.32905 9.92976 4.15948 9.80474 4.03445C9.67971 3.90943 9.51014 3.83919 9.33333 3.83919H4C3.82319 3.83919 3.65362 3.90943 3.5286 4.03445C3.40357 4.15948 3.33333 4.32905 3.33333 4.50586V9.83919C3.33333 10.016 3.40357 10.1856 3.5286 10.3106C3.65362 10.4356 3.82319 10.5059 4 10.5059H5.33333C5.70152 10.5059 6 10.8043 6 11.1725C6 11.5407 5.70152 11.8392 5.33333 11.8392H4C3.46957 11.8392 2.96086 11.6285 2.58579 11.2534C2.21071 10.8783 2 10.3696 2 9.83919V4.50586C2 3.97543 2.21071 3.46672 2.58579 3.09165Z"
-                                  fill="#9CA3AF"
-                                />
-                              </svg>
-                            )}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  ))}
+                        </span>
+                        {singleProfile.isRevealed === true && (
+                          <>
+                            <img src={circleCheck} alt="check-circle" />
+                            <div
+                              className="copy-icon"
+                              style={{
+                                cursor: 'pointer',
+                              }}
+                              onClick={() => handleEmailCopy(email?.email)}
+                            >
+                              <img src={copy} alt="copy" />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  {singleProfile?.isRevealed &&
+                    singleProfile?.emails?.length === 0 && (
+                      <div className="prospect-email-unavailable">
+                        <img
+                          className="prospect-email-unavailable-icon"
+                          src={mail}
+                          alt="email"
+                        />
+                        <span className="prospect-email-unavailable-text">
+                          Email unavailable
+                        </span>
+                        <div className="tooltip-container">
+                          <img src={alertCircle} alt="alert" />
+                          {!singleProfile.id ? (
+                            <div className="custom-tooltip tooltip-bottom">
+                              Email is not available
+                            </div>
+                          ) : (
+                            <div className="custom-tooltip tooltip-bottom">
+                              Email is not available your
+                              <br />
+                              credit is refunded
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                   {/* PhoneNumber */}
                   {singleProfile?.phones?.length > 0 &&
                     singleProfile?.phones?.map((phone, phoneIndex) => (
                       <div
+                        key={phone?.number}
                         className="phone1"
                         style={{
                           display: 'flex',
                           gap: '8px',
                           alignItems: 'center',
                         }}
-                        onMouseEnter={() => {
-                          setIsPhoneCopyIconDisplay(true);
-                        }}
-                        onMouseLeave={() => {
-                          setIsPhoneCopyIconDisplay(false);
-                        }}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="17"
-                          viewBox="0 0 16 17"
-                          fill="none"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M3.33325 3.83898C3.15644 3.83898 2.98687 3.90921 2.86185 4.03424C2.74086 4.15523 2.67117 4.31794 2.6668 4.48855C2.82013 6.91784 3.85431 9.20812 5.57588 10.9297C7.29744 12.6513 9.58772 13.6854 12.017 13.8388C12.1876 13.8344 12.3503 13.7647 12.4713 13.6437C12.5963 13.5187 12.6666 13.3491 12.6666 13.1723V10.957L10.2795 10.0022L9.57158 11.182C9.39307 11.4795 9.01621 11.5903 8.70504 11.4369C7.12575 10.658 5.84756 9.37981 5.06868 7.80052C4.91522 7.48935 5.02608 7.11249 5.32359 6.93398L6.50341 6.22609L5.54856 3.83898H3.33325ZM1.91904 3.09143C2.29411 2.71636 2.80282 2.50564 3.33325 2.50564H5.99992C6.27252 2.50564 6.51766 2.67161 6.6189 2.92472L7.95224 6.25805C8.07376 6.56186 7.95683 6.90895 7.67625 7.0773L6.56025 7.7469C7.10949 8.64265 7.86291 9.39607 8.75866 9.94531L9.42826 8.82931C9.59661 8.54873 9.9437 8.4318 10.2475 8.55332L13.5808 9.88666C13.834 9.9879 13.9999 10.233 13.9999 10.5056V13.1723C13.9999 13.7027 13.7892 14.2115 13.4141 14.5865C13.0391 14.9616 12.5304 15.1723 11.9999 15.1723C11.9864 15.1723 11.9729 15.1719 11.9595 15.1711C9.19646 15.0032 6.59042 13.8299 4.63307 11.8725C2.67571 9.91514 1.50239 7.3091 1.33448 4.54608C1.33366 4.53262 1.33325 4.51913 1.33325 4.50564C1.33325 3.97521 1.54397 3.4665 1.91904 3.09143Z"
-                            fill="#9CA3AF"
-                          />
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M9.33325 5.17231C9.33325 4.80412 9.63173 4.50564 9.99992 4.50564C10.5304 4.50564 11.0391 4.71636 11.4141 5.09143C11.7892 5.4665 11.9999 5.97521 11.9999 6.50564C11.9999 6.87383 11.7014 7.17231 11.3333 7.17231C10.9651 7.17231 10.6666 6.87383 10.6666 6.50564C10.6666 6.32883 10.5963 6.15926 10.4713 6.03424C10.3463 5.90921 10.1767 5.83898 9.99992 5.83898C9.63173 5.83898 9.33325 5.5405 9.33325 5.17231Z"
-                            fill="#9CA3AF"
-                          />
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M9.33325 2.50065C9.33325 2.13246 9.63173 1.83398 9.99992 1.83398C11.2376 1.83398 12.4246 2.32565 13.2998 3.20082C14.1749 4.07599 14.6666 5.26297 14.6666 6.50065C14.6666 6.86884 14.3681 7.16732 13.9999 7.16732C13.6317 7.16732 13.3333 6.86884 13.3333 6.50065C13.3333 5.6166 12.9821 4.76875 12.3569 4.14363C11.7318 3.51851 10.884 3.16732 9.99992 3.16732C9.63173 3.16732 9.33325 2.86884 9.33325 2.50065Z"
-                            fill="#9CA3AF"
-                          />
-                        </svg>
+                        <img src={phoneSignal} alt="phone-signal" />
                         <div
                           style={{
                             display: 'flex',
@@ -1276,6 +1207,7 @@ const SingleProfile = ({ userMetaData }) => {
                           }}
                         >
                           <div
+                            className="prospect-item-expanded-phone"
                             style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -1305,36 +1237,15 @@ const SingleProfile = ({ userMetaData }) => {
                             {/* Phone Number Copy Icon */}
                             {!phone?.number?.includes('X') && (
                               <span
+                                className="copy-icon"
                                 style={{
                                   cursor: 'pointer',
                                 }}
                                 onClick={() =>
                                   handlePhoneNumberCopy(phone?.number)
                                 }
-                                data-tooltip-id="my-tooltip-Email-Copy"
                               >
-                                {isPhoneCopyiconDisplay && (
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="17"
-                                    viewBox="0 0 16 17"
-                                    fill="none"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      clipRule="evenodd"
-                                      d="M6.66667 6.49588C6.29848 6.49588 6 6.79435 6 7.16254V12.4959C6 12.8641 6.29848 13.1625 6.66667 13.1625H12C12.3682 13.1625 12.6667 12.8641 12.6667 12.4959V7.16254C12.6667 6.79435 12.3682 6.49588 12 6.49588H6.66667ZM4.66667 7.16254C4.66667 6.05797 5.5621 5.16254 6.66667 5.16254H12C13.1046 5.16254 14 6.05797 14 7.16254V12.4959C14 13.6004 13.1046 14.4959 12 14.4959H6.66667C5.5621 14.4959 4.66667 13.6004 4.66667 12.4959V7.16254Z"
-                                      fill="#9CA3AF"
-                                    />
-                                    <path
-                                      fillRule="evenodd"
-                                      clipRule="evenodd"
-                                      d="M2.58579 3.09165C2.96086 2.71657 3.46957 2.50586 4 2.50586H9.33333C9.86377 2.50586 10.3725 2.71657 10.7475 3.09165C11.1226 3.46672 11.3333 3.97543 11.3333 4.50586V5.83919C11.3333 6.20738 11.0349 6.50586 10.6667 6.50586C10.2985 6.50586 10 6.20738 10 5.83919V4.50586C10 4.32905 9.92976 4.15948 9.80474 4.03445C9.67971 3.90943 9.51014 3.83919 9.33333 3.83919H4C3.82319 3.83919 3.65362 3.90943 3.5286 4.03445C3.40357 4.15948 3.33333 4.32905 3.33333 4.50586V9.83919C3.33333 10.016 3.40357 10.1856 3.5286 10.3106C3.65362 10.4356 3.82319 10.5059 4 10.5059H5.33333C5.70152 10.5059 6 10.8043 6 11.1725C6 11.5407 5.70152 11.8392 5.33333 11.8392H4C3.46957 11.8392 2.96086 11.6285 2.58579 11.2534C2.21071 10.8783 2 10.3696 2 9.83919V4.50586C2 3.97543 2.21071 3.46672 2.58579 3.09165Z"
-                                      fill="#9CA3AF"
-                                    />
-                                  </svg>
-                                )}
+                                <img src={copy} alt="copy" />
                               </span>
                             )}
                           </div>
@@ -1376,8 +1287,8 @@ const SingleProfile = ({ userMetaData }) => {
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
                                   width="12"
-                                  height="13"
-                                  viewBox="0 0 12 13"
+                                  height="12"
+                                  viewBox="0 0 12 12"
                                   fill="none"
                                 >
                                   <path
@@ -1439,14 +1350,20 @@ const SingleProfile = ({ userMetaData }) => {
                       style={{
                         display: 'flex',
                         padding: '0px 16px',
-                        opacity: userMetaData?.isFreePlanUser ? '0.35' : '1',
-                        cursor: userMetaData?.isFreePlanUser
-                          ? 'not-allowed'
-                          : 'default',
+                        opacity:
+                          userMetaData?.isFreePlanUser || isRevealing
+                            ? '0.35'
+                            : '1',
+                        cursor:
+                          userMetaData?.isFreePlanUser || isRevealing
+                            ? 'not-allowed'
+                            : 'default',
                       }}
                       data-tooltip-id={
                         userMetaData?.isFreePlanUser
                           ? 'is-free-plan-user'
+                          : !singleProfile?.isRevealed
+                          ? 'is-not-revealed'
                           : null
                       }
                     >
@@ -1470,7 +1387,7 @@ const SingleProfile = ({ userMetaData }) => {
                         setIsExpanded={handleExpandedSection}
                         btnLoadingStatus={btnLoadingStatus.addToSequence}
                         isAgency={isAgency}
-                        isFreePlanUser={userMetaData?.isFreePlanUser}
+                        isDisabled={userMetaData?.isFreePlanUser || isRevealing}
                       />
                     </div>
                   )}
@@ -1515,6 +1432,7 @@ const SingleProfile = ({ userMetaData }) => {
         id="my-tooltip-1"
         place="bottom"
         content="1 Credits Required"
+        opacity="1"
         style={{
           fontSize: '12px',
           fontWeight: '500',
@@ -1528,6 +1446,7 @@ const SingleProfile = ({ userMetaData }) => {
       <ReactTooltip
         id="my-tooltip-2"
         place="bottom"
+        opacity="1"
         content={
           isRevealing && revealType === 'email'
             ? "You can't take this action as lead reveal is in progress"
@@ -1544,22 +1463,9 @@ const SingleProfile = ({ userMetaData }) => {
         }}
       />
       <ReactTooltip
-        id="my-tooltip-Email-Copy"
-        place="bottom"
-        content={isCopied ? 'Copied' : 'Copy'}
-        style={{
-          fontSize: '12px',
-          fontWeight: '500',
-          lineHeight: '16px',
-          textAlign: 'center',
-          borderRadius: '4px',
-          backgroundColor: '#1F2937',
-          padding: '8px',
-        }}
-      />
-      <ReactTooltip
         id="is-free-plan-user"
         place="bottom"
+        opacity="1"
         content={
           <>
             Please upgrade your plan
@@ -1577,6 +1483,23 @@ const SingleProfile = ({ userMetaData }) => {
           padding: '8px',
         }}
       />
+      {!prospect?.isRevealed && expandedSection !== 'sequence' && (
+        <ReactTooltip
+          id="is-not-revealed"
+          place="bottom"
+          opacity="1"
+          content="1 Credit required to reveal email"
+          style={{
+            fontSize: '12px',
+            fontWeight: '500',
+            lineHeight: '16px',
+            textAlign: 'center',
+            borderRadius: '4px',
+            backgroundColor: '#1F2937',
+            padding: '8px',
+          }}
+        />
+      )}
     </>
   );
 };
