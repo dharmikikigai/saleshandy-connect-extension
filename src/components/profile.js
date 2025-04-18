@@ -114,8 +114,7 @@ const Profile = () => {
                     style={{
                       color: '#0137FC',
                       cursor: 'pointer',
-                      display: 'inline-block',
-                      position: 'relative',
+                      display: 'block',
                     }}
                     onMouseEnter={() => setEmailAccountTooltip(true)}
                     onMouseLeave={() => setEmailAccountTooltip(false)}
