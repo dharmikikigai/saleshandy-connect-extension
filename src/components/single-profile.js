@@ -64,6 +64,9 @@ const SingleProfile = ({ userMetaData }) => {
     saveTags: false,
   });
   const [isRateLimitReached, setIsRateLimitReached] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  console.log('isCopied', isCopied);
 
   const fetchProspect = async () => {
     try {
@@ -310,6 +313,12 @@ const SingleProfile = ({ userMetaData }) => {
           },
           ...remainingSequences,
         ];
+        const isSelectedSequenceInClientSequences = res.payload.some(
+          (sequence) => sequence.id === selectedSequence?.value,
+        );
+        if (!isSelectedSequenceInClientSequences) {
+          setSelectedSequence(null);
+        }
         setClientSequences(customSequenceOptions);
       } else {
         console.log(
@@ -323,16 +332,29 @@ const SingleProfile = ({ userMetaData }) => {
 
   const handleAddToSequence = async (data) => {
     try {
-      const payload = {
-        leadId: prospect.id,
-        revealType: 'email',
-        tagIds: data.tagIds,
-        newTags: data.newTags,
-        sequenceId: data.sequenceId,
-        stepId: data.stepId,
-      };
+      let payload = {};
+      let response = null;
 
-      const response = await prospectsInstance.revealProspect(payload);
+      if (prospect.isRevealed) {
+        payload = {
+          leadIds: [prospect.id],
+          sequenceId: data.sequenceId,
+          stepId: data.stepId,
+          tagIds: data.tagIds,
+          newTags: data.newTags,
+        };
+        response = await prospectsInstance.addToSequence(payload);
+      } else {
+        payload = {
+          leadId: prospect.id,
+          revealType: 'email',
+          tagIds: data.tagIds,
+          newTags: data.newTags,
+          sequenceId: data.sequenceId,
+          stepId: data.stepId,
+        };
+        response = await prospectsInstance.revealProspect(payload);
+      }
 
       if (response) {
         const { message, status, shouldPoll, title } = response.payload;
@@ -345,17 +367,11 @@ const SingleProfile = ({ userMetaData }) => {
             setIsPollingEnabled(true);
           }
           setToasterData({
-            header: title || 'Added to Sequence Successfully',
+            header: title || 'Add to Sequence Initiated',
             body: message,
             type: 'success',
           });
           setShowToaster(true);
-          // }
-          console.log(
-            'success',
-            message ||
-              'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
-          );
         }
       }
     } catch (err) {
@@ -382,7 +398,7 @@ const SingleProfile = ({ userMetaData }) => {
     const tagIds = [];
     const newTags = [];
 
-    selectedTags.forEach((tag) => {
+    sequenceTags.forEach((tag) => {
       // eslint-disable-next-line no-underscore-dangle
       if (tag.__isNew__) {
         newTags.push(tag.value);
@@ -553,6 +569,10 @@ const SingleProfile = ({ userMetaData }) => {
         }));
         setStepOptions(customStepOptions);
       }
+      setSelectedStep(null);
+    } else {
+      setSelectedStep(null);
+      setStepOptions([]);
     }
   }, [selectedSequence]);
 
@@ -973,7 +993,7 @@ const SingleProfile = ({ userMetaData }) => {
                           background: '#1D4ED8',
                           gap: '8px',
                         }}
-                        disabled={isRevealing}
+                        disabled={isRevealing || isPollingEnabled}
                         onClick={hadnleViewEmailBtn}
                       >
                         {!isRevealing && (
@@ -1057,7 +1077,7 @@ const SingleProfile = ({ userMetaData }) => {
                                   gap: '8px',
                                 }
                           }
-                          disabled={isRevealing && revealType === 'email'}
+                          disabled={isRevealing || isPollingEnabled}
                           onClick={handleViewEmailPhoneAndFindPhoneBtn}
                         >
                           {!isRevealing && (
@@ -1396,10 +1416,14 @@ const SingleProfile = ({ userMetaData }) => {
                       style={{
                         display: 'flex',
                         padding: '0px 16px',
-                        opacity: userMetaData?.isFreePlanUser ? '0.35' : '1',
-                        cursor: userMetaData?.isFreePlanUser
-                          ? 'not-allowed'
-                          : 'default',
+                        opacity:
+                          userMetaData?.isFreePlanUser || isRevealing
+                            ? '0.35'
+                            : '1',
+                        cursor:
+                          userMetaData?.isFreePlanUser || isRevealing
+                            ? 'not-allowed'
+                            : 'default',
                       }}
                       data-tooltip-id={
                         userMetaData?.isFreePlanUser
@@ -1415,7 +1439,7 @@ const SingleProfile = ({ userMetaData }) => {
                         setIsExpanded={handleExpandedSection}
                         saveTags={saveTags}
                         btnLoadingStatus={btnLoadingStatus.saveTags}
-                        isFreePlanUser={userMetaData?.isFreePlanUser}
+                        isDisabled={userMetaData?.isFreePlanUser || isRevealing}
                       />
                     </div>
                   )}
