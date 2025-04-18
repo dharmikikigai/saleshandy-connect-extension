@@ -130,6 +130,32 @@ class Prospects extends Server {
       console.log(URLs.getSavedLeads.error, e);
     }
   }
+
+  async addToSequence(payload) {
+    try {
+      return (await this.req.post(URLs.addToSequence.path(), payload)).data;
+    } catch (e) {
+      return {
+        error: e?.response?.data,
+      };
+    }
+  }
+
+  async bulkAddToSequence(payload) {
+    try {
+      return (await this.req.post(URLs.bulkAddToSequence.path(), payload)).data;
+    } catch (e) {
+      console.log(URLs.bulkAddToSequence.error, e);
+    }
+  }
+
+  async bulkSaveTags(payload) {
+    try {
+      return (await this.req.post(URLs.bulkSaveTags.path(), payload)).data;
+    } catch (e) {
+      console.log(URLs.bulkSaveTags.error, e);
+    }
+  }
 }
 
 const prospectsInstance = new Prospects();

@@ -88,6 +88,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
     save: false,
   });
 
+  const [savedAllSelected, setSavedAllSelected] = useState(false);
+  const [deSelectedProspects, setDeSelectedProspects] = useState([]);
+
   // Add pagination state for saved leads
   const [savedLeadsPagination, setSavedLeadsPagination] = useState({
     start: 1,
@@ -125,6 +128,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
   const [selectedTagFilters, setSelectedTagFilters] = useState([]);
   const [dateFilterValue, setDateFilterValue] = useState(null);
   const [dateFilterCustomValue, setDateFilterCustomValue] = useState(null);
+  const [savedFilter, setSavedFilter] = useState({
+    tags: [],
+    startDate: null,
+    endDate: null,
+  });
   const [applyFiltersLoading, setApplyFiltersLoading] = useState(false);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [isRateLimitReached, setIsRateLimitReached] = useState(false);
@@ -256,8 +264,116 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
   };
 
+  const bulkRevealProspects = async (payload) => {
+    try {
+      const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
+        payload,
+      );
+      if (bulkRevealRes) {
+        const { message, status, shouldPoll, title } = bulkRevealRes.payload;
+        if (status === 0) {
+          console.log('error', message);
+        } else if (status === 2) {
+          console.log('warning', message);
+        } else {
+          const newRevealingProspects = {
+            ...revealingProspects,
+            ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+          };
+          setRevealingProspects(newRevealingProspects);
+          setIsPollingEnabled(shouldPoll);
+          setToasterData({
+            header: title || 'Lead reveal initiated',
+            body: message,
+            type: 'success',
+          });
+          setShowToaster(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error in bulkRevealProspects:', error);
+    }
+  };
+
+  const addToSequence = async (payload) => {
+    try {
+      const response = await prospectsInstance.addToSequence(payload);
+      if (response && response.payload && response.payload.message) {
+        setToasterData({
+          header: 'Add to Sequence Initiated',
+          body: response?.payload?.message,
+          type: 'success',
+        });
+        setShowToaster(true);
+      }
+    } catch (error) {
+      console.error('Error in addToSequence:', error);
+    }
+  };
+
+  const bulkAddToSequence = async (payload) => {
+    try {
+      const response = await prospectsInstance.bulkAddToSequence(payload);
+      if (response && response.payload && response.payload.message) {
+        setToasterData({
+          header: 'Add to Sequence Initiated',
+          body: response?.payload?.message,
+          type: 'success',
+        });
+        setShowToaster(true);
+        setSavedAllSelected(false);
+        setSelectedProspects([]);
+        setDeSelectedProspects([]);
+      }
+    } catch (error) {
+      console.error('Error in bulkAddToSequence:', error);
+    }
+  };
+
+  const addTagsToRevealedProspects = async (payload) => {
+    try {
+      const response = await prospectsInstance.saveTags(payload);
+      if (response && response.message) {
+        getSavedLeads();
+        setToasterData({
+          header: 'Tags applied successfully',
+          body: response.message,
+          type: 'success',
+        });
+        setShowToaster(true);
+      }
+    } catch (error) {
+      console.error('Error in addTagsToRevealedProspects:', error);
+    }
+  };
+
+  const bulkAddTagsToRevealedProspects = async (payload) => {
+    try {
+      const response = await prospectsInstance.bulkSaveTags(payload);
+      if (response && response.message) {
+        getSavedLeads();
+        setToasterData({
+          header: 'Tags applied successfully',
+          body: response.message,
+          type: 'success',
+        });
+        setShowToaster(true);
+        setSavedAllSelected(false);
+        setSelectedProspects([]);
+        setDeSelectedProspects([]);
+      }
+    } catch (error) {
+      console.error('Error in bulkAddTagsToRevealedProspects:', error);
+    }
+  };
+
   const handleApplyTags = async () => {
     try {
+      setRevealProspectLoading({
+        ignore: false,
+        apply: true,
+        save: false,
+      });
       const tagIds = [];
       const newTags = [];
 
@@ -271,25 +387,32 @@ const ProspectList = ({ pageType, userMetaData }) => {
       });
 
       if (isTagsModalForRevealedProspects) {
-        const payload = {
-          leads: selectedProspects,
-          tagIds,
-          newTags,
-        };
-        setRevealProspectLoading({
-          ignore: false,
-          apply: true,
-          save: false,
-        });
-        const response = await prospectsInstance.saveTags(payload);
-        if (response && response.message) {
-          getSavedLeads();
-          setToasterData({
-            header: 'Tags applied successfully',
-            body: response.message,
-            type: 'success',
-          });
-          setShowToaster(true);
+        if (activeTab === 'saved' && savedAllSelected) {
+          const leadsFilter = {};
+
+          if (savedFilter.tags) {
+            leadsFilter.tags = savedFilter.tags;
+          }
+          if (savedFilter.startDate) {
+            leadsFilter.startDate = savedFilter.startDate;
+          }
+          if (savedFilter.endDate) {
+            leadsFilter.endDate = savedFilter.endDate;
+          }
+          const payload = {
+            deSelectedLeadIds: deSelectedProspects,
+            newTags,
+            tagIds,
+            leadsFilter,
+          };
+          await bulkAddTagsToRevealedProspects(payload);
+        } else {
+          const payload = {
+            leads: selectedProspects,
+            tagIds,
+            newTags,
+          };
+          await addTagsToRevealedProspects(payload);
         }
       } else {
         const payload = {
@@ -298,35 +421,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
           tagIds,
           newTags,
         };
-        setRevealProspectLoading({
-          ignore: false,
-          apply: true,
-          save: false,
-        });
-        const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
-          payload,
-        );
-        if (bulkRevealRes) {
-          const { message, status, shouldPoll, title } = bulkRevealRes.payload;
-          if (status === 0) {
-            console.log('error', message);
-          } else if (status === 2) {
-            console.log('warning', message);
-          } else {
-            const newRevealingProspects = {
-              ...revealingProspects,
-              ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
-            };
-            setRevealingProspects(newRevealingProspects);
-            setIsPollingEnabled(shouldPoll);
-            setToasterData({
-              header: title || 'Lead reveal initiated',
-              body: message,
-              type: 'success',
-            });
-            setShowToaster(true);
-          }
-        }
+        await bulkRevealProspects(payload);
       }
     } catch (error) {
       console.error('Error in handleApplyTags:', error);
@@ -353,30 +448,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
         apply: false,
         save: false,
       });
-      const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
-        payload,
-      );
-      if (bulkRevealRes) {
-        const { message, status, shouldPoll, title } = bulkRevealRes.payload;
-        if (status === 0) {
-          console.log('error', message);
-        } else if (status === 2) {
-          console.log('warning', message);
-        } else {
-          const newRevealingProspects = {
-            ...revealingProspects,
-            ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
-          };
-          setRevealingProspects(newRevealingProspects);
-          setIsPollingEnabled(shouldPoll);
-          setToasterData({
-            header: title || 'Lead reveal initiated',
-            body: message,
-            type: 'success',
-          });
-          setShowToaster(true);
-        }
-      }
+      await bulkRevealProspects(payload);
     } catch (error) {
       console.error('Error in handleIgnoreTags:', error);
     } finally {
@@ -393,42 +465,54 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   const handleAddToSequence = async (data) => {
     try {
-      const payload = {
-        leadIds: selectedProspects,
-        revealType: 'email',
-        tagIds: data.tagIds,
-        newTags: data.newTags,
-        sequenceId: data.sequenceId,
-        stepId: data.stepId,
-      };
       setRevealProspectLoading({
         ignore: false,
         apply: false,
         save: true,
       });
-      const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
-        payload,
-      );
-      if (bulkRevealRes) {
-        const { message, status, shouldPoll, title } = bulkRevealRes.payload;
-        if (status === 0) {
-          console.log('error', message);
-        } else if (status === 2) {
-          console.log('warning', message);
-        } else {
-          const newRevealingProspects = {
-            ...revealingProspects,
-            ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+      let payload = {};
+      if (activeTab === 'saved') {
+        if (savedAllSelected) {
+          const leadsFilter = {};
+
+          if (savedFilter.tags) {
+            leadsFilter.tags = savedFilter.tags;
+          }
+          if (savedFilter.startDate) {
+            leadsFilter.startDate = savedFilter.startDate;
+          }
+          if (savedFilter.endDate) {
+            leadsFilter.endDate = savedFilter.endDate;
+          }
+          payload = {
+            deSelectedLeadIds: deSelectedProspects,
+            sequenceId: data.sequenceId,
+            stepId: data.stepId,
+            tagIdsToAssign: data.tagIds,
+            newTagsToAssign: data.newTags,
+            leadsFilter,
           };
-          setRevealingProspects(newRevealingProspects);
-          setIsPollingEnabled(shouldPoll);
-          setToasterData({
-            header: title || 'Added to Sequence Successfully',
-            body: message,
-            type: 'success',
-          });
-          setShowToaster(true);
+          await bulkAddToSequence(payload);
+        } else {
+          payload = {
+            leadIds: selectedProspects,
+            sequenceId: data.sequenceId,
+            stepId: data.stepId,
+            tagIds: data.tagIds,
+            newTags: data.newTags,
+          };
+          await addToSequence(payload);
         }
+      } else {
+        payload = {
+          leadIds: selectedProspects,
+          revealType: 'email',
+          tagIds: data.tagIds,
+          newTags: data.newTags,
+          sequenceId: data.sequenceId,
+          stepId: data.stepId,
+        };
+        await bulkRevealProspects(payload);
       }
     } catch (error) {
       console.error('Error in handleAddToSequence:', error);
@@ -575,6 +659,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
   const switchTabTo = (tab) => {
     setActiveTab(tab);
     setSelectedProspects([]);
+    setSavedAllSelected(false);
   };
 
   const copyToClipboard = (text) => {
@@ -616,6 +701,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
         start: 1,
         take: 25,
         tags: tagFilter,
+      };
+      const currentFilter = {
+        tags: selectedTagFilters.map((tag) => tag.value),
       };
 
       if (dateFilterValue) {
@@ -682,11 +770,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
             formattedEndDate = formatDateToLocalISO(endDateMidnight);
           }
 
+          currentFilter.startDate = formattedStartDate;
+          currentFilter.endDate = formattedEndDate;
+
           const createdDateString = `${formattedStartDate},${formattedEndDate}`;
           payload.createdDate = encodeURIComponent(createdDateString);
         }
       }
-
+      setSavedFilter(currentFilter);
       const response = await prospectsInstance.getSavedLeads(payload);
       if (response && response.payload && response.payload.profiles) {
         setSavedProspects(response.payload.profiles);
@@ -860,19 +951,31 @@ const ProspectList = ({ pageType, userMetaData }) => {
   }, [isPollingEnabled]);
 
   const toggleProspectSelection = (prospectId) => {
-    setSelectedProspects((prev) =>
-      prev.includes(prospectId)
-        ? prev.filter((id) => id !== prospectId)
-        : [...prev, prospectId],
-    );
+    if (activeTab === 'saved' && savedAllSelected) {
+      setDeSelectedProspects((prev) =>
+        prev.includes(prospectId)
+          ? prev.filter((id) => id !== prospectId)
+          : [...prev, prospectId],
+      );
+    } else {
+      setSelectedProspects((prev) =>
+        prev.includes(prospectId)
+          ? prev.filter((id) => id !== prospectId)
+          : [...prev, prospectId],
+      );
+    }
   };
 
   const toggleAllProspectsSelection = () => {
-    setSelectedProspects(
-      selectedProspects.length === selectableProspects.length
-        ? []
-        : selectableProspects.map((prospect) => prospect.id),
-    );
+    if (activeTab === 'saved') {
+      setSavedAllSelected((prev) => !prev);
+    } else {
+      setSelectedProspects(
+        selectedProspects.length === selectableProspects.length
+          ? []
+          : selectableProspects.map((prospect) => prospect.id),
+      );
+    }
   };
 
   const handleAddTagsForRevealedProspects = () => {
@@ -1025,7 +1128,8 @@ const ProspectList = ({ pageType, userMetaData }) => {
           (type === 'email' && prospect.isRevealed) ||
           (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
       );
-    const shouldDisable = selectedProspects.length === 0 || isAllRevealed;
+    const shouldDisable =
+      selectedProspects.length === 0 || isAllRevealed || savedAllSelected;
     return (
       <div className="tooltip-container">
         <CustomButton
@@ -1058,7 +1162,13 @@ const ProspectList = ({ pageType, userMetaData }) => {
     <CustomButton
       variant="outline"
       className={isExpanded ? 'action-button' : 'action-icon-button'}
-      disabled={selectedProspects.length === 0 || userMetaData?.isFreePlanUser}
+      disabled={
+        (selectedProspects.length === 0 && activeTab === 'leads') ||
+        userMetaData?.isFreePlanUser ||
+        (activeTab === 'saved' &&
+          !savedAllSelected &&
+          selectedProspects.length === 0)
+      }
       onClick={() => setShowAddToSequenceModal(true)}
       dataTooltipId={userMetaData?.isFreePlanUser ? 'is-free-plan-user' : null}
     >
@@ -1071,7 +1181,13 @@ const ProspectList = ({ pageType, userMetaData }) => {
     <CustomButton
       variant="outline"
       className="action-icon-button"
-      disabled={selectedProspects.length === 0 || userMetaData?.isFreePlanUser}
+      disabled={
+        (selectedProspects.length === 0 && activeTab === 'leads') ||
+        userMetaData?.isFreePlanUser ||
+        (activeTab === 'saved' &&
+          !savedAllSelected &&
+          selectedProspects.length === 0)
+      }
       onClick={handleAddTagsForRevealedProspects}
       dataTooltipId={userMetaData?.isFreePlanUser ? 'is-free-plan-user' : null}
     >
@@ -1242,7 +1358,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
                   >
                     <img
                       src={
-                        selectedProspects.length === selectableProspects.length
+                        selectedProspects.length ===
+                          selectableProspects.length ||
+                        (activeTab === 'saved' && savedAllSelected)
                           ? checkboxChecked
                           : checkbox
                       }
@@ -1250,7 +1368,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
                     />
                   </div>
                   <span>
-                    {selectedProspects.length > 0
+                    {activeTab === 'saved' && savedAllSelected
+                      ? 'All'
+                      : selectedProspects.length > 0
                       ? selectedProspects.length
                       : 'All'}
                   </span>
@@ -1282,20 +1402,37 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                 !prospect.id ||
                                 (prospect.id &&
                                   prospect.isRevealed &&
-                                  prospect.isCreditRefunded)
+                                  prospect.isCreditRefunded) ||
+                                (activeTab === 'saved' &&
+                                  selectedProspects?.length === 25 &&
+                                  !selectedProspects.includes(prospect.id))
                                   ? 'checkbox-disabled'
                                   : ''
                               }`}
                               {...(prospect.id &&
-                                !prospect.isCreditRefunded && {
+                                !prospect.isCreditRefunded &&
+                                (activeTab === 'leads' ||
+                                  (activeTab === 'saved' &&
+                                    (selectedProspects.includes(prospect.id) ||
+                                      (selectedProspects?.length < 25 &&
+                                        !selectedProspects.includes(
+                                          prospect.id,
+                                        ))))) && {
                                   onClick: () =>
                                     toggleProspectSelection(prospect.id),
                                 })}
                             >
                               <img
                                 src={
-                                  prospect.id &&
-                                  selectedProspects.includes(prospect.id)
+                                  (prospect.id &&
+                                    selectedProspects.includes(prospect.id) &&
+                                    !savedAllSelected) ||
+                                  (activeTab === 'saved' &&
+                                    savedAllSelected &&
+                                    prospect.id &&
+                                    prospect.isRevealed &&
+                                    !prospect.isCreditRefunded &&
+                                    !deSelectedProspects.includes(prospect.id))
                                     ? checkboxChecked
                                     : checkbox
                                 }
