@@ -83,14 +83,17 @@ const Popup = () => {
                       cursor: 'pointer',
                       display: 'block',
                     }}
-                    onMouseEnter={() => setEmailAccountTooltip(true)}
-                    onMouseLeave={() => setEmailAccountTooltip(false)}
                     onClick={() => {
                       setEmailAccountTooltip(!emailAccountTooltip);
                       console.debug('click ');
                     }}
                   >
-                    [+{trackingEmails.length - 2} more]
+                    <span
+                      onMouseEnter={() => setEmailAccountTooltip(true)}
+                      onMouseLeave={() => setEmailAccountTooltip(false)}
+                    >
+                      [+{trackingEmails.length - 2} more]
+                    </span>
                   </div>
                 </>
               );
@@ -1088,7 +1091,7 @@ const Popup = () => {
                           style={{
                             position: 'absolute',
                             top: '16.85rem', // adjust this based on your layout
-                            left: '61%',
+                            left: '52%',
                             transform: 'translateX(-50%)',
                             padding: '8px',
                             backgroundColor: '#333',
@@ -1097,7 +1100,7 @@ const Popup = () => {
                             fontSize: '12px',
                             fontWeight: '500',
                             lineHeight: '16px',
-                            width: '200px',
+                            width: 'auto',
                             height: 'auto',
                             wordWrap: 'break-word',
                             zIndex: 1,
@@ -1109,18 +1112,6 @@ const Popup = () => {
                               <br />
                             </>
                           ))}
-                          <div
-                            style={{
-                              position: 'absolute',
-                              bottom: '-5px',
-                              left: '75%',
-                              width: '0',
-                              height: '0',
-                              borderLeft: '5px solid transparent',
-                              borderRight: '5px solid transparent',
-                              borderTop: '5px solid #333',
-                            }}
-                          />
                         </div>
                       )}
                     </div>

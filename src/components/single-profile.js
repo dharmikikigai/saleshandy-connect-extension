@@ -992,6 +992,8 @@ const SingleProfile = ({ userMetaData }) => {
                           lineHeight: '20px',
                           background: '#1D4ED8',
                           gap: '8px',
+                          outline: 'none',
+                          boxShadow: 'none',
                         }}
                         disabled={isRevealing || isPollingEnabled}
                         onClick={hadnleViewEmailBtn}
@@ -1048,6 +1050,7 @@ const SingleProfile = ({ userMetaData }) => {
                                   cursor: 'not-allowed',
                                   opacity: '0.35',
                                   fontSize: '14px',
+                                  height: '32px',
                                   padding: '6px 16px',
                                   borderRadius: '4px',
                                   display: 'flex',
@@ -1075,6 +1078,8 @@ const SingleProfile = ({ userMetaData }) => {
                                     : '#fff',
                                   border: '1px solid #1D4ED8',
                                   gap: '8px',
+                                  outline: 'none',
+                                  boxShadow: 'none',
                                 }
                           }
                           disabled={isRevealing || isPollingEnabled}
@@ -1169,6 +1174,9 @@ const SingleProfile = ({ userMetaData }) => {
                                 cursor: 'pointer',
                               }}
                               onClick={() => handleEmailCopy(email?.email)}
+                              data-tooltip-id="my-tooltip-copy"
+                              onMouseEnter={() => setIsCopied(true)}
+                              onMouseLeave={() => setIsCopied(false)}
                             >
                               <img src={copy} alt="copy" />
                             </div>
@@ -1264,6 +1272,9 @@ const SingleProfile = ({ userMetaData }) => {
                                 onClick={() =>
                                   handlePhoneNumberCopy(phone?.number)
                                 }
+                                data-tooltip-id="my-tooltip-copy"
+                                onMouseEnter={() => setIsCopied(true)}
+                                onMouseLeave={() => setIsCopied(false)}
                               >
                                 <img src={copy} alt="copy" />
                               </span>
@@ -1456,6 +1467,21 @@ const SingleProfile = ({ userMetaData }) => {
         id="my-tooltip-1"
         place="bottom"
         content="1 Credits Required"
+        opacity="1"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+        }}
+      />
+      <ReactTooltip
+        id="my-tooltip-copy"
+        place="bottom"
+        content="Copy"
         opacity="1"
         style={{
           fontSize: '12px',
