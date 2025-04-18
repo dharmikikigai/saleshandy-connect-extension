@@ -23,9 +23,9 @@ const customOptionSequenceName = (props) => {
   const { data, innerRef, innerProps, isFocused } = props;
 
   const fullLabel = data.label;
-  const shouldShowTooltip = fullLabel.length > 30;
+  const shouldShowTooltip = fullLabel.length > 25 || data.isAlreadyIn;
   const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 30)}..`
+    ? `${fullLabel.slice(0, 25)}..`
     : fullLabel;
 
   return (
@@ -47,7 +47,9 @@ const customOptionSequenceName = (props) => {
         }}
         {...(shouldShowTooltip && {
           'data-tooltip-id': 'step-option-tooltip',
-          'data-tooltip-content': fullLabel,
+          'data-tooltip-content': data.isAlreadyIn
+            ? 'Already exist in this sequence'
+            : fullLabel,
         })}
       >
         {truncatedLabel}
@@ -79,7 +81,7 @@ const formatGroupLabel = (data) => (
   <div>
     <div
       style={{
-        padding: '4px 12px',
+        padding: '0px 12px 4px 12px',
         fontSize: '12px',
         color: '#6B7280',
         textTransform: 'none',
@@ -95,9 +97,9 @@ const formatGroupLabel = (data) => (
 const CustomOption = (props) => {
   // eslint-disable-next-line react/destructuring-assignment
   const fullLabel = props.label;
-  const shouldShowTooltip = fullLabel.length > 29;
+  const shouldShowTooltip = fullLabel.length > 30;
   const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 29)}....`
+    ? `${fullLabel.slice(0, 30)}..`
     : fullLabel;
 
   return (
@@ -117,9 +119,9 @@ const CustomOption = (props) => {
 const CustomOptionTags = (props) => {
   // eslint-disable-next-line react/destructuring-assignment
   const fullLabel = props.label;
-  const shouldShowTooltip = fullLabel.length > 10;
+  const shouldShowTooltip = fullLabel.length > 25;
   const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 10)}....`
+    ? `${fullLabel.slice(0, 25)}..`
     : fullLabel;
 
   return (
@@ -156,7 +158,7 @@ const AddToSequence = ({
   setIsExpanded,
   btnLoadingStatus,
   isAgency,
-  isFreePlanUser,
+  isDisabled,
 }) => {
   // const [isExpanded, setIsExpanded] = useState(false);
   // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
@@ -197,9 +199,10 @@ const AddToSequence = ({
 
   return (
     <div
+      className={`${isExpanded ? '' : 'add-to-sequence-container'}`}
       style={{
         border: '1px solid #e5e7eb',
-        borderRadius: '8px',
+        borderRadius: '4px',
         padding: '12px 16px',
         width: '320px',
         backgroundColor: '#ffffff',
@@ -207,7 +210,7 @@ const AddToSequence = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        cursor: isFreePlanUser ? 'not-allowed' : 'pointer',
+        cursor: isDisabled ? 'not-allowed' : isExpanded ? 'default' : 'pointer',
       }}
     >
       {/* Header */}
@@ -217,8 +220,9 @@ const AddToSequence = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           height: '16px',
+          cursor: isDisabled ? 'not-allowed' : 'pointer',
         }}
-        {...(!isFreePlanUser && {
+        {...(!isDisabled && {
           onClick: () => {
             setIsExpanded('sequence');
           },
@@ -257,9 +261,12 @@ const AddToSequence = ({
               style={{
                 fontSize: '14px',
                 fontWeight: 500,
+                lineHeight: '16px',
+                color: '#6B7280',
               }}
             >
-              Add to Sequence
+              Add to Sequence{' '}
+              {recentSequence?.length > 0 ? `(${recentSequence?.length})` : ''}
             </span>
           </div>
         </div>
@@ -397,6 +404,7 @@ const AddToSequence = ({
                         height: '32px',
                         minHeight: '32px',
                         flexWrap: 'no-wrap',
+                        maxWidth: '258px',
                       }),
                       indicatorSeparator: (base) => ({
                         ...base,
@@ -452,6 +460,7 @@ const AddToSequence = ({
                   <ReactTooltip
                     id="step-option-tooltip"
                     place="bottom"
+                    opacity="1"
                     style={{
                       fontSize: '12px',
                       fontWeight: '500',
@@ -461,6 +470,11 @@ const AddToSequence = ({
                       backgroundColor: '#1F2937',
                       padding: '8px',
                       zIndex: '99',
+                      display: 'flex',
+                      width: '184px',
+                      textWrap: 'wrap',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
                     }}
                   />
                 </div>
@@ -509,6 +523,7 @@ const AddToSequence = ({
                       height: '32px',
                       minHeight: '32px',
                       flexWrap: 'no-wrap',
+                      maxWidth: '258px',
                     }),
                     indicatorSeparator: (base) => ({
                       ...base,
@@ -543,7 +558,7 @@ const AddToSequence = ({
                     }),
                     option: (base, state) => ({
                       ...base,
-                      padding: '6px 16px',
+                      padding: '4px 16px',
                       backgroundColor: state.isFocused
                         ? '#eff6ff'
                         : 'transparent',
@@ -563,6 +578,8 @@ const AddToSequence = ({
                       fontWeight: '500',
                       color: '#9ca3af',
                       paddingLeft: '0px',
+                      paddingTop: '0px',
+                      marginTop: '0px',
                       // textTransform: 'uppercase',
                       // backgroundColor: '#f9fafb',
                     }),
@@ -571,6 +588,7 @@ const AddToSequence = ({
                 <ReactTooltip
                   id="step-option-tooltip"
                   place="bottom"
+                  opacity="1"
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
@@ -580,6 +598,11 @@ const AddToSequence = ({
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
+                    display: 'flex',
+                    width: '184px',
+                    textWrap: 'wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}
                 />
               </div>
@@ -622,6 +645,7 @@ const AddToSequence = ({
                       height: '32px',
                       minHeight: '32px',
                       flexWrap: 'no-wrap',
+                      maxWidth: '258px',
                     }),
                     indicatorSeparator: (base) => ({
                       ...base,
@@ -675,6 +699,7 @@ const AddToSequence = ({
                 <ReactTooltip
                   id="step-option-tooltip"
                   place="bottom"
+                  opacity="1"
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
@@ -684,6 +709,11 @@ const AddToSequence = ({
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
+                    display: 'flex',
+                    width: '184px',
+                    textWrap: 'wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}
                 />
               </div>
@@ -714,7 +744,7 @@ const AddToSequence = ({
                     MultiValueLabel: ({ data, ...props }) => {
                       const showTooltip = data.label.length > 10;
                       const displayLabel = showTooltip
-                        ? `${data.label.slice(0, 10)}....`
+                        ? `${data.label.slice(0, 10)}..`
                         : data.label;
 
                       return (
@@ -748,16 +778,7 @@ const AddToSequence = ({
                       cursor: 'pointer',
                       minHeight: '32px',
                       flexWrap: 'no-wrap',
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      maxHeight: '58px',
-                      overflowY: 'auto',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '2px 8px',
+                      maxWidth: '258px',
                     }),
                     dropdownIndicator: (base) => ({
                       ...base,
@@ -833,6 +854,7 @@ const AddToSequence = ({
                 <ReactTooltip
                   id="option-tooltip"
                   place="bottom"
+                  opacity="1"
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
@@ -842,11 +864,17 @@ const AddToSequence = ({
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
+                    display: 'flex',
+                    width: '184px',
+                    textWrap: 'wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}
                 />
                 <ReactTooltip
                   id="chip-tooltip"
                   place="bottom"
+                  opacity="1"
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
@@ -856,6 +884,11 @@ const AddToSequence = ({
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
+                    display: 'flex',
+                    width: '184px',
+                    textWrap: 'wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}
                 />
               </div>

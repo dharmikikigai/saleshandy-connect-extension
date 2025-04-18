@@ -36,6 +36,7 @@ import NoProspectFound from './no-prospect-found';
 import RateLimitReached from '../rate-limit-reached';
 import mailboxInstance from '../../config/server/tracker/mailbox';
 import Toaster from '../toaster';
+import ContactStatusTag from '../contact-status-tag/contact-status-tag';
 
 const CustomButton = ({
   variant,
@@ -204,6 +205,57 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
   };
 
+  const getSavedLeads = async (isLoadMore = false) => {
+    try {
+      // If loading more, use the next value from pagination
+      const start = isLoadMore ? savedLeadsPagination.next : 1;
+
+      // Set loading state
+      if (isLoadMore) {
+        setSavedLeadsPagination((prev) => ({ ...prev, isLoading: true }));
+      }
+
+      const payload = {
+        start,
+        take: 10,
+      };
+
+      const response = await prospectsInstance.getSavedLeads(payload);
+
+      if (
+        response &&
+        response.payload &&
+        response.payload.profiles &&
+        response.payload.profiles.length > 0
+      ) {
+        // If loading more, append to existing prospects
+        if (isLoadMore) {
+          setSavedProspects((prev) => [...prev, ...response.payload.profiles]);
+        } else {
+          setSavedProspects(response.payload.profiles);
+        }
+      }
+
+      // Update pagination state
+      if (response?.payload?.pagination) {
+        const { total, next } = response.payload.pagination;
+        setSavedCount(total);
+
+        setSavedLeadsPagination((prev) => ({
+          ...prev,
+          start,
+          next,
+          total,
+          hasMore: next <= total,
+          isLoading: false,
+        }));
+      }
+    } catch (e) {
+      console.log('error', e);
+      setSavedLeadsPagination((prev) => ({ ...prev, isLoading: false }));
+    }
+  };
+
   const handleApplyTags = async () => {
     try {
       const tagIds = [];
@@ -218,39 +270,62 @@ const ProspectList = ({ pageType, userMetaData }) => {
         }
       });
 
-      const payload = {
-        leadIds: selectedProspects,
-        revealType: selectedRevealType,
-        tagIds,
-        newTags,
-      };
-      setRevealProspectLoading({
-        ignore: false,
-        apply: true,
-        save: false,
-      });
-      const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
-        payload,
-      );
-      if (bulkRevealRes) {
-        const { message, status, shouldPoll, title } = bulkRevealRes.payload;
-        if (status === 0) {
-          console.log('error', message);
-        } else if (status === 2) {
-          console.log('warning', message);
-        } else {
-          const newRevealingProspects = {
-            ...revealingProspects,
-            ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
-          };
-          setRevealingProspects(newRevealingProspects);
-          setIsPollingEnabled(shouldPoll);
+      if (isTagsModalForRevealedProspects) {
+        const payload = {
+          leads: selectedProspects,
+          tagIds,
+          newTags,
+        };
+        setRevealProspectLoading({
+          ignore: false,
+          apply: true,
+          save: false,
+        });
+        const response = await prospectsInstance.saveTags(payload);
+        if (response && response.message) {
+          getSavedLeads();
           setToasterData({
-            header: title || 'Lead reveal initiated',
-            body: message,
+            header: 'Tags applied successfully',
+            body: response.message,
             type: 'success',
           });
           setShowToaster(true);
+        }
+      } else {
+        const payload = {
+          leadIds: selectedProspects,
+          revealType: selectedRevealType,
+          tagIds,
+          newTags,
+        };
+        setRevealProspectLoading({
+          ignore: false,
+          apply: true,
+          save: false,
+        });
+        const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
+          payload,
+        );
+        if (bulkRevealRes) {
+          const { message, status, shouldPoll, title } = bulkRevealRes.payload;
+          if (status === 0) {
+            console.log('error', message);
+          } else if (status === 2) {
+            console.log('warning', message);
+          } else {
+            const newRevealingProspects = {
+              ...revealingProspects,
+              ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+            };
+            setRevealingProspects(newRevealingProspects);
+            setIsPollingEnabled(shouldPoll);
+            setToasterData({
+              header: title || 'Lead reveal initiated',
+              body: message,
+              type: 'success',
+            });
+            setShowToaster(true);
+          }
         }
       }
     } catch (error) {
@@ -468,57 +543,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
       }
     } catch (error) {
       console.error('Error in refreshProspects:', error);
-    }
-  };
-
-  const getSavedLeads = async (isLoadMore = false) => {
-    try {
-      // If loading more, use the next value from pagination
-      const start = isLoadMore ? savedLeadsPagination.next : 1;
-
-      // Set loading state
-      if (isLoadMore) {
-        setSavedLeadsPagination((prev) => ({ ...prev, isLoading: true }));
-      }
-
-      const payload = {
-        start,
-        take: 10,
-      };
-
-      const response = await prospectsInstance.getSavedLeads(payload);
-
-      if (
-        response &&
-        response.payload &&
-        response.payload.profiles &&
-        response.payload.profiles.length > 0
-      ) {
-        // If loading more, append to existing prospects
-        if (isLoadMore) {
-          setSavedProspects((prev) => [...prev, ...response.payload.profiles]);
-        } else {
-          setSavedProspects(response.payload.profiles);
-        }
-      }
-
-      // Update pagination state
-      if (response?.payload?.pagination) {
-        const { total, next } = response.payload.pagination;
-        setSavedCount(total);
-
-        setSavedLeadsPagination((prev) => ({
-          ...prev,
-          start,
-          next,
-          total,
-          hasMore: next <= total,
-          isLoading: false,
-        }));
-      }
-    } catch (e) {
-      console.log('error', e);
-      setSavedLeadsPagination((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -959,17 +983,27 @@ const ProspectList = ({ pageType, userMetaData }) => {
         </div>
       );
     }
-    if (prospect.isRevealed && prospect.emails.length > 0) {
+    if (prospect?.isRevealed && prospect?.emails?.length > 0) {
       return (
         <div className="prospect-description-revealed">
           <img src={mail} alt="email" />
-          <span className="prospect-description-revealed-email">
-            {prospect.emails[0].email}
+          <span
+            className="prospect-description-revealed-email"
+            data-tooltip-id={
+              prospect?.emails[0]?.email?.length > 18
+                ? 'prospect-data-tooltip'
+                : null
+            }
+            data-tooltip-content={prospect?.emails[0]?.email}
+          >
+            {prospect?.emails[0]?.email?.length > 18
+              ? `${prospect?.emails[0]?.email?.slice(0, 18)}..`
+              : prospect?.emails[0]?.email}
           </span>
           <img src={circleCheck} alt="circle-check" />
           <div
             className="copy-icon"
-            onClick={() => copyToClipboard(prospect.emails[0].email)}
+            onClick={() => copyToClipboard(prospect?.emails[0]?.email)}
           >
             <img src={copy} alt="copy" />
           </div>
@@ -1293,7 +1327,21 @@ const ProspectList = ({ pageType, userMetaData }) => {
                             }`}
                           >
                             <div className="prospect-name">
-                              <span>{prospect?.name}</span>
+                              <span
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                }}
+                              >
+                                {prospect?.name}
+                                {prospect?.isRevealed &&
+                                  prospect?.prospectStatus && (
+                                    <ContactStatusTag
+                                      status={prospect?.prospectStatus?.toString()}
+                                    />
+                                  )}
+                              </span>
                               {getExpandIcon(prospect)}
                             </div>
                             {getProspectDescription(prospect)}
@@ -1302,16 +1350,26 @@ const ProspectList = ({ pageType, userMetaData }) => {
                       </div>
                       {expendedProspect === prospect.id && (
                         <div className="prospect-item-expanded">
-                          {prospect.emails.length > 0 &&
+                          {prospect?.emails?.length > 0 &&
                             (prospect.isRevealed
-                              ? prospect.emails.slice(1).map((e, i) => (
+                              ? prospect?.emails?.slice(1).map((e, i) => (
                                   <div
                                     className="prospect-item-expanded-email"
                                     key={i}
                                   >
                                     <img src={mail} alt="email" />
-                                    <span className="prospect-description-revealed-email">
-                                      {e.email}
+                                    <span
+                                      className="prospect-description-revealed-email"
+                                      data-tooltip-id={
+                                        e?.email?.length > 18
+                                          ? 'prospect-data-tooltip'
+                                          : null
+                                      }
+                                      data-tooltip-content={e?.email}
+                                    >
+                                      {e?.email?.length > 18
+                                        ? `${e?.email?.slice(0, 18)}..`
+                                        : e?.email}
                                     </span>
                                     <img src={circleCheck} alt="circle-check" />
                                     <div
@@ -1322,19 +1380,30 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     </div>
                                   </div>
                                 ))
-                              : prospect.emails.map((e, i) => (
+                              : prospect?.emails?.map((e, i) => (
                                   <div
                                     className="prospect-item-expanded-email"
                                     key={i}
                                   >
                                     <img src={mail} alt="email" />
-                                    <span>
-                                      {e.email ? (
-                                        e.email
+                                    <span
+                                      data-tooltip-id={
+                                        e?.email?.length > 18
+                                          ? 'prospect-data-tooltip'
+                                          : null
+                                      }
+                                      data-tooltip-content={e?.email || e}
+                                    >
+                                      {e?.email ? (
+                                        e?.email?.length > 18 ? (
+                                          `${e?.email?.slice(0, 18)}..`
+                                        ) : (
+                                          e?.email
+                                        )
                                       ) : (
                                         <span className="list-dots">
-                                          &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                          @{e}
+                                          &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;@
+                                          {e}
                                         </span>
                                       )}
                                     </span>
@@ -1373,15 +1442,37 @@ const ProspectList = ({ pageType, userMetaData }) => {
                             <div className="prospect-item-expanded-sequences">
                               <div className="prospect-item-expanded-sequences-title">
                                 <img src={send2} alt="send" />
-                                <span>Already in 1 Sequence:</span>
+                                <span>
+                                  {`Already in ${prospect?.sequences?.length}
+                                  ${
+                                    prospect?.sequences?.length === 1
+                                      ? ' Sequence'
+                                      : ' Sequences'
+                                  }:`}
+                                </span>
                               </div>
                               <div className="prospect-item-expanded-sequences-list">
                                 {prospect?.sequences?.map((sequence) => (
                                   <div
                                     className="prospect-item-expanded-sequences-item"
-                                    key={sequence.sequenceId}
+                                    key={sequence?.sequenceId}
+                                    data-tooltip-id={
+                                      sequence?.sequenceName?.length > 26
+                                        ? 'prospect-data-tooltip'
+                                        : null
+                                    }
+                                    data-tooltip-content={
+                                      sequence?.sequenceName
+                                    }
                                   >
-                                    <span>{sequence.sequenceName}</span>
+                                    <span>
+                                      {sequence?.sequenceName?.length > 26
+                                        ? `${sequence?.sequenceName?.slice(
+                                            0,
+                                            26,
+                                          )}..`
+                                        : sequence?.sequenceName}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -1397,9 +1488,19 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                 {prospect?.tags?.map((tag) => (
                                   <div
                                     className="prospect-item-expanded-tags-item"
-                                    key={tag.id}
+                                    key={tag?.id}
+                                    data-tooltip-id={
+                                      tag?.name?.length > 10
+                                        ? 'prospect-data-tooltip'
+                                        : null
+                                    }
+                                    data-tooltip-content={tag?.name}
                                   >
-                                    <span>{tag.name}</span>
+                                    <span>
+                                      {tag?.name?.length > 10
+                                        ? `${tag?.name?.slice(0, 10)}..`
+                                        : tag?.name}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -1429,6 +1530,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
           onApplyTags={handleApplyTags}
           onIgnoreTags={handleIgnoreTags}
           isLoading={revealProspectLoading}
+          revealType={selectedRevealType}
           isTagsModalForRevealedProspects={isTagsModalForRevealedProspects}
         />
       )}
@@ -1445,6 +1547,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
       <ReactTooltip
         id="is-free-plan-user"
         place="bottom"
+        opacity="1"
         content={
           <>
             Please upgrade your plan
@@ -1460,6 +1563,26 @@ const ProspectList = ({ pageType, userMetaData }) => {
           borderRadius: '4px',
           backgroundColor: '#1F2937',
           padding: '8px',
+        }}
+      />
+      <ReactTooltip
+        id="prospect-data-tooltip"
+        place="bottom"
+        opacity="1"
+        content={email}
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'left',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          display: 'flex',
+          maxWidth: '184px',
+          textWrap: 'wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
         }}
       />
     </>

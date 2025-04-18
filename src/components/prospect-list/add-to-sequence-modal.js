@@ -25,9 +25,9 @@ const customOptionSequenceName = (props) => {
   const { data, innerRef, innerProps, isFocused } = props;
 
   const fullLabel = data.label;
-  const shouldShowTooltip = fullLabel.length > 30;
+  const shouldShowTooltip = fullLabel.length > 25;
   const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 30)}..`
+    ? `${fullLabel.slice(0, 25)}..`
     : fullLabel;
 
   return (
@@ -81,7 +81,7 @@ const formatGroupLabel = (data) => (
   <div>
     <div
       style={{
-        padding: '4px 12px',
+        padding: '0px 12px 4px 12px',
         fontSize: '12px',
         color: '#6B7280',
         textTransform: 'none',
@@ -97,9 +97,9 @@ const formatGroupLabel = (data) => (
 const CustomOption = (props) => {
   // eslint-disable-next-line react/destructuring-assignment
   const fullLabel = props.label;
-  const shouldShowTooltip = fullLabel.length > 29;
+  const shouldShowTooltip = fullLabel.length > 30;
   const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 29)}....`
+    ? `${fullLabel.slice(0, 30)}..`
     : fullLabel;
 
   return (
@@ -119,9 +119,9 @@ const CustomOption = (props) => {
 const CustomOptionTags = (props) => {
   // eslint-disable-next-line react/destructuring-assignment
   const fullLabel = props.label;
-  const shouldShowTooltip = fullLabel.length > 10;
+  const shouldShowTooltip = fullLabel.length > 25;
   const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 10)}....`
+    ? `${fullLabel.slice(0, 25)}..`
     : fullLabel;
 
   return (
@@ -294,6 +294,12 @@ const AddToSequenceModal = ({
           },
           ...remainingSequences,
         ];
+        const isSelectedSequenceInClientSequences = res.payload.some(
+          (sequence) => sequence.id === selectedSequence?.value,
+        );
+        if (!isSelectedSequenceInClientSequences) {
+          setSelectedSequence(null);
+        }
         setClientSequences(customSequenceOptions);
       }
     } catch (error) {
@@ -351,6 +357,10 @@ const AddToSequenceModal = ({
         }));
         setStepOptions(customStepOptions);
       }
+      setSelectedStep(null);
+    } else {
+      setSelectedStep(null);
+      setStepOptions([]);
     }
   }, [selectedSequence]);
 
@@ -401,7 +411,7 @@ const AddToSequenceModal = ({
             <img src={cross} alt="close" />
           </button>
         </div>
-        <div className="custom-modal-body">
+        <div className="custom-modal-body add-to-sequence-modal-body">
           <div
             style={{
               display: 'flex',
@@ -511,6 +521,7 @@ const AddToSequenceModal = ({
                   <ReactTooltip
                     id="step-option-tooltip"
                     place="bottom"
+                    opacity="1"
                     style={{
                       fontSize: '12px',
                       fontWeight: '500',
@@ -520,6 +531,11 @@ const AddToSequenceModal = ({
                       backgroundColor: '#1F2937',
                       padding: '8px',
                       zIndex: '99',
+                      display: 'flex',
+                      width: '184px',
+                      textWrap: 'wrap',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
                     }}
                   />
                 </div>
@@ -625,6 +641,8 @@ const AddToSequenceModal = ({
                       fontWeight: '500',
                       color: '#9ca3af',
                       paddingLeft: '0px',
+                      paddingTop: '0px',
+                      marginTop: '0px',
                       // textTransform: 'uppercase',
                       // backgroundColor: '#f9fafb',
                     }),
@@ -633,6 +651,7 @@ const AddToSequenceModal = ({
                 <ReactTooltip
                   id="step-option-tooltip"
                   place="bottom"
+                  opacity="1"
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
@@ -642,6 +661,11 @@ const AddToSequenceModal = ({
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
+                    display: 'flex',
+                    width: '184px',
+                    textWrap: 'wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}
                 />
               </div>
@@ -738,6 +762,7 @@ const AddToSequenceModal = ({
                 <ReactTooltip
                   id="step-option-tooltip"
                   place="bottom"
+                  opacity="1"
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
@@ -747,6 +772,11 @@ const AddToSequenceModal = ({
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
+                    display: 'flex',
+                    width: '184px',
+                    textWrap: 'wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}
                 />
               </div>
@@ -778,7 +808,7 @@ const AddToSequenceModal = ({
                     MultiValueLabel: ({ data, ...props }) => {
                       const showTooltip = data.label.length > 10;
                       const displayLabel = showTooltip
-                        ? `${data.label.slice(0, 10)}....`
+                        ? `${data.label.slice(0, 10)}..`
                         : data.label;
 
                       return (
@@ -810,6 +840,7 @@ const AddToSequenceModal = ({
                         borderColor: 'none',
                       },
                       cursor: 'pointer',
+                      minHeight: '32px',
                       flexWrap: 'no-wrap',
                     }),
                     dropdownIndicator: (base) => ({
@@ -842,6 +873,8 @@ const AddToSequenceModal = ({
                       fontWeight: 400,
                       lineHeight: '20px',
                       cursor: 'pointer',
+                      height: '32px',
+                      maxHeight: '58px',
                     }),
                     multiValue: (base) => ({
                       ...base,
@@ -880,6 +913,7 @@ const AddToSequenceModal = ({
                 <ReactTooltip
                   id="option-tooltip"
                   place="bottom"
+                  opacity="1"
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
@@ -889,11 +923,17 @@ const AddToSequenceModal = ({
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
+                    display: 'flex',
+                    width: '184px',
+                    textWrap: 'wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}
                 />
                 <ReactTooltip
                   id="chip-tooltip"
                   place="bottom"
+                  opacity="1"
                   style={{
                     fontSize: '12px',
                     fontWeight: '500',
@@ -903,6 +943,11 @@ const AddToSequenceModal = ({
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
+                    display: 'flex',
+                    width: '184px',
+                    textWrap: 'wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}
                 />
               </div>

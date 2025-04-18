@@ -42,6 +42,7 @@ const AddTagsModal = ({
   onApplyTags,
   onIgnoreTags,
   isLoading,
+  revealType,
   isTagsModalForRevealedProspects,
 }) => {
   const [tagOptions, setTagOptions] = useState([]);
@@ -91,10 +92,15 @@ const AddTagsModal = ({
             <img src={cross} alt="close" />
           </button>
         </div>
-        <div className="custom-modal-body">
+        <div
+          className={`custom-modal-body ${
+            isTagsModalForRevealedProspects ? 'revealed-tag-modal-body' : ''
+          }`}
+        >
           {!isTagsModalForRevealedProspects && (
             <span>
-              Apply a tag before disclosing emails for{' '}
+              Apply a tag before disclosing emails
+              {revealType === 'emailphone' ? ' & phone ' : ' '}for{' '}
               {selectedProspects.length} leads; this will assist you in locating
               them later.
             </span>
@@ -119,6 +125,7 @@ const AddTagsModal = ({
                     borderColor: 'none',
                   },
                   cursor: 'pointer',
+                  minHeight: '34px',
                 }),
                 dropdownIndicator: (base) => ({
                   ...base,
@@ -176,6 +183,8 @@ const AddTagsModal = ({
                   ':hover': {
                     backgroundColor: '#BFDBFE',
                   },
+                  height: '14px',
+                  width: '14px',
                 }),
                 clearIndicator: (base) => ({
                   ...base,

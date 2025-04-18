@@ -11,7 +11,6 @@ const CommonSearchPeople = () => (
         width: '100%',
         height: '100%',
         padding: '0px 0px 16px 0px',
-        marginTop: '16px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -35,9 +34,15 @@ const CommonSearchPeople = () => (
             width: '252px',
             padding: '32px 0px',
             gap: '24px',
+            marginTop: '138px',
           }}
         >
-          <div>
+          <div
+            style={{
+              border: '1px solid #E5E7EB',
+              borderRadius: '50%',
+            }}
+          >
             <svg
               width="164"
               height="164"
