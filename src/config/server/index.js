@@ -17,7 +17,7 @@ class Server {
 
       if (!authenticationToken) {
         chrome.runtime.sendMessage({
-          method: 'closeIframeCs',
+          method: 'reloadIframeCs',
         });
         return;
       }

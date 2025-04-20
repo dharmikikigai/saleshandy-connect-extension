@@ -348,7 +348,7 @@ chrome.runtime.onMessage.addListener((message) => {
     });
   }
 
-  if (message.method === 'closeIframeCs') {
+  if (message.method === 'reloadIframeCs') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0].id;
       chrome.tabs.sendMessage(tabId, { method: 'reloadIframe' });
