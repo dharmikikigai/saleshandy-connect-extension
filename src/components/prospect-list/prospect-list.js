@@ -148,6 +148,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
     isTagsModalForRevealedProspects,
     setIsTagsModalForRevealedProspects,
   ] = useState(false);
+  const [isCopyIconHover, setIsCopyIconHover] = useState(false);
 
   const setProspectsData = (data, rawData) => {
     try {
@@ -1107,6 +1108,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
           <div
             className="copy-icon"
             onClick={() => copyToClipboard(prospect?.emails[0]?.email)}
+            data-tooltip-id="my-tooltip-copy"
+            onMouseEnter={() => setIsCopyIconHover(true)}
+            onMouseLeave={() => setIsCopyIconHover(false)}
           >
             <img src={copy} alt="copy" />
           </div>
@@ -1512,6 +1516,13 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     <div
                                       className="copy-icon"
                                       onClick={() => copyToClipboard(e.email)}
+                                      data-tooltip-id="my-tooltip-copy"
+                                      onMouseEnter={() =>
+                                        setIsCopyIconHover(true)
+                                      }
+                                      onMouseLeave={() =>
+                                        setIsCopyIconHover(false)
+                                      }
                                     >
                                       <img src={copy} alt="copy" />
                                     </div>
@@ -1567,6 +1578,13 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                       className="copy-icon"
                                       onClick={() =>
                                         copyToClipboard(phone?.number)
+                                      }
+                                      data-tooltip-id="my-tooltip-copy"
+                                      onMouseEnter={() =>
+                                        setIsCopyIconHover(true)
+                                      }
+                                      onMouseLeave={() =>
+                                        setIsCopyIconHover(false)
                                       }
                                     >
                                       <img src={copy} alt="copy" />
@@ -1692,6 +1710,21 @@ const ProspectList = ({ pageType, userMetaData }) => {
             to start adding prospects
           </>
         }
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+        }}
+      />
+      <ReactTooltip
+        id="my-tooltip-copy"
+        place="bottom"
+        content={isCopyIconHover && 'Copy'}
+        opacity="1"
         style={{
           fontSize: '12px',
           fontWeight: '500',

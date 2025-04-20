@@ -116,14 +116,17 @@ const Profile = () => {
                       cursor: 'pointer',
                       display: 'block',
                     }}
-                    onMouseEnter={() => setEmailAccountTooltip(true)}
-                    onMouseLeave={() => setEmailAccountTooltip(false)}
                     onClick={() => {
                       setEmailAccountTooltip(!emailAccountTooltip);
                       console.debug('click ');
                     }}
                   >
-                    [+{trackingEmails.length - 2} more]
+                    <span
+                      onMouseEnter={() => setEmailAccountTooltip(true)}
+                      onMouseLeave={() => setEmailAccountTooltip(false)}
+                    >
+                      [+{trackingEmails.length - 2} more]
+                    </span>
                   </div>
                 </>
               );
@@ -1013,8 +1016,8 @@ const Profile = () => {
                         <div
                           style={{
                             position: 'absolute',
-                            top: '32.65rem', // adjust this based on your layout
-                            left: '65%',
+                            top: '31.65rem', // adjust this based on your layout
+                            left: '56%',
                             transform: 'translateX(-50%)',
                             padding: '8px',
                             backgroundColor: '#333',
@@ -1024,7 +1027,7 @@ const Profile = () => {
                             fontWeight: '500',
                             fontFamily: 'Inter',
                             lineHeight: '16px',
-                            width: '200px',
+                            width: 'auto',
                             height: 'auto',
                             wordWrap: 'break-word',
                             zIndex: 1,
