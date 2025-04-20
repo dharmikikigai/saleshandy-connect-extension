@@ -8,8 +8,10 @@ const MAIN_PROFILE_INFO = 'com.linkedin.voyager.dash.identity.profile.Profile';
 const USER_LOCATION = 'com.linkedin.voyager.common.NormBasicLocation';
 
 const USER_SKILLS = 'com.linkedin.voyager.dash.identity.profile.Skill';
+const REG_DETECT_LANG = /<meta name="i18nLocale" content="(.+)"/i;
 
 const USER_POSITIONS = 'com.linkedin.voyager.identity.profile.Position';
+const REG_EMAILS_P_S2 = /\b[a-z\d-][_a-z\d-+]*(?:\.[_a-z\d-+]*)*@[a-z\d]+[a-z\d-]*(?:\.[a-z\d-]+)*(?:\.[a-z]{2,63})\b/gi;
 
 const SEARCH_PROFILES_IDENT =
   'com.linkedin.voyager.identity.shared.MiniProfile';
@@ -20,6 +22,7 @@ const COMPANIES_IDENT = 'com.linkedin.voyager.organization.Company';
 let csrfToken = false;
 const regGooglePersonSourceId2 = /in\/(.+)/i;
 const regPersonId2Parse = /(.+)\?miniProfileUrn*/i;
+const REG_JSON_BLOCKS2_P_S2 = /<code.+?>([\s\S]+?)<\/code>/gi;
 
 const REG_EMAILS = /\b[a-z\d-][_a-z\d-+]*(?:\.[_a-z\d-+]*)*@[a-z\d]+[a-z\d-]*(?:\.[a-z\d-]+)*(?:\.[a-z]{2,63})\b/gi;
 const isRecruterIntP = false;
@@ -28,6 +31,761 @@ let person = {};
 let currentTabUrl = null;
 let isPre = false;
 let isGraph = false;
+
+function getPeopleSSP(source) {
+  const people = [];
+  const peopledata = [];
+  function getPeopleDataV(elements) {
+    for (elem in elements) {
+      profile = elements[elem];
+      const person1 = {};
+      person1.source = 'linkedIn';
+
+      if (profile.firstName) {
+        person1.firstname = convertHtmlToText(profile.firstName);
+      }
+      if (profile.lastName) {
+        person1.lastname = convertHtmlToText(profile.lastName);
+      }
+      if (profile.fullName) {
+        person1.name = convertHtmlToText(profile.fullName);
+      }
+      if (profile.geoRegion) {
+        person1.locality = profile.geoRegion;
+      }
+
+      person1.positions = [];
+      if (profile.currentPositions) {
+        profile.currentPositions.forEach((pi) => {
+          const job = {};
+          if (pi.companyName) {
+            job.company_name = pi.companyName;
+          }
+          if (pi.companyUrn) {
+            job.source_id = pi.companyUrn.replace(
+              'urn:li:fs_salesCompany:',
+              '',
+            );
+          }
+          if (pi.current) {
+            job.current = pi.current;
+          }
+          if (pi.title) {
+            job.position = pi.title;
+          }
+          if (pi.location) {
+            job.location = pi.location;
+          }
+          if (pi.startedOn) {
+            const startDate = new Date(pi.startedOn.year, pi.startedOn.month);
+            if (startDate > 1000) {
+              job.start = startDate / 1000;
+            }
+          }
+          if (pi.endedOn) {
+            const endDate = new Date(pi.endedOn.year, pi.endedOn.month);
+            if (endDate > 1000) {
+              job.end = endDate / 1000;
+            }
+          }
+          person1.positions.push(job);
+        });
+      }
+
+      if (profile.objectUrn) {
+        person1.source_id = +findDescrByRegEx(profile.objectUrn, /:(\d+)/i);
+        person1.sid = +findDescrByRegEx(profile.objectUrn, /:(\d+)/i);
+      }
+      if (profile.premium) {
+        person1.loc = 1;
+      }
+      if (profile.entityUrn) {
+        person1.searchLink = `https://www.linkedin.com/sales/people/${profile.entityUrn
+          .replace('urn:li:fs_salesProfile:(', '')
+          .replace(')', '')}`;
+      }
+
+      if (
+        profile.profilePictureDisplayImage &&
+        profile.profilePictureDisplayImage.artifacts
+      ) {
+        for (
+          let iNo = 0;
+          iNo < profile.profilePictureDisplayImage.artifacts.length;
+          iNo++
+        ) {
+          if ((profile.profilePictureDisplayImage.artifacts[iNo].width = 100)) {
+            person1.logo =
+              profile.profilePictureDisplayImage.artifacts[
+                iNo
+              ].fileIdentifyingUrlPathSegment;
+          }
+          if ((profile.profilePictureDisplayImage.artifacts[iNo].width = 800)) {
+            person1.logo1 =
+              profile.profilePictureDisplayImage.artifacts[
+                iNo
+              ].fileIdentifyingUrlPathSegment;
+          }
+        }
+        if (
+          !person1.logo &&
+          profile.profilePictureDisplayImage.artifacts &&
+          profile.profilePictureDisplayImage.artifacts.length > 0
+        ) {
+          person1.logo =
+            profile.profilePictureDisplayImage.artifacts[0].fileIdentifyingUrlPathSegment;
+        }
+        if (person1.logo && profile.profilePictureDisplayImage.rootUrl) {
+          person1.logo =
+            profile.profilePictureDisplayImage.rootUrl + person1.logo;
+          person1.logo1 =
+            profile.profilePictureDisplayImage.rootUrl + person1.logo1;
+        }
+      }
+
+      peopledata.push(person1);
+    }
+  }
+  function getPeopleList(elements) {
+    for (elem in elements) {
+      profile = elements[elem];
+      const person2 = {};
+      person2.source = 'linkedIn';
+
+      if (profile.firstName) {
+        person2.firstName = convertHtmlToText(profile.firstName);
+      }
+      if (profile.lastName) {
+        person2.lastName = convertHtmlToText(profile.lastName);
+      }
+      if (profile.fullName) {
+        person2.name = convertHtmlToText(profile.fullName);
+      }
+      if (profile.currentPositions && profile.currentPositions.length > 0) {
+        if (profile.currentPositions[0].title) {
+          person2.description = profile.currentPositions[0].title;
+        }
+      }
+      if (profile.objectUrn) {
+        person2.source_id = +findDescrByRegEx(profile.objectUrn, /:(\d+)/i);
+      }
+
+      if (profile.entityUrn) {
+        person2.searchLink = `https://www.linkedin.com/sales/people/${profile.entityUrn
+          .replace('urn:li:fs_salesProfile:(', '')
+          .replace(')', '')}`;
+      }
+
+      if (
+        profile.profilePictureDisplayImage &&
+        profile.profilePictureDisplayImage.artifacts
+      ) {
+        for (
+          let iNo = 0;
+          iNo < profile.profilePictureDisplayImage.artifacts.length;
+          iNo++
+        ) {
+          if ((profile.profilePictureDisplayImage.artifacts[iNo].width = 100)) {
+            person2.logo =
+              profile.profilePictureDisplayImage.artifacts[
+                iNo
+              ].fileIdentifyingUrlPathSegment;
+            break;
+          }
+        }
+        if (
+          !person2.logo &&
+          profile.profilePictureDisplayImage.artifacts &&
+          profile.profilePictureDisplayImage.artifacts.length > 0
+        ) {
+          person2.logo =
+            profile.profilePictureDisplayImage.artifacts[0].fileIdentifyingUrlPathSegment;
+        }
+        if (person2.logo && profile.profilePictureDisplayImage.rootUrl) {
+          person2.logo =
+            profile.profilePictureDisplayImage.rootUrl + person2.logo;
+        }
+      }
+
+      people.push(person2);
+    }
+  }
+
+  if (source && source.elements && source.paging && source.metadata) {
+    getPeopleList(source.elements);
+    getPeopleDataV(source.elements);
+  } else {
+    source = source.replace(/&quot;/gi, '"').replace(/&#92;/gi, '\\');
+    const regExp = /<code.*style="display: none".*>\s*([\s\S]*?)<\/code>/gi;
+
+    while ((matches = regExp.exec(source))) {
+      if (matches[1]) {
+        const txt = matches[1];
+
+        const obj = JSON.parse(txt);
+        if (obj.elements && obj.paging && obj.metadata && people.length === 0) {
+          getPeopleList(obj.elements);
+          getPeopleDataV(source.elements);
+        }
+      }
+    }
+  }
+
+  return people;
+}
+
+function getJsonFromUrl(url) {
+  const query = url.substr(1);
+  const result = {};
+  query.split('&').forEach((part) => {
+    const item = part.split('=');
+    result[item[0]] = decodeURIComponent(item[1]);
+  });
+  return result;
+}
+
+function searchEmailsPS2(input, emailsOld) {
+  input = input.replace(/\s/gi, ' ');
+
+  const emails = input.match(REG_EMAILS_P_S2);
+
+  if (emails !== null && emails.length > 0) {
+    for (let iNo = 0; iNo < emails.length; iNo++) {
+      if (emailsOld.indexOf(emails[iNo]) === -1) {
+        emailsOld.push(emails[iNo]);
+      }
+    }
+  }
+
+  return emailsOld;
+}
+
+function parseEmailsPS2(profile) {
+  let res = [];
+
+  if (profile.summary) {
+    res = searchEmailsPS2(profile.summary, res);
+  }
+
+  if (profile.headline) {
+    res = searchEmailsPS2(profile.headline, res);
+  }
+
+  const positions = profile.positions;
+
+  for (const i in positions) {
+    const position = positions[i];
+
+    if (position.description) {
+      res = searchEmailsPS2(position.description, res);
+    }
+
+    res = searchEmailsPS2(position.title, res);
+  }
+
+  return res;
+}
+
+function parseContactInfoPS2(data) {
+  const res = {};
+
+  res.e = parseEmailsPS2(data);
+
+  if (!res.e) {
+    return res;
+  }
+}
+
+function findDescrByRegEx(source, reg, html) {
+  let sTemp = '';
+  const fnd = source.match(reg);
+
+  if (fnd && fnd.length > 1) {
+    if (fnd[1]) {
+      sTemp = fnd[1];
+    } else if (fnd[2]) {
+      sTemp = fnd[2];
+    }
+
+    sTemp = sTemp.trim();
+    if (!html) {
+      sTemp = convertHtmlToText(sTemp);
+    }
+    return sTemp;
+  }
+  return '';
+}
+
+function getDataFromPagePS2(source) {
+  const arData = [];
+  while ((matches = REG_JSON_BLOCKS2_P_S2.exec(source))) {
+    if (matches[1]) {
+      let obj = {};
+      try {
+        obj = JSON.parse(matches[1].trim());
+        if (obj) {
+          arData.push(obj);
+        }
+      } catch (e) {
+        try {
+          const resp = matches[1]
+            .trim()
+            .replace(/\\n\\n"/gi, ' ')
+            .replace(/"\\n\\n/gi, ' ');
+          obj = JSON.parse(resp);
+          if (obj) {
+            arData.push(obj);
+          }
+        } catch (error) {
+          try {
+            let resp = resp.replace(/""/gi, '" "');
+            resp = resp.replace(/\s".*?"\s/gi, ' ');
+            obj = JSON.parse(resp);
+            if (obj) {
+              arData.push(obj);
+            }
+          } catch (err) {
+            const resp = resp;
+            obj = JSON.parse(resp);
+            if (obj) {
+              arData.push(obj);
+            }
+          }
+        }
+      }
+    }
+  }
+  return arData;
+}
+
+function getUserInfoPS3(data) {
+  if (!data || data.length === 0) {
+    return undefined;
+  }
+
+  let profile;
+  let profile2;
+
+  for (let iNo = 0; iNo < data.length; iNo++) {
+    if (
+      data[iNo] &&
+      data[iNo].data &&
+      data[iNo].data.firstName &&
+      data[iNo].data.lastName
+    ) {
+      profile = data[iNo].data;
+      if (data[iNo].included && data[iNo].included[0]) {
+        profile2 = data[iNo].included[0];
+      }
+      break;
+    }
+  }
+
+  const user = {};
+
+  if (profile) {
+    user.source = 'linkedIn';
+
+    user.fullInfo = 1;
+
+    if (profile.firstName) {
+      user.firstName = profile.firstName;
+      if (!profile.fullName) {
+        user.name = profile.firstName;
+      }
+    }
+    if (profile.lastName) {
+      user.lastName = profile.lastName;
+      if (!profile.fullName) {
+        user.name += ` ${profile.lastName}`;
+      }
+    }
+
+    if (profile.fullName) {
+      user.name = profile.fullName;
+    }
+
+    if (profile.industryName) {
+      user.industry = profile.industryName;
+    }
+
+    if (profile.locationName) {
+      user.locality = profile.locationName;
+    }
+
+    if (profile.skills) {
+      user.skills = profile.skills;
+    }
+
+    if (profile.objectUrn) {
+      user.source_id = +findDescrByRegEx(profile.objectUrn, /:(\d+)/i);
+    } else if (profile2 && profile2.objectUrn) {
+      user.source_id = +findDescrByRegEx(profile2.objectUrn, /:(\d+)/i);
+    }
+
+    if (profile2.publicIdentifier) {
+      user.sourceId2 = profile2.publicIdentifier;
+    }
+
+    if (profile2.picture && profile2.picture.artifacts) {
+      for (let iNo = 0; iNo < profile2.picture.artifacts.length; iNo++) {
+        if (profile2.picture.artifacts[iNo].width === 100) {
+          user.logo =
+            profile2.picture.artifacts[iNo].fileIdentifyingUrlPathSegment;
+          break;
+        }
+        if (profile2.picture.artifacts[iNo].width === 800) {
+          user.logo1 =
+            profile2.picture.artifacts[iNo].fileIdentifyingUrlPathSegment;
+          break;
+        }
+      }
+      if (
+        !user.logo &&
+        profile2.picture.artifacts &&
+        profile2.picture.artifacts.length > 0
+      ) {
+        user.logo = profile2.picture.artifacts[0].fileIdentifyingUrlPathSegment;
+      }
+      if (profile2.picture.rootUrl) {
+        user.logo = profile2.picture.rootUrl + user.logo;
+        user.logo1 = profile2.picture.rootUrl + user.logo1;
+      }
+    }
+
+    const current = [];
+    const previous = [];
+
+    if (profile.positions) {
+      for (const position in profile.positions) {
+        const objPosition = profile.positions[position];
+        const newPosition = {};
+
+        newPosition.company_name = objPosition.companyName;
+        newPosition.position = objPosition.title;
+
+        if (objPosition.companyUrn) {
+          newPosition.source_id = +findDescrByRegEx(
+            objPosition.companyUrn,
+            /:(\d+)/i,
+          );
+        }
+        if (objPosition.posId) {
+          newPosition.position_id = objPosition.posId;
+        }
+        if (objPosition.startedOn) {
+          const startDate = new Date(
+            objPosition.startedOn.year,
+            objPosition.startedOn.month,
+          );
+          if (startDate > 1000) {
+            newPosition.start = startDate / 1000;
+          }
+        }
+        if (objPosition.endedOn) {
+          const endDate = new Date(
+            objPosition.endedOn.year,
+            objPosition.endedOn.month,
+          );
+          if (endDate > 1000) {
+            newPosition.end = endDate / 1000;
+          }
+        }
+
+        if (objPosition.current) {
+          current.push(newPosition);
+        } else {
+          previous.push(newPosition);
+        }
+      }
+
+      if (current.length > 0 && previous.length > 0) {
+        for (let iCurrentNo = 0; iCurrentNo < current.length; iCurrentNo++) {
+          if (!current[iCurrentNo].source_id) {
+            for (
+              let iPreviousNo = 0;
+              iPreviousNo < previous.length;
+              iPreviousNo++
+            ) {
+              if (
+                current[iCurrentNo].company_name ===
+                previous[iPreviousNo].company_name
+              ) {
+                current[iCurrentNo].source_id = previous[iPreviousNo].source_id;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    user.current = current;
+    user.previous = previous;
+
+    if (profile.defaultPosition) {
+      user.defaultPosition = {};
+      user.defaultPosition.company_name = profile.defaultPosition.companyName;
+      user.defaultPosition.position = profile.defaultPosition.title;
+      if (profile.defaultPosition.posId) {
+        user.defaultPosition.position_id = profile.defaultPosition.posId;
+      }
+
+      if (profile.defaultPosition.companyUrn) {
+        user.defaultPosition.source_id = +findDescrByRegEx(
+          profile.defaultPosition.companyUrn,
+          /:(\d+)/i,
+        );
+      }
+
+      if (profile.defaultPosition.startedOn) {
+        const startDate = new Date(
+          profile.defaultPosition.startedOn.year,
+          profile.defaultPosition.startedOn.month,
+        );
+        if (startDate > 1000) {
+          user.defaultPosition.start = startDate / 1000;
+        }
+      }
+      if (profile.defaultPosition.endedOn) {
+        const endDate = new Date(
+          profile.defaultPosition.endedOn.year,
+          profile.defaultPosition.endedOn.month,
+        );
+        if (endDate > 1000) {
+          user.defaultPosition.end = endDate / 1000;
+        }
+      }
+    }
+
+    return user;
+  }
+}
+
+function getUserInfoPS2(source) {
+  let profile;
+  let data;
+
+  if (source.firstName) {
+    profile = source;
+  } else {
+    data = getDataFromPagePS2(source);
+
+    if (!data || data.length === 0) {
+      return undefined;
+    }
+
+    for (let iNo = 0; iNo < data.length; iNo++) {
+      if (data[iNo] && data[iNo].firstName && data[iNo].lastName) {
+        profile = data[iNo];
+        break;
+      }
+    }
+    if (!profile) {
+      return getUserInfoPS3(data);
+    }
+  }
+
+  const user = {};
+
+  if (profile) {
+    user.source = 'linkedIn';
+
+    user.fullInfo = 1;
+
+    if (profile.headline) {
+      user.headline = profile.headline;
+    }
+
+    if (profile.firstName) {
+      user.firstName = profile.firstName;
+      if (!profile.fullName) {
+        user.name = profile.firstName;
+      }
+    }
+    if (profile.lastName) {
+      user.lastName = profile.lastName;
+      if (!profile.fullName) {
+        user.name += ` ${profile.lastName}`;
+      }
+    }
+
+    if (profile.fullName) {
+      user.name = profile.fullName;
+    }
+
+    if (profile.industry) {
+      user.industry = profile.industry;
+    }
+
+    if (profile.location) {
+      user.locality = profile.location;
+    }
+
+    if (profile.skills) {
+      user.skills = profile.skills;
+    }
+
+    if (profile.objectUrn) {
+      user.source_id = +findDescrByRegEx(profile.objectUrn, /:(\d+)/i);
+    } else if (profile2 && profile2.objectUrn) {
+      user.source_id = +findDescrByRegEx(profile2.objectUrn, /:(\d+)/i);
+    }
+
+    if (profile.flagshipProfileUrl) {
+      user.source_page = profile.flagshipProfileUrl;
+    }
+    if (profile.flagshipProfileUrl) {
+      user.sourceId2 = findDescrByRegEx(
+        profile.flagshipProfileUrl,
+        /in\/(.+)$|in\/(.+)\//i,
+      );
+    }
+
+    if (
+      profile.profilePictureDisplayImage &&
+      profile.profilePictureDisplayImage.artifacts
+    ) {
+      for (
+        let iNo = 0;
+        iNo < profile.profilePictureDisplayImage.artifacts.length;
+        iNo++
+      ) {
+        if (profile.profilePictureDisplayImage.artifacts[iNo].width === 100) {
+          user.logo =
+            profile.profilePictureDisplayImage.artifacts[
+              iNo
+            ].fileIdentifyingUrlPathSegment;
+        }
+      }
+      if (
+        !user.logo &&
+        profile.profilePictureDisplayImage.artifacts &&
+        profile.profilePictureDisplayImage.artifacts.length > 0
+      ) {
+        user.logo =
+          profile.profilePictureDisplayImage.artifacts[0].fileIdentifyingUrlPathSegment;
+      }
+    }
+
+    const current = [];
+    const previous = [];
+
+    if (profile.positions) {
+      for (const position in profile.positions) {
+        const objPosition = profile.positions[position];
+        const newPosition = {};
+
+        newPosition.company_name = objPosition.companyName;
+        newPosition.position = objPosition.title;
+
+        if (objPosition.companyUrn) {
+          newPosition.source_id = +findDescrByRegEx(
+            objPosition.companyUrn,
+            /:(\d+)/i,
+          );
+        }
+        if (objPosition.posId) {
+          newPosition.position_id = objPosition.posId;
+        }
+        if (objPosition.startedOn) {
+          const startDate = new Date(
+            objPosition.startedOn.year,
+            objPosition.startedOn.month,
+          );
+          if (startDate > 1000) {
+            newPosition.start = startDate / 1000;
+          }
+        }
+        if (objPosition.endedOn) {
+          const endDate = new Date(
+            objPosition.endedOn.year,
+            objPosition.endedOn.month,
+          );
+          if (endDate > 1000) {
+            newPosition.end = endDate / 1000;
+          }
+        }
+
+        if (objPosition.current) {
+          current.push(newPosition);
+        } else {
+          previous.push(newPosition);
+        }
+      }
+
+      if (current.length > 0 && previous.length > 0) {
+        for (let iCurrentNo = 0; iCurrentNo < current.length; iCurrentNo++) {
+          if (!current[iCurrentNo].source_id) {
+            for (
+              let iPreviousNo = 0;
+              iPreviousNo < previous.length;
+              iPreviousNo++
+            ) {
+              if (
+                current[iCurrentNo].company_name ===
+                previous[iPreviousNo].company_name
+              ) {
+                current[iCurrentNo].source_id = previous[iPreviousNo].source_id;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    user.current = current;
+    user.previous = previous;
+
+    if (profile.defaultPosition) {
+      user.defaultPosition = {};
+      user.defaultPosition.company_name = profile.defaultPosition.companyName;
+      user.defaultPosition.position = profile.defaultPosition.title;
+      if (profile.defaultPosition.posId) {
+        user.defaultPosition.position_id = profile.defaultPosition.posId;
+      }
+
+      if (profile.defaultPosition.companyUrn) {
+        user.defaultPosition.source_id = +findDescrByRegEx(
+          profile.defaultPosition.companyUrn,
+          /:(\d+)/i,
+        );
+      }
+
+      if (profile.defaultPosition.startedOn) {
+        const startDate = new Date(
+          profile.defaultPosition.startedOn.year,
+          profile.defaultPosition.startedOn.month,
+        );
+        if (startDate > 1000) {
+          user.defaultPosition.start = startDate / 1000;
+        }
+      }
+      if (profile.defaultPosition.endedOn) {
+        const endDate = new Date(
+          profile.defaultPosition.endedOn.year,
+          profile.defaultPosition.endedOn.month,
+        );
+        if (endDate > 1000) {
+          user.defaultPosition.end = endDate / 1000;
+        }
+      }
+    }
+
+    if (data) {
+      const cInfo = parseContactInfoPS2(data);
+      if (cInfo) {
+        user.cInfo = cInfo;
+      }
+      user.page_lang = findDescrByRegEx(source, REG_DETECT_LANG);
+    }
+  } else {
+    return undefined;
+  }
+
+  return user;
+}
 
 function getAll(field, data, type) {
   for (key in data) {
@@ -1071,13 +1829,6 @@ function BGActionDo(tab, tabId) {
         'graphApiPeopleSearch_url',
       ],
       (request) => {
-        console.log(
-          request.csrfToken,
-          request.defaultApiPeopleSearch_url,
-          request.premiumApiPeopleSearch_url,
-          request.graphApiPeopleSearch_url,
-          '----------------------------------',
-        );
         if (request.graphApiPeopleSearch_url) {
           urls = JSON.parse(request.graphApiPeopleSearch_url);
           isGraph = true;
@@ -1246,6 +1997,294 @@ function BGActionDo(tab, tabId) {
         }
       },
     );
+  } else if (tab.url.includes('/sales/lead/')) {
+    chrome.storage.local.get(['csrfToken'], (request) => {
+      if (request.csrfToken) {
+        let fnd = tab.url.match(/sales\/people\/(.+?),(.+?),(.+?)(\?|$)/i);
+        if (!fnd && tab.url.toLowerCase().indexOf('/lead/') !== -1) {
+          fnd = tab.url.match(/sales\/lead\/(.+?),(.+?),(.+?)(\?|$)/i);
+        }
+        let authToken;
+        let profileId;
+        // let profileIdS;
+        if (fnd && fnd.length > 3) {
+          for (let iNo = 1; iNo < 4; iNo++) {
+            if (fnd[iNo].length < 11) {
+              authToken = fnd[iNo];
+            }
+            if (fnd[iNo].length > 11) {
+              profileId = fnd[iNo];
+              // profileIdS = fnd[iNo];
+            }
+          }
+          if (profileId && authToken) {
+            let newUrl =
+              'https://www.linkedin.com/sales-api/salesApiProfiles/(';
+            newUrl += `profileId:${profileId},authType:NAME_SEARCH,authToken:${authToken})`;
+            newUrl +=
+              '?decoration=%28entityUrn%2CobjectUrn%2CpictureInfo%2CprofilePictureDisplayImage%2CfirstName%2ClastName%2CfullName%2Cheadline%2CmemberBadges%2Cdegree%2CprofileUnlockInfo%2Clocation%2ClistCount%2Cindustry%2CnumOfConnections%2CinmailRestriction%2CsavedLead%2CdefaultPosition%2CcontactInfo%2Csummary%2CcrmStatus%2CpendingInvitation%2Cunlocked%2CrelatedColleagueCompanyId%2CnumOfSharedConnections%2CshowTotalConnectionsPage%2CblockThirdPartyDataSharing%2CconnectedTime%2CnoteCount%2CflagshipProfileUrl%2CfullNamePronunciationAudio%2Cmemorialized%2CfullNamePronunciationAudio%2Cpositions*%2Ceducations*%29';
+
+            chrome.tabs.sendMessage(
+              tabId,
+              {
+                method: 'getPersonData',
+                tk: request.csrfToken,
+                url: newUrl,
+              },
+              (response) => {
+                if (response && response.data) {
+                  person = getUserInfoPS2(JSON.parse(response.data));
+                }
+                if (person) {
+                  csrfToken = true;
+                  if (person.name) {
+                    if (person.current && person.current.length > 0) {
+                      currentCompany(person.current[0], tabId);
+                    }
+                    chrome.tabs.sendMessage(tabId, {
+                      method: 'getInnerHTML',
+                    });
+                  }
+                  const personInfo = {};
+                  personInfo.oldurl = tab.url;
+                  personInfo.name = person.name;
+                  if (person.sourceId2) {
+                    personInfo.sourceId2 = person.sourceId2;
+                  } else {
+                    personInfo.source_id = person.source_id;
+                  }
+                  if (person.current && person.current.length > 0) {
+                    personInfo.position = person.current[0].position;
+                    personInfo.company_name = person.current[0].company_name;
+                  }
+                  personInfo.locality = person.locality;
+                  personInfo.profile_image = person.logo;
+                  console.log(person, 'Person Info 5: ');
+                  chrome.storage.local.set({ personInfo: person });
+                }
+              },
+            );
+          }
+        }
+      }
+    });
+  } else if (tab.url.toLowerCase().indexOf('/sales/search/people') !== -1) {
+    let tabUrl = tab.url;
+    let tabMethod = null;
+    let urls = {};
+    let params = '';
+    const currentPageNum = findDescrByRegEx(tab.url, /page=(\d+)&/i);
+    let currentPageIndex = parseInt(currentPageNum, 10) * 25;
+    currentPageIndex -= 25;
+    chrome.storage.local.get(
+      ['csrfToken', 'salesApiPeopleSearch_url'],
+      (request) => {
+        if (request.salesApiPeopleSearch_url) {
+          urls = JSON.parse(request.salesApiPeopleSearch_url);
+        }
+        if (urls[tabId]) {
+          tabUrl = urls[tabId].url;
+          tabMethod = urls[tabId].method;
+          if (
+            tabMethod === 'POST' ||
+            tabUrl === 'https://www.linkedin.com/sales-api/salesApiLeadSearch'
+          ) {
+            const tempUrl = findDescrByRegEx(
+              tab.url,
+              /\/sales\/search\/people(.*)/i,
+            );
+            queryParams = getJsonFromUrl(tempUrl);
+            params = `q=searchQuery&query=${queryParams.query}&start=${
+              currentPageIndex || 0
+            }&count=25&trackingParam=(sessionId:${
+              queryParams.sessionId
+            })&decorationId=com.linkedin.sales.deco.desktop.searchv2.LeadSearchResult-7`;
+          } else {
+            const currentApiIndex = parseInt(
+              findDescrByRegEx(tabUrl, /&start=(\d+)&count=/i),
+              10,
+            );
+            if (
+              currentPageIndex &&
+              currentApiIndex > -1 &&
+              currentPageIndex !== currentApiIndex
+            ) {
+              tabUrl = tabUrl.replace(
+                `&start=${currentApiIndex}`,
+                `&start=${currentPageIndex}`,
+              );
+            } else if (
+              currentApiIndex &&
+              !currentPageIndex &&
+              currentPageIndex !== 0
+            ) {
+              tabUrl = tabUrl.replace(`&start=${currentApiIndex}`, '&start=0');
+            }
+          }
+        }
+        if (request.csrfToken) {
+          chrome.tabs.sendMessage(
+            tabId,
+            {
+              method: 'getPersonData',
+              tk: request.csrfToken,
+              url: tabUrl,
+              request_method: tabMethod,
+              params,
+            },
+            (response) => {
+              if (!chrome.runtime.lastError) {
+                if (response) {
+                  if (response && response.data) {
+                    people = getPeopleSSP(JSON.parse(response.data));
+                  }
+                } else {
+                  people = undefined;
+                }
+                if (people && people.length > 0) {
+                  const peopleInfo = {};
+                  peopleInfo.oldurl = tab.url;
+                  peopleInfo.people = people;
+                  console.log(people, 'People1000');
+
+                  // chrome.storage.local.set({ peopleInfo });
+                }
+              }
+            },
+          );
+        }
+      },
+    );
+  } else if (tab.url.toLowerCase().indexOf('/sales/lists/people') !== -1) {
+    chrome.tabs.sendMessage(
+      tabId,
+      {
+        method: 'getPersonData',
+        url: tab.url,
+      },
+      (response) => {
+        if (!chrome.runtime.lastError) {
+          if (response && response.data) {
+            response = response.data
+              .replace(/&quot;/gi, '"')
+              .replace(/&#92;/gi, '\\');
+          }
+          if (response) {
+            console.log(response, 'Response 1: ');
+            person = getUserInfoPS2(response);
+            console.log(person, 'Person Info 9: ');
+          }
+          if (person) {
+            let fnd = tab.url.match(/sales\/people\/(.+?),(.+?),(.+?)(\?|$)/i);
+            if (!fnd && tab.url.toLowerCase().indexOf('/lead/') !== -1) {
+              fnd = tab.url.match(/sales\/lead\/(.+?),(.+?),(.+?)(\?|$)/i);
+            }
+            if (person.name) {
+              if (person.current && person.current.length > 0) {
+                currentCompany(person.current[0], tabId);
+              }
+              chrome.tabs.sendMessage(tabId, {
+                method: 'getInnerHTML',
+              });
+            }
+            const personInfo = {};
+            personInfo.oldurl = tab.url;
+            personInfo.name = person.name;
+            if (person.source_id_2) {
+              personInfo.source_id_2 = person.source_id_2;
+            } else {
+              personInfo.source_id = person.source_id;
+            }
+            if (person.current && person.current.length > 0) {
+              personInfo.position = person.current[0].position;
+              personInfo.company_name = person.current[0].company_name;
+            }
+            personInfo.locality = person.locality;
+            personInfo.profile_image = person.logo;
+            console.log(personInfo, 'Person Info 7: ');
+            console.log(person, 'Person Info 6: ');
+
+            chrome.storage.local.set({ personInfo });
+          } else {
+            chrome.storage.local.get(['csrfToken'], (request) => {
+              if (request.csrfToken) {
+                let fnd = tab.url.match(
+                  /sales\/people\/(.+?),(.+?),(.+?)(\?|$)/i,
+                );
+                if (!fnd && tab.url.toLowerCase().indexOf('/lead/') !== -1) {
+                  fnd = tab.url.match(/sales\/lead\/(.+?),(.+?),(.+?)(\?|$)/i);
+                }
+                if (fnd && fnd.length > 3) {
+                  let authToken;
+                  let profileId;
+                  for (let iNo = 1; iNo < 4; iNo++) {
+                    if (fnd[iNo].length < 11) {
+                      authToken = fnd[iNo];
+                    }
+                    if (fnd[iNo].length > 11) {
+                      profileId = fnd[iNo];
+                    }
+                  }
+                  if (profileId && authToken) {
+                    let newUrl =
+                      'https://www.linkedin.com/sales-api/salesApiProfiles/(';
+                    newUrl += `profileId:${profileId},authType:NAME_SEARCH,authToken:${authToken})`;
+                    newUrl +=
+                      '?decoration=%28entityUrn%2CobjectUrn%2CpictureInfo%2CprofilePictureDisplayImage%2CfirstName%2ClastName%2CfullName%2Cheadline%2CmemberBadges%2Cdegree%2CprofileUnlockInfo%2Clocation%2ClistCount%2Cindustry%2CnumOfConnections%2CinmailRestriction%2CsavedLead%2CdefaultPosition%2CcontactInfo%2Csummary%2CcrmStatus%2CpendingInvitation%2Cunlocked%2CrelatedColleagueCompanyId%2CnumOfSharedConnections%2CshowTotalConnectionsPage%2CblockThirdPartyDataSharing%2CconnectedTime%2CnoteCount%2CflagshipProfileUrl%2CfullNamePronunciationAudio%2Cmemorialized%2CfullNamePronunciationAudio%2Cpositions*%2Ceducations*%29';
+
+                    chrome.tabs.sendMessage(
+                      tabId,
+                      {
+                        method: 'getPersonData',
+                        tk: request.csrfToken,
+                        url: newUrl,
+                      },
+                      (response1) => {
+                        if (response1 && response1.data) {
+                          person = getUserInfoPS2(JSON.parse(response1.data));
+                        }
+                        if (person) {
+                          csrfToken = true;
+                          if (person.name) {
+                            if (person.current && person.current.length > 0) {
+                              currentCompany(person.current[0], tabId);
+                            }
+                            chrome.tabs.sendMessage(tabId, {
+                              method: 'getInnerHTML',
+                            });
+                          }
+                          const personInfo = {};
+                          personInfo.oldurl = tab.url;
+                          personInfo.name = person.name;
+                          if (person.source_id_2) {
+                            personInfo.source_id_2 = person.source_id_2;
+                          } else {
+                            personInfo.source_id = person.source_id;
+                          }
+                          if (person.current && person.current.length > 0) {
+                            personInfo.position = person.current[0].position;
+                            personInfo.company_name =
+                              person.current[0].company_name;
+                          }
+                          personInfo.locality = person.locality;
+                          personInfo.profile_image = person.logo;
+                          console.log(personInfo, '10001');
+                          console.log(person, '10002');
+
+                          chrome.storage.local.set({
+                            personInfo,
+                          });
+                        }
+                      },
+                    );
+                  }
+                }
+              }
+            });
+          }
+        }
+      },
+    );
   }
 }
 
@@ -1261,12 +2300,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     currentTabUrl = tab.url;
 
-    // if (
-    //   currentTabUrl.includes('linkedin.com/company/') &&
-    //   currentTabUrl.includes('/people')
-    // ) {
-    //   chrome.tabs.reload(tabId);
-    // }
     if (currentTabUrl.includes('linkedin.com')) {
       BGActionDo(tab, tabId);
     }

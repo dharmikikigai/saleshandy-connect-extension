@@ -100,7 +100,10 @@ const Main = () => {
         setIsBulkViewActive(false);
         setIsFeatureAvailable(false);
         setIsCommonPeopleScreenActive(false);
-      } else if (activeUrl.includes('linkedin.com/in/')) {
+      } else if (
+        activeUrl.includes('linkedin.com/in/') ||
+        activeUrl.includes('linkedin.com/sales/lead/')
+      ) {
         setIsCommonSearchScreenActive(false);
         setIsSingleViewActive(true);
         setIsBulkPagViewActive(false);
