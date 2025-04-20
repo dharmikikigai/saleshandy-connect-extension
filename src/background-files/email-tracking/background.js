@@ -79,6 +79,9 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 let lastUrl = '';
 
 function cleanUrl(url) {
+  if (url.includes('overlay')) {
+    return lastUrl;
+  }
   // Clean the URL by removing query parameters
   const urlObj = new URL(url);
   urlObj.search = ''; // Remove query parameters
@@ -342,6 +345,13 @@ chrome.runtime.onMessage.addListener((message) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = tabs[0].id;
       chrome.tabs.sendMessage(tabId, { method: 'closeDiv' });
+    });
+  }
+
+  if (message.method === 'closeIframeCs') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs[0].id;
+      chrome.tabs.sendMessage(tabId, { method: 'reloadIframe' });
     });
   }
 

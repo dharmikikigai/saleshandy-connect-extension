@@ -15,6 +15,13 @@ class Server {
     this.req.interceptors.request.use(async (config) => {
       const authenticationToken = await Server.getAuthToken(); // Use static method
 
+      if (!authenticationToken) {
+        chrome.runtime.sendMessage({
+          method: 'closeIframeCs',
+        });
+        return;
+      }
+
       // eslint-disable-next-line no-param-reassign
       config.headers.authorization = `Bearer ${authenticationToken}`;
       // eslint-disable-next-line no-param-reassign
