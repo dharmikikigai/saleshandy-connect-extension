@@ -112,4 +112,22 @@ export default {
     },
     error: 'Error in getting the saved leads',
   },
+
+  addToSequence: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'lead-finder/leads/bulk-actions/add-to-sequence',
+    error: 'Error in adding the lead to the sequence',
+  },
+
+  bulkAddToSequence: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'lead-finder/leads/bulk-actions/saved-add-to-sequence',
+    error: 'Error in adding the leads to the sequence',
+  },
+
+  bulkSaveTags: {
+    type: REQUEST_TYPES.POST,
+    path: () => 'lead-finder/tag/bulk-assign',
+    error: 'Error in adding the tags to the leads',
+  },
 };

@@ -133,6 +133,7 @@ const Toaster = ({ header = '', body = '', type = 'success', onClose }) => {
             alignContent: 'center',
             justifyContent: 'center',
             gap: '4px',
+            flex: 'auto',
           }}
         >
           <div

@@ -110,7 +110,7 @@ const AddTagsSelect = ({
   setIsExpanded,
   saveTags,
   btnLoadingStatus,
-  isFreePlanUser,
+  isDisabled,
 }) => (
   <div
     className={`${isExpanded ? '' : 'add-tags-container'}`}
@@ -124,7 +124,7 @@ const AddTagsSelect = ({
       display: 'flex',
       flexDirection: 'column',
       gap: '16px',
-      cursor: isFreePlanUser ? 'not-allowed' : 'pointer',
+      cursor: isDisabled ? 'not-allowed' : isExpanded ? 'default' : 'pointer',
     }}
   >
     <div
@@ -132,8 +132,9 @@ const AddTagsSelect = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
       }}
-      {...(!isFreePlanUser && {
+      {...(!isDisabled && {
         onClick: () => {
           setIsExpanded('tags');
         },
