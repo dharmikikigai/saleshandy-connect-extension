@@ -63,6 +63,12 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
           (cookie) => {
             if (cookie) {
               chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+              chrome.storage.local.get(['isModalClosed'], (req) => {
+                const isModalClosed = req?.isModalClosed;
+                if (isModalClosed === undefined || isModalClosed === false) {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+                }
+              });
             } else {
               console.log('User is not logged in');
             }
@@ -102,6 +108,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         (cookie) => {
           if (cookie) {
             chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+            chrome.storage.local.get(['isModalClosed'], (req) => {
+              const isModalClosed = req?.isModalClosed;
+              if (isModalClosed === undefined || isModalClosed === false) {
+                chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+              }
+            });
           } else {
             console.log('User is not logged in');
           }

@@ -33,6 +33,7 @@ function injectFloatingWindow() {
   modalDiv.allow = 'clipboard-write';
 
   document.body.appendChild(modalDiv);
+  chrome.storage.local.set({ isModalClosed: false });
 }
 
 function injectBeaconOnLinkedInUrl() {
@@ -192,6 +193,7 @@ function closeDiv() {
   const element = document.getElementById(FLOATING_WINDOW_ID);
 
   if (element) {
+    chrome.storage.local.set({ isModalClosed: true });
     // Apply inline CSS for transition
     element.style.transition = 'transform 0.5s ease-out';
 
