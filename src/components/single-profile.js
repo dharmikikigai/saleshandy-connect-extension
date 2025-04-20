@@ -66,6 +66,8 @@ const SingleProfile = ({ userMetaData }) => {
   const [isRateLimitReached, setIsRateLimitReached] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
+  const leadFinderCredits = userMetaData?.leadFinderCredits;
+
   console.log('isCopied', isCopied);
 
   const fetchProspect = async () => {
@@ -976,117 +978,48 @@ const SingleProfile = ({ userMetaData }) => {
                   >
                     {/* View Email Btn */}
                     {singleProfile.id && !singleProfile.isRevealed && (
-                      <Button
-                        variant="primary"
-                        className="w-100 py-2"
+                      <span
                         data-tooltip-id="my-tooltip-1"
                         style={{
-                          fontSize: '14px',
-                          padding: '6px 16px',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          height: '32px',
-                          alignItems: 'center',
-                          fontWeight: '500',
-                          lineHeight: '20px',
-                          background: '#1D4ED8',
-                          gap: '8px',
-                          outline: 'none',
-                          boxShadow: 'none',
+                          cursor:
+                            isRevealing ||
+                            isPollingEnabled ||
+                            btnLoadingStatus.addToSequence ||
+                            leadFinderCredits < 1
+                              ? 'not-allowed'
+                              : 'pointer',
                         }}
-                        disabled={isRevealing || isPollingEnabled}
-                        onClick={hadnleViewEmailBtn}
                       >
-                        {!isRevealing && (
-                          <div>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 16 16"
-                              fill="none"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                clipRule="evenodd"
-                                d="M3.83357 4.49544C3.46538 4.49544 3.1669 4.79392 3.1669 5.16211V11.8288C3.1669 12.197 3.46538 12.4954 3.83357 12.4954H13.1669C13.5351 12.4954 13.8336 12.197 13.8336 11.8288V5.16211C13.8336 4.79392 13.5351 4.49544 13.1669 4.49544H3.83357ZM1.83357 5.16211C1.83357 4.05754 2.729 3.16211 3.83357 3.16211H13.1669C14.2715 3.16211 15.1669 4.05754 15.1669 5.16211V11.8288C15.1669 12.9333 14.2715 13.8288 13.1669 13.8288H3.83357C2.729 13.8288 1.83357 12.9333 1.83357 11.8288V5.16211Z"
-                                fill="white"
-                              />
-                              <path
-                                // fill-rule="evenodd"
-                                // clip-rule="evenodd"
-                                d="M1.94553 4.80229C2.14977 4.49594 2.56368 4.41316 2.87003 4.61739L8.50023 8.37086L14.1304 4.61739C14.4368 4.41316 14.8507 4.49594 15.0549 4.80229C15.2592 5.10864 15.1764 5.52256 14.87 5.72679L8.87003 9.72679C8.6461 9.87608 8.35437 9.87608 8.13043 9.72679L2.13043 5.72679C1.82408 5.52256 1.7413 5.10864 1.94553 4.80229Z"
-                                fill="white"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                        <span>
-                          {isRevealing && revealType === 'email' ? (
-                            <Spinner animation="border" size="sm" />
-                          ) : (
-                            'View Email'
-                          )}
-                        </span>
-                      </Button>
-                    )}
-
-                    {/* View Email + Phone Btn */}
-
-                    {singleProfile.id &&
-                      (!singleProfile.isRevealed ||
-                        (singleProfile.isRevealed &&
-                          singleProfile.reReveal)) && (
                         <Button
                           variant="primary"
                           className="w-100 py-2"
-                          data-tooltip-id="my-tooltip-2"
-                          onMouseEnter={() => setIsViewEmailPhoneHover(true)}
-                          onMouseLeave={() => setIsViewEmailPhoneHover(false)}
-                          style={
-                            isRevealing && revealType === 'email'
-                              ? {
-                                  cursor: 'not-allowed',
-                                  opacity: '0.35',
-                                  fontSize: '14px',
-                                  height: '32px',
-                                  padding: '6px 16px',
-                                  borderRadius: '4px',
-                                  display: 'flex',
-                                  justifyContent: 'center',
-                                  alignItems: 'center',
-                                  fontWeight: '500',
-                                  lineHeight: '20px',
-                                  color: '#1D4ED8',
-                                  backgroundColor: '#fff',
-                                  gap: '8px',
-                                }
-                              : {
-                                  fontSize: '14px',
-                                  padding: '6px 16px',
-                                  borderRadius: '4px',
-                                  height: '32px',
-                                  display: 'flex',
-                                  justifyContent: 'center',
-                                  alignItems: 'center',
-                                  fontWeight: '500',
-                                  lineHeight: '20px',
-                                  color: '#1D4ED8',
-                                  background: isViewEmailPhoneHover
-                                    ? '#EFF6FF'
-                                    : '#fff',
-                                  border: '1px solid #1D4ED8',
-                                  gap: '8px',
-                                  outline: 'none',
-                                  boxShadow: 'none',
-                                }
+                          style={{
+                            fontSize: '14px',
+                            padding: '6px 16px',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            height: '32px',
+                            alignItems: 'center',
+                            fontWeight: '500',
+                            lineHeight: '20px',
+                            background: '#1D4ED8',
+                            gap: '8px',
+                            outline: 'none',
+                            boxShadow: 'none',
+                          }}
+                          disabled={
+                            isRevealing ||
+                            isPollingEnabled ||
+                            btnLoadingStatus.addToSequence ||
+                            leadFinderCredits < 1
                           }
-                          disabled={isRevealing || isPollingEnabled}
-                          onClick={handleViewEmailPhoneAndFindPhoneBtn}
+                          onClick={hadnleViewEmailBtn}
                         >
-                          {!isRevealing && (
-                            <div>
+                          {isRevealing && revealType === 'email' ? (
+                            <Spinner animation="border" size="sm" />
+                          ) : (
+                            <>
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="16"
@@ -1095,28 +1028,123 @@ const SingleProfile = ({ userMetaData }) => {
                                 fill="none"
                               >
                                 <path
-                                  // fill-rule="evenodd"
-                                  // clip-rule="evenodd"
-                                  d="M13.9998 10.7879V12.7897C13.9998 13.8943 13.1044 14.7897 11.9998 14.7897H2.6665C1.56193 14.7897 0.666504 13.8943 0.666504 12.7897V6.14214V6.12269C0.666697 5.01828 1.56205 4.12305 2.6665 4.12305H5.7762C5.85288 4.5819 5.96861 5.02752 6.11987 5.45638H2.6665C2.40603 5.45638 2.18045 5.60576 2.07075 5.82352L7.33317 9.3318L8.27418 8.70445C8.62106 9.02114 8.99592 9.30769 9.39461 9.55997L7.70297 10.6877C7.47904 10.837 7.1873 10.837 6.96337 10.6877L1.99984 7.37871V12.7897C1.99984 13.1579 2.29831 13.4564 2.6665 13.4564H11.9998C12.368 13.4564 12.6665 13.1579 12.6665 12.7897V10.7329C12.9941 10.7737 13.3278 10.7948 13.6664 10.7948C13.7781 10.7948 13.8893 10.7925 13.9998 10.7879Z"
-                                  fill="#1D4ED8"
+                                  fillRule="evenodd"
+                                  clipRule="evenodd"
+                                  d="M3.83357 4.49544C3.46538 4.49544 3.1669 4.79392 3.1669 5.16211V11.8288C3.1669 12.197 3.46538 12.4954 3.83357 12.4954H13.1669C13.5351 12.4954 13.8336 12.197 13.8336 11.8288V5.16211C13.8336 4.79392 13.5351 4.49544 13.1669 4.49544H3.83357ZM1.83357 5.16211C1.83357 4.05754 2.729 3.16211 3.83357 3.16211H13.1669C14.2715 3.16211 15.1669 4.05754 15.1669 5.16211V11.8288C15.1669 12.9333 14.2715 13.8288 13.1669 13.8288H3.83357C2.729 13.8288 1.83357 12.9333 1.83357 11.8288V5.16211Z"
+                                  fill="white"
                                 />
                                 <path
                                   // fill-rule="evenodd"
                                   // clip-rule="evenodd"
-                                  d="M7.60832 2.42316C7.52541 2.42316 7.4459 2.45609 7.38728 2.51472C7.33204 2.56995 7.29961 2.64373 7.29605 2.72142C7.40354 4.39498 8.11685 5.97246 9.30306 7.15867C10.4893 8.34488 12.0667 9.05819 13.7403 9.16569C13.818 9.16212 13.8918 9.12969 13.947 9.07446C14.0056 9.01583 14.0386 8.93632 14.0386 8.85341V7.39662L12.5778 6.81231L12.1473 7.52975C11.979 7.81026 11.6237 7.91479 11.3303 7.77009C10.1843 7.20492 9.25682 6.27742 8.69164 5.13144C8.54695 4.83805 8.65147 4.48272 8.93198 4.31442L9.64943 3.88395L9.06511 2.42316H7.60832ZM6.49834 1.62578C6.79273 1.3314 7.192 1.16602 7.60832 1.16602H9.49067C9.7477 1.16602 9.97883 1.3225 10.0743 1.56114L11.0155 3.91408C11.13 4.20053 11.0198 4.52779 10.7552 4.68652L10.1067 5.07567C10.4431 5.58348 10.8783 6.01863 11.3861 6.35507L11.7752 5.70648C11.9339 5.44194 12.2612 5.33169 12.5477 5.44627L14.9006 6.38744C15.1392 6.4829 15.2957 6.71403 15.2957 6.97106V8.85341C15.2957 9.26973 15.1303 9.66901 14.8359 9.96339C14.5416 10.2578 14.1423 10.4232 13.726 10.4232C13.7133 10.4232 13.7005 10.4228 13.6878 10.422C11.699 10.3011 9.82308 9.45655 8.41413 8.04761C7.00518 6.63866 6.1606 4.76278 6.03973 2.77389C6.03896 2.7612 6.03857 2.74848 6.03857 2.73576C6.03857 2.31944 6.20396 1.92017 6.49834 1.62578Z"
-                                  fill="#1D4ED8"
+                                  d="M1.94553 4.80229C2.14977 4.49594 2.56368 4.41316 2.87003 4.61739L8.50023 8.37086L14.1304 4.61739C14.4368 4.41316 14.8507 4.49594 15.0549 4.80229C15.2592 5.10864 15.1764 5.52256 14.87 5.72679L8.87003 9.72679C8.6461 9.87608 8.35437 9.87608 8.13043 9.72679L2.13043 5.72679C1.82408 5.52256 1.7413 5.10864 1.94553 4.80229Z"
+                                  fill="white"
                                 />
                               </svg>
-                            </div>
+                              View Email
+                            </>
                           )}
-                          <span>
+                        </Button>
+                      </span>
+                    )}
+
+                    {/* View Email + Phone Btn */}
+
+                    {singleProfile.id &&
+                      (!singleProfile.isRevealed ||
+                        (singleProfile.isRevealed &&
+                          singleProfile.reReveal)) && (
+                        <span
+                          data-tooltip-id="my-tooltip-2"
+                          style={{
+                            cursor:
+                              isRevealing ||
+                              isPollingEnabled ||
+                              btnLoadingStatus.addToSequence ||
+                              leadFinderCredits < 2
+                                ? 'not-allowed'
+                                : 'pointer',
+                          }}
+                        >
+                          <Button
+                            variant="primary"
+                            className="w-100 py-2"
+                            onMouseEnter={() => setIsViewEmailPhoneHover(true)}
+                            onMouseLeave={() => setIsViewEmailPhoneHover(false)}
+                            style={
+                              isRevealing && revealType === 'email'
+                                ? {
+                                    cursor: 'not-allowed',
+                                    opacity: '0.35',
+                                    fontSize: '14px',
+                                    height: '32px',
+                                    padding: '6px 16px',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    fontWeight: '500',
+                                    lineHeight: '20px',
+                                    color: '#1D4ED8',
+                                    backgroundColor: '#fff',
+                                    gap: '8px',
+                                  }
+                                : {
+                                    fontSize: '14px',
+                                    padding: '6px 16px',
+                                    borderRadius: '4px',
+                                    height: '32px',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    fontWeight: '500',
+                                    lineHeight: '20px',
+                                    color: '#1D4ED8',
+                                    background: isViewEmailPhoneHover
+                                      ? '#EFF6FF'
+                                      : '#fff',
+                                    border: '1px solid #1D4ED8',
+                                    gap: '8px',
+                                    outline: 'none',
+                                    boxShadow: 'none',
+                                  }
+                            }
+                            disabled={
+                              isRevealing ||
+                              isPollingEnabled ||
+                              btnLoadingStatus.addToSequence ||
+                              leadFinderCredits < 2
+                            }
+                            onClick={handleViewEmailPhoneAndFindPhoneBtn}
+                          >
                             {isRevealing && revealType === 'emailphone' ? (
                               <Spinner animation="border" size="sm" />
                             ) : (
-                              'View Email + Phone'
+                              <>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 16 16"
+                                  fill="none"
+                                >
+                                  <path
+                                    // fill-rule="evenodd"
+                                    // clip-rule="evenodd"
+                                    d="M13.9998 10.7879V12.7897C13.9998 13.8943 13.1044 14.7897 11.9998 14.7897H2.6665C1.56193 14.7897 0.666504 13.8943 0.666504 12.7897V6.14214V6.12269C0.666697 5.01828 1.56205 4.12305 2.6665 4.12305H5.7762C5.85288 4.5819 5.96861 5.02752 6.11987 5.45638H2.6665C2.40603 5.45638 2.18045 5.60576 2.07075 5.82352L7.33317 9.3318L8.27418 8.70445C8.62106 9.02114 8.99592 9.30769 9.39461 9.55997L7.70297 10.6877C7.47904 10.837 7.1873 10.837 6.96337 10.6877L1.99984 7.37871V12.7897C1.99984 13.1579 2.29831 13.4564 2.6665 13.4564H11.9998C12.368 13.4564 12.6665 13.1579 12.6665 12.7897V10.7329C12.9941 10.7737 13.3278 10.7948 13.6664 10.7948C13.7781 10.7948 13.8893 10.7925 13.9998 10.7879Z"
+                                    fill="#1D4ED8"
+                                  />
+                                  <path
+                                    // fill-rule="evenodd"
+                                    // clip-rule="evenodd"
+                                    d="M7.60832 2.42316C7.52541 2.42316 7.4459 2.45609 7.38728 2.51472C7.33204 2.56995 7.29961 2.64373 7.29605 2.72142C7.40354 4.39498 8.11685 5.97246 9.30306 7.15867C10.4893 8.34488 12.0667 9.05819 13.7403 9.16569C13.818 9.16212 13.8918 9.12969 13.947 9.07446C14.0056 9.01583 14.0386 8.93632 14.0386 8.85341V7.39662L12.5778 6.81231L12.1473 7.52975C11.979 7.81026 11.6237 7.91479 11.3303 7.77009C10.1843 7.20492 9.25682 6.27742 8.69164 5.13144C8.54695 4.83805 8.65147 4.48272 8.93198 4.31442L9.64943 3.88395L9.06511 2.42316H7.60832ZM6.49834 1.62578C6.79273 1.3314 7.192 1.16602 7.60832 1.16602H9.49067C9.7477 1.16602 9.97883 1.3225 10.0743 1.56114L11.0155 3.91408C11.13 4.20053 11.0198 4.52779 10.7552 4.68652L10.1067 5.07567C10.4431 5.58348 10.8783 6.01863 11.3861 6.35507L11.7752 5.70648C11.9339 5.44194 12.2612 5.33169 12.5477 5.44627L14.9006 6.38744C15.1392 6.4829 15.2957 6.71403 15.2957 6.97106V8.85341C15.2957 9.26973 15.1303 9.66901 14.8359 9.96339C14.5416 10.2578 14.1423 10.4232 13.726 10.4232C13.7133 10.4232 13.7005 10.4228 13.6878 10.422C11.699 10.3011 9.82308 9.45655 8.41413 8.04761C7.00518 6.63866 6.1606 4.76278 6.03973 2.77389C6.03896 2.7612 6.03857 2.74848 6.03857 2.73576C6.03857 2.31944 6.20396 1.92017 6.49834 1.62578Z"
+                                    fill="#1D4ED8"
+                                  />
+                                </svg>
+                                View Email + Phone
+                              </>
                             )}
-                          </span>
-                        </Button>
+                          </Button>
+                        </span>
                       )}
                   </div>
                 )}
@@ -1466,7 +1494,17 @@ const SingleProfile = ({ userMetaData }) => {
       <ReactTooltip
         id="my-tooltip-1"
         place="bottom"
-        content="1 Credits Required"
+        content={
+          isRevealing && revealType === 'emailphone' ? (
+            <>
+              You can&apos;t take this action as
+              <br />
+              lead reveal is in progress
+            </>
+          ) : (
+            '1 Credit Required'
+          )
+        }
         opacity="1"
         style={{
           fontSize: '12px',
@@ -1498,9 +1536,15 @@ const SingleProfile = ({ userMetaData }) => {
         place="bottom"
         opacity="1"
         content={
-          isRevealing && revealType === 'email'
-            ? "You can't take this action as lead reveal is in progress"
-            : '2 Credits Required'
+          isRevealing && revealType === 'email' ? (
+            <>
+              You can&apos;t take this action as
+              <br />
+              lead reveal is in progress
+            </>
+          ) : (
+            '2 Credits Required'
+          )
         }
         style={{
           fontSize: '12px',

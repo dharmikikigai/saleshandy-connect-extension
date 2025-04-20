@@ -10,6 +10,7 @@ import mailboxInstance from '../config/server/tracker/mailbox';
 import SingleProfile from './single-profile';
 import ProspectList from './prospect-list/prospect-list';
 import SingleProfileSkeleton from './single-profile-skeleton';
+import Toaster from './toaster';
 
 import './prospect-list/prospect-list.css';
 
@@ -33,20 +34,54 @@ const Main = () => {
   );
   const [userMetaData, setUserMetaData] = useState(null);
 
+  // Toaster state
+  const [showToaster, setShowToaster] = useState(false);
+  const [toasterData, setToasterData] = useState({
+    header: '',
+    body: '',
+    type: 'danger',
+  });
+
   const getMetaData = async () => {
     if (!chrome?.storage?.local) {
       return;
     }
 
-    const metaData = (await mailboxInstance.getMetaData())?.payload;
+    try {
+      const response = await mailboxInstance.getMetaData();
 
-    if (metaData) {
-      chrome.storage.local.set({ saleshandyMetaData: metaData });
-      setUserMetaData(metaData);
-
-      if (metaData.user?.isUserRestricted) {
-        setIsFeatureAvailable(true);
+      if (response?.error) {
+        // Show error toast
+        setToasterData({
+          header: 'Error',
+          body:
+            response?.error?.message ||
+            'Failed to fetch user metadata. Please try again later.',
+          type: 'danger',
+        });
+        setShowToaster(true);
+        return;
       }
+
+      const metaData = response?.payload;
+
+      if (metaData) {
+        chrome.storage.local.set({ saleshandyMetaData: metaData });
+        setUserMetaData(metaData);
+
+        if (metaData.user?.isUserRestricted) {
+          setIsFeatureAvailable(true);
+        }
+      }
+    } catch (error) {
+      // Show error toast for any exception
+      setToasterData({
+        header: 'Error',
+        body: 'An unexpected error occurred while fetching metadata.',
+        type: 'danger',
+      });
+      setShowToaster(true);
+      console.error('Error fetching metadata:', error);
     }
   };
 
@@ -165,26 +200,38 @@ const Main = () => {
     return <NotAvailableFeature />;
   }
 
-  if (isSingleViewActive) {
-    return <SingleProfile userMetaData={userMetaData} />;
-  }
+  // Render the appropriate component based on the current state
+  let componentToRender;
 
-  if (isBulkPagViewActive || isBulkViewActive) {
-    return (
+  if (isSingleViewActive) {
+    componentToRender = <SingleProfile userMetaData={userMetaData} />;
+  } else if (isBulkPagViewActive || isBulkViewActive) {
+    componentToRender = (
       <ProspectList
         pageType={isBulkPagViewActive ? 'pagination' : 'continuous'}
         userMetaData={userMetaData}
       />
     );
+  } else if (isCommonPeopleScreenActive) {
+    componentToRender = <CommonSearchPeople />;
+  } else if (isCommonSearchScreenActive) {
+    componentToRender = <CommonSearch />;
   }
 
-  if (isCommonPeopleScreenActive) {
-    return <CommonSearchPeople />;
-  }
-
-  if (isCommonSearchScreenActive) {
-    return <CommonSearch />;
-  }
+  // Return the component with the toaster
+  return (
+    <>
+      {showToaster && (
+        <Toaster
+          header={toasterData.header}
+          body={toasterData.body}
+          type={toasterData.type}
+          onClose={() => setShowToaster(false)}
+        />
+      )}
+      {componentToRender}
+    </>
+  );
 };
 
 export default Main;
