@@ -25,7 +25,7 @@ function injectFloatingWindow() {
   modalDiv.style.backgroundColor = 'white';
   modalDiv.style.borderRadius = '10px';
   modalDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-  modalDiv.style.zIndex = '9999';
+  modalDiv.style.zIndex = '99999999999999999999999999999999999999';
   modalDiv.style.display = 'flex';
   modalDiv.style.flexDirection = 'column';
   modalDiv.style.alignItems = 'center';
@@ -52,7 +52,7 @@ function injectBeaconOnLinkedInUrl() {
   beacon.style.backgroundSize = 'cover';
   beacon.style.cursor = 'pointer';
   beacon.style.borderRadius = '7px 0 0 7px';
-  beacon.style.zIndex = '8888';
+  beacon.style.zIndex = '9999999999999999999999999999999999999';
   beacon.style.transition = 'all 0.3s ease'; // Add transition for smooth hover effect
 
   // Create the drag handle
