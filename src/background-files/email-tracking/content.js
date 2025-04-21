@@ -21,7 +21,7 @@ function injectFloatingWindow() {
   modalDiv.style.right = '12px';
   modalDiv.style.transform = 'translateY(-50%)';
   modalDiv.style.width = '332px';
-  modalDiv.style.height = '686px';
+  modalDiv.style.height = '780px';
   modalDiv.style.backgroundColor = 'white';
   modalDiv.style.borderRadius = '10px';
   modalDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
