@@ -33,6 +33,7 @@ const Main = () => {
     profilePageState,
   );
   const [userMetaData, setUserMetaData] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Toaster state
   const [showToaster, setShowToaster] = useState(false);
@@ -49,7 +50,6 @@ const Main = () => {
 
     try {
       const response = await mailboxInstance.getMetaData();
-
       if (response?.error) {
         // Show error toast
         setToasterData({
@@ -184,7 +184,13 @@ const Main = () => {
     pageCheck();
   }, []);
 
-  if (authCheckLoading || pageCheckLoading) {
+  useEffect(() => {
+    if (!authCheckLoading && !pageCheckLoading) {
+      setIsInitialized(true);
+    }
+  }, [authCheckLoading, pageCheckLoading]);
+
+  if (!isInitialized) {
     return <SingleProfileSkeleton />;
   }
 
