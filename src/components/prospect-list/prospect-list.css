@@ -102,6 +102,7 @@ body {
   color: #6b7280;
   font-size: 12px;
   line-height: 16px;
+  font-weight: 600;
 }
 
 .prospect-tabs-skeleton {
@@ -138,6 +139,8 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  max-width: 48px;
 }
 
 input[type='checkbox'] {
@@ -179,13 +182,21 @@ input[type='checkbox'] {
   flex: 1 0 0;
 }
 
+.action-button.email {
+  min-width: 140px;
+}
+
+.action-button.sequence {
+  min-width: 140px;
+}
+
 .action-icon-button {
   padding: 8px !important;
   gap: 8px;
 }
 
 .btn-outline-primary:hover {
-  background-color: #EFF6FF;
+  background-color: #eff6ff;
 }
 
 .ignore-button {
@@ -676,7 +687,7 @@ body.modal-open {
 }
 
 .custom-button.btn-outline-primary:hover {
-  background-color: #EFF6FF;
+  background-color: #eff6ff;
 }
 
 .custom-button.disabled {
@@ -874,7 +885,7 @@ body.modal-open {
   align-items: center;
   gap: 4px;
   border-radius: 2px;
-  border: 1px solid #dbeafe;
+  outline: 1px solid #dbeafe;
   background: #eff6ff;
 }
 
@@ -950,7 +961,7 @@ body.modal-open {
 .add-tags-container:hover {
   background-color: #f9fafb !important;
 }
-.revealed-tag-modal-body{
+.revealed-tag-modal-body {
   padding-top: 16px;
 }
 
@@ -988,7 +999,7 @@ body.modal-open {
   margin: 0px;
   padding: 0px;
 }
-.pick-date-and-time-action-btns{
+.pick-date-and-time-action-btns {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1000,4 +1011,26 @@ body.modal-open {
 .pick-date-and-time-action-btns button:hover {
   background-color: #f9fafb;
 }
-  
+.custom-down-chevron {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px 8px 8px;
+}
+.custom-down-chevron img {
+  width: 16px;
+  height: 16px;
+}
+
+.custom-down-chevron img:hover {
+  background-color: #f9fafb;
+  border-radius: 2px;
+}
+
+.custom-multi-value-remove {
+  display: flex;
+  align-items: center;
+}
+
+.custom-switch .switchToggle input:checked + label {
+  background: #1D4ED8 !important;
+}

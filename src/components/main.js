@@ -14,6 +14,17 @@ import Toaster from './toaster';
 
 import './prospect-list/prospect-list.css';
 
+const VIEW_TYPES = {
+  LOADING: 'LOADING',
+  LOGIN: 'LOGIN',
+  PROFILE: 'PROFILE',
+  FEATURE_NA: 'FEATURE_NA',
+  SINGLE_PROFILE: 'SINGLE_PROFILE',
+  PROSPECT_LIST: 'PROSPECT_LIST',
+  COMMON_SEARCH_PEOPLE: 'COMMON_SEARCH_PEOPLE',
+  COMMON_SEARCH: 'COMMON_SEARCH',
+};
+
 const Main = () => {
   const [authCheckLoading, setAuthCheckLoading] = useState(true);
   const [pageCheckLoading, setPageCheckLoading] = useState(true);
@@ -33,7 +44,8 @@ const Main = () => {
     profilePageState,
   );
   const [userMetaData, setUserMetaData] = useState(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [currentView, setCurrentView] = useState(VIEW_TYPES.LOADING);
+  const [isMetaDataLoaded, setIsMetaDataLoaded] = useState(false);
 
   // Toaster state
   const [showToaster, setShowToaster] = useState(false);
@@ -45,13 +57,14 @@ const Main = () => {
 
   const getMetaData = async () => {
     if (!chrome?.storage?.local) {
+      setIsMetaDataLoaded(true);
       return;
     }
 
     try {
       const response = await mailboxInstance.getMetaData();
+
       if (response?.error) {
-        // Show error toast
         setToasterData({
           header: 'Error',
           body:
@@ -60,6 +73,7 @@ const Main = () => {
           type: 'danger',
         });
         setShowToaster(true);
+        setIsMetaDataLoaded(true);
         return;
       }
 
@@ -73,8 +87,8 @@ const Main = () => {
           setIsFeatureAvailable(true);
         }
       }
+      setIsMetaDataLoaded(true);
     } catch (error) {
-      // Show error toast for any exception
       setToasterData({
         header: 'Error',
         body: 'An unexpected error occurred while fetching metadata.',
@@ -82,14 +96,13 @@ const Main = () => {
       });
       setShowToaster(true);
       console.error('Error fetching metadata:', error);
+      setIsMetaDataLoaded(true);
     }
   };
 
   const authCheck = () => {
     chrome.storage.local.get(['authToken'], (result1) => {
       const authenticationToken = result1?.authToken;
-
-      console.log('authToken', authenticationToken);
 
       let checkFurther = true;
 
@@ -114,6 +127,7 @@ const Main = () => {
             getMetaData();
           } else {
             setIsSaleshandyLoggedIn(false);
+            setIsMetaDataLoaded(true);
           }
         }
       });
@@ -125,8 +139,6 @@ const Main = () => {
   const pageCheck = () => {
     chrome.storage.local.get(['activeUrl'], (result) => {
       const activeUrl = result?.activeUrl;
-
-      console.log('activeUrl', activeUrl);
 
       if (!activeUrl || activeUrl === '') {
         setIsCommonSearchScreenActive(true);
@@ -185,46 +197,65 @@ const Main = () => {
   }, []);
 
   useEffect(() => {
-    if (!authCheckLoading && !pageCheckLoading) {
-      setIsInitialized(true);
+    if (!authCheckLoading && !pageCheckLoading && isMetaDataLoaded) {
+      if (!isSaleshandyLoggedIn) {
+        setCurrentView(VIEW_TYPES.LOGIN);
+      } else if (showProfilePage) {
+        setCurrentView(VIEW_TYPES.PROFILE);
+      } else if (isFeatureAvailable) {
+        setCurrentView(VIEW_TYPES.FEATURE_NA);
+      } else if (isSingleViewActive) {
+        setCurrentView(VIEW_TYPES.SINGLE_PROFILE);
+      } else if (isBulkPagViewActive || isBulkViewActive) {
+        setCurrentView(VIEW_TYPES.PROSPECT_LIST);
+      } else if (isCommonPeopleScreenActive) {
+        setCurrentView(VIEW_TYPES.COMMON_SEARCH_PEOPLE);
+      } else if (isCommonSearchScreenActive) {
+        setCurrentView(VIEW_TYPES.COMMON_SEARCH);
+      }
     }
-  }, [authCheckLoading, pageCheckLoading]);
+  }, [
+    authCheckLoading,
+    pageCheckLoading,
+    isMetaDataLoaded,
+    isSaleshandyLoggedIn,
+    showProfilePage,
+    isFeatureAvailable,
+    isSingleViewActive,
+    isBulkPagViewActive,
+    isBulkViewActive,
+    isCommonPeopleScreenActive,
+    isCommonSearchScreenActive,
+  ]);
 
-  if (!isInitialized) {
-    return <SingleProfileSkeleton />;
-  }
+  const renderContent = () => {
+    switch (currentView) {
+      case VIEW_TYPES.LOADING:
+        return <SingleProfileSkeleton />;
+      case VIEW_TYPES.LOGIN:
+        return <Login />;
+      case VIEW_TYPES.PROFILE:
+        return <Profile />;
+      case VIEW_TYPES.FEATURE_NA:
+        return <NotAvailableFeature />;
+      case VIEW_TYPES.SINGLE_PROFILE:
+        return <SingleProfile userMetaData={userMetaData} />;
+      case VIEW_TYPES.PROSPECT_LIST:
+        return (
+          <ProspectList
+            pageType={isBulkPagViewActive ? 'pagination' : 'continuous'}
+            userMetaData={userMetaData}
+          />
+        );
+      case VIEW_TYPES.COMMON_SEARCH_PEOPLE:
+        return <CommonSearchPeople />;
+      case VIEW_TYPES.COMMON_SEARCH:
+        return <CommonSearch />;
+      default:
+        return <SingleProfileSkeleton />;
+    }
+  };
 
-  if (!isSaleshandyLoggedIn) {
-    return <Login />;
-  }
-
-  if (showProfilePage) {
-    return <Profile />;
-  }
-
-  if (isFeatureAvailable) {
-    return <NotAvailableFeature />;
-  }
-
-  // Render the appropriate component based on the current state
-  let componentToRender;
-
-  if (isSingleViewActive) {
-    componentToRender = <SingleProfile userMetaData={userMetaData} />;
-  } else if (isBulkPagViewActive || isBulkViewActive) {
-    componentToRender = (
-      <ProspectList
-        pageType={isBulkPagViewActive ? 'pagination' : 'continuous'}
-        userMetaData={userMetaData}
-      />
-    );
-  } else if (isCommonPeopleScreenActive) {
-    componentToRender = <CommonSearchPeople />;
-  } else if (isCommonSearchScreenActive) {
-    componentToRender = <CommonSearch />;
-  }
-
-  // Return the component with the toaster
   return (
     <>
       {showToaster && (
@@ -235,7 +266,7 @@ const Main = () => {
           onClose={() => setShowToaster(false)}
         />
       )}
-      {componentToRender}
+      {renderContent()}
     </>
   );
 };

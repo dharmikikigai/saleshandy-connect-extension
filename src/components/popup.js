@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Switch } from '@saleshandy/designs';
 import mailboxInstance from '../config/server/tracker/mailbox';
 import Gmail from '../assets/icons/gmail.svg';
+import './popup.css';
 
 const handleClose = () => {
   window.close();
@@ -528,6 +529,7 @@ const Popup = () => {
           >
             {/* View Lead Finder */}
             <div
+              className="popup-platform-item"
               style={{
                 width: '100%',
                 height: '32px',
@@ -615,6 +617,7 @@ const Popup = () => {
             </div>
             {/* View Prospects */}
             <div
+              className="popup-platform-item"
               style={{
                 width: '100%',
                 height: '32px',
@@ -713,6 +716,7 @@ const Popup = () => {
             </div>
             {/* Sequence */}
             <div
+              className="popup-platform-item"
               style={{
                 width: '100%',
                 height: '32px',
@@ -1019,13 +1023,14 @@ const Popup = () => {
                     Enable Email Tracker
                   </div>
                 </div>
-                <div style={{ alignSelf: 'normal' }}>
+                <div className="custom-switch" style={{ alignSelf: 'normal' }}>
                   <Switch
                     checked={mailboxSetting}
                     onChange={handleTrackingSetting}
                     size={Switch.Size.Small}
                     disabled={!authenticated}
                     tooltip={authenticated ? '' : 'Login to change the setting'}
+                    color="primary"
                   />
                 </div>
               </div>
@@ -1165,7 +1170,10 @@ const Popup = () => {
                       Enable Tracking Notification
                     </div>
                   </div>
-                  <div style={{ alignSelf: 'normal' }}>
+                  <div
+                    className="custom-switch"
+                    style={{ alignSelf: 'normal' }}
+                  >
                     <Switch
                       checked={desktopNotification}
                       onChange={handleNotificationSetting}
@@ -1174,6 +1182,7 @@ const Popup = () => {
                       tooltip={
                         authenticated ? '' : 'Login to change the setting'
                       }
+                      color="primary"
                     />
                   </div>
                 </div>

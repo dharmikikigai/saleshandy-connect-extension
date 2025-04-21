@@ -69,8 +69,6 @@ const SingleProfile = ({ userMetaData }) => {
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
-  console.log('isCopied', isCopied);
-
   const fetchProspect = async () => {
     try {
       chrome.storage.local.get(['personInfo'], async (result) => {
@@ -1252,6 +1250,7 @@ const SingleProfile = ({ userMetaData }) => {
                           height: '16px',
                           alignItems: 'center',
                         }}
+                        onMouseLeave={() => setIsCopied(false)}
                       >
                         <img src={mail} alt="email" />
                         <span
@@ -1285,8 +1284,6 @@ const SingleProfile = ({ userMetaData }) => {
                               }}
                               onClick={() => handleEmailCopy(email?.email)}
                               data-tooltip-id="my-tooltip-copy"
-                              onMouseEnter={() => setIsCopied(true)}
-                              onMouseLeave={() => setIsCopied(false)}
                             >
                               <img src={copy} alt="copy" />
                             </div>
@@ -1351,6 +1348,7 @@ const SingleProfile = ({ userMetaData }) => {
                               alignItems: 'center',
                               gap: '8px',
                             }}
+                            onMouseLeave={() => setIsCopied(false)}
                           >
                             <span
                               style={{
@@ -1383,8 +1381,6 @@ const SingleProfile = ({ userMetaData }) => {
                                   handlePhoneNumberCopy(phone?.number)
                                 }
                                 data-tooltip-id="my-tooltip-copy"
-                                onMouseEnter={() => setIsCopied(true)}
-                                onMouseLeave={() => setIsCopied(false)}
                               >
                                 <img src={copy} alt="copy" />
                               </span>
@@ -1601,7 +1597,7 @@ const SingleProfile = ({ userMetaData }) => {
       <ReactTooltip
         id="my-tooltip-copy"
         place="bottom"
-        content="Copy"
+        content={isCopied ? 'Copied' : 'Copy'}
         opacity="1"
         style={{
           fontSize: '12px',

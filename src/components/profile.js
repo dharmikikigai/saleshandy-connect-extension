@@ -258,57 +258,49 @@ const Profile = () => {
             }}
           >
             <div
-              className="d-flex"
               style={{
+                display: 'flex',
+                alignItems: 'center',
                 width: '100%',
-                height: '32px',
+                padding: '0px 16px 12px 16px',
                 borderBottom: '1px solid #E5E7EB',
               }}
             >
               <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
-                  height: '20px',
-                  padding: '0px 16px',
-                }}
+                className="button-hover-effect"
+                onClick={handledBack}
+                style={{ cursor: 'pointer' }}
               >
-                <span
-                  className="button-hover-effect"
-                  onClick={handledBack}
-                  style={{ cursor: 'pointer' }}
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
+                  <path
+                    d="M0.165039 2.05469C0.165039 0.950118 1.06047 0.0546875 2.16504 0.0546875H14.165C15.2696 0.0546875 16.165 0.950118 16.165 2.05469V14.0547C16.165 15.1593 15.2696 16.0547 14.165 16.0547H2.16504C1.06047 16.0547 0.165039 15.1593 0.165039 14.0547V2.05469Z"
                     fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M0.832031 4.05545C0.832031 3.68726 1.13051 3.38878 1.4987 3.38878H10.832C11.2002 3.38878 11.4987 3.68726 11.4987 4.05545C11.4987 4.42364 11.2002 4.72211 10.832 4.72211H1.4987C1.13051 4.72211 0.832031 4.42364 0.832031 4.05545Z"
-                      fill="#6B7280"
-                    />
-                    <path
-                      fillRule-rule="evenodd"
-                      clipRule="evenodd"
-                      d="M1.02729 3.58404C1.28764 3.32369 1.70975 3.32369 1.9701 3.58404L4.63677 6.25071C4.89712 6.51106 4.89712 6.93317 4.63677 7.19352C4.37642 7.45387 3.95431 7.45387 3.69396 7.19352L1.02729 4.52685C0.766944 4.2665 0.766944 3.84439 1.02729 3.58404Z"
-                      fill="#6B7280"
-                    />
-                    <path
-                      style={{
-                        position: 'absolute',
-                      }}
-                      fill-fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M4.63677 0.919872C4.89712 1.18022 4.89712 1.60233 4.63677 1.86268L1.9701 4.52935C1.70975 4.7897 1.28764 4.7897 1.02729 4.52935C0.766944 4.269 0.766944 3.84689 1.02729 3.58654L3.69396 0.919871C3.95431 0.659522 4.37642 0.659522 4.63677 0.919872Z"
-                      fill="#6B7280"
-                    />
-                  </svg>
-                </span>
+                  />
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M2.83203 8.05545C2.83203 7.68726 3.13051 7.38878 3.4987 7.38878H12.832C13.2002 7.38878 13.4987 7.68726 13.4987 8.05545C13.4987 8.42364 13.2002 8.72211 12.832 8.72211H3.4987C3.13051 8.72211 2.83203 8.42364 2.83203 8.05545Z"
+                    fill="#6B7280"
+                  />
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M3.02729 7.58404C3.28764 7.32369 3.70975 7.32369 3.9701 7.58404L6.63677 10.2507C6.89712 10.5111 6.89712 10.9332 6.63677 11.1935C6.37642 11.4539 5.95431 11.4539 5.69396 11.1935L3.02729 8.52685C2.76694 8.2665 2.76694 7.84439 3.02729 7.58404Z"
+                    fill="#6B7280"
+                  />
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M6.63677 4.91987C6.89712 5.18022 6.89712 5.60233 6.63677 5.86268L3.9701 8.52935C3.70975 8.7897 3.28764 8.7897 3.02729 8.52935C2.76694 8.269 2.76694 7.84689 3.02729 7.58654L5.69396 4.91987C5.95431 4.65952 6.37642 4.65952 6.63677 4.91987Z"
+                    fill="#6B7280"
+                  />
+                </svg>
               </div>
             </div>
             {/* Profile Section */}
@@ -954,7 +946,7 @@ const Profile = () => {
                       Enable Email Tracker
                     </div>
                   </div>
-                  <div>
+                  <div className="custom-switch">
                     <Switch
                       checked={mailboxSetting}
                       onChange={handleTrackingSetting}
@@ -1091,7 +1083,7 @@ const Profile = () => {
                       Enable Tracking Notification
                     </div>
                   </div>
-                  <div>
+                  <div className="custom-switch">
                     <Switch
                       checked={desktopNotification}
                       onChange={handleNotificationSetting}

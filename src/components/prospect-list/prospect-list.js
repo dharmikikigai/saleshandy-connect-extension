@@ -148,7 +148,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
     isTagsModalForRevealedProspects,
     setIsTagsModalForRevealedProspects,
   ] = useState(false);
-  const [isCopyIconHover, setIsCopyIconHover] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
@@ -711,7 +711,8 @@ const ProspectList = ({ pageType, userMetaData }) => {
       navigator.clipboard
         .writeText(text)
         .then(() => {
-          console.log('text copied');
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000);
         })
         .catch((err) => {
           console.error('Failed to copy text: ', err);
@@ -722,7 +723,8 @@ const ProspectList = ({ pageType, userMetaData }) => {
           textArea.select();
           try {
             document.execCommand('copy');
-            console.log('text copied');
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
           } catch (fallbackErr) {
             console.error('Fallback: Oops, unable to copy', fallbackErr);
           }
@@ -1132,7 +1134,10 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
     if (prospect?.isRevealed && prospect?.emails?.length > 0) {
       return (
-        <div className="prospect-description-revealed">
+        <div
+          className="prospect-description-revealed"
+          onMouseLeave={() => setIsCopied(false)}
+        >
           <img src={mail} alt="email" />
           <span
             className="prospect-description-revealed-email"
@@ -1152,8 +1157,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
             className="copy-icon"
             onClick={() => copyToClipboard(prospect?.emails[0]?.email)}
             data-tooltip-id="my-tooltip-copy"
-            onMouseEnter={() => setIsCopyIconHover(true)}
-            onMouseLeave={() => setIsCopyIconHover(false)}
           >
             <img src={copy} alt="copy" />
           </div>
@@ -1186,7 +1189,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
       <div className="tooltip-container">
         <CustomButton
           variant={type === 'email' ? 'primary' : 'outline'}
-          className={type === 'email' ? 'action-button' : 'action-icon-button'}
+          className={
+            type === 'email'
+              ? 'action-button email'
+              : 'action-icon-button email-phone'
+          }
           onClick={() => handleViewContact(type)}
           disabled={shouldDisable}
         >
@@ -1213,7 +1220,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
   const getAddToSequenceButton = (isExpanded = false) => (
     <CustomButton
       variant="outline"
-      className={isExpanded ? 'action-button' : 'action-icon-button'}
+      className={isExpanded ? 'action-button sequence' : 'action-icon-button'}
       disabled={
         (selectedProspects.length === 0 && activeTab === 'leads') ||
         userMetaData?.isFreePlanUser ||
@@ -1545,6 +1552,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                   <div
                                     className="prospect-item-expanded-email"
                                     key={i}
+                                    onMouseLeave={() => setIsCopied(false)}
                                   >
                                     <img src={mail} alt="email" />
                                     <span
@@ -1565,12 +1573,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                       className="copy-icon"
                                       onClick={() => copyToClipboard(e.email)}
                                       data-tooltip-id="my-tooltip-copy"
-                                      onMouseEnter={() =>
-                                        setIsCopyIconHover(true)
-                                      }
-                                      onMouseLeave={() =>
-                                        setIsCopyIconHover(false)
-                                      }
                                     >
                                       <img src={copy} alt="copy" />
                                     </div>
@@ -1610,6 +1612,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
                               <div
                                 className="prospect-item-expanded-phone"
                                 key={phone.number}
+                                onMouseLeave={() => setIsCopied(false)}
                               >
                                 <img src={phoneSignal} alt="phone-signal" />
                                 {phone?.number?.includes('X') ? (
@@ -1628,12 +1631,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                         copyToClipboard(phone?.number)
                                       }
                                       data-tooltip-id="my-tooltip-copy"
-                                      onMouseEnter={() =>
-                                        setIsCopyIconHover(true)
-                                      }
-                                      onMouseLeave={() =>
-                                        setIsCopyIconHover(false)
-                                      }
                                     >
                                       <img src={copy} alt="copy" />
                                     </div>
@@ -1771,7 +1768,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
       <ReactTooltip
         id="my-tooltip-copy"
         place="bottom"
-        content={isCopyIconHover && 'Copy'}
+        content={isCopied ? 'Copied' : 'Copy'}
         opacity="1"
         style={{
           fontSize: '12px',
