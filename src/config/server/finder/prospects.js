@@ -61,6 +61,9 @@ class Prospects extends Server {
         .data;
     } catch (e) {
       console.log(URLs.bulkRevealProspects.error, e);
+      return {
+        error: e?.response?.data,
+      };
     }
   }
 
