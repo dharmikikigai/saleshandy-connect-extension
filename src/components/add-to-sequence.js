@@ -24,9 +24,8 @@ const customOptionSequenceName = (props) => {
 
   const fullLabel = data.label;
   const shouldShowTooltip = fullLabel.length > 25 || data.isAlreadyIn;
-  const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 25)}..`
-    : fullLabel;
+  const truncatedLabel =
+    fullLabel.length > 25 ? `${fullLabel.slice(0, 25)}..` : fullLabel;
 
   return (
     <>
@@ -465,13 +464,13 @@ const AddToSequence = ({
                       fontSize: '12px',
                       fontWeight: '500',
                       lineHeight: '16px',
-                      textAlign: 'center',
+                      textAlign: 'left',
                       borderRadius: '4px',
                       backgroundColor: '#1F2937',
                       padding: '8px',
                       zIndex: '99',
                       display: 'flex',
-                      width: '184px',
+                      maxWidth: '192px',
                       textWrap: 'wrap',
                       wordBreak: 'break-word',
                       overflowWrap: 'break-word',
@@ -593,13 +592,13 @@ const AddToSequence = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
                     display: 'flex',
-                    width: '184px',
+                    maxWidth: '192px',
                     textWrap: 'wrap',
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',
@@ -704,13 +703,13 @@ const AddToSequence = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
                     display: 'flex',
-                    width: '184px',
+                    maxWidth: '192px',
                     textWrap: 'wrap',
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',
@@ -859,7 +858,7 @@ const AddToSequence = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
@@ -879,7 +878,7 @@ const AddToSequence = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',

@@ -318,6 +318,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
         });
         setShowToaster(true);
       }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
+      }
     } catch (error) {
       console.error('Error in addToSequence:', error);
     }
@@ -337,6 +345,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
         setSelectedProspects([]);
         setDeSelectedProspects([]);
       }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
+      }
     } catch (error) {
       console.error('Error in bulkAddToSequence:', error);
     }
@@ -351,6 +367,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
           header: 'Tags applied successfully',
           body: response.message,
           type: 'success',
+        });
+        setShowToaster(true);
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
         });
         setShowToaster(true);
       }
@@ -373,6 +397,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
         setSavedAllSelected(false);
         setSelectedProspects([]);
         setDeSelectedProspects([]);
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
       }
     } catch (error) {
       console.error('Error in bulkAddTagsToRevealedProspects:', error);

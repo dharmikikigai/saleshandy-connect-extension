@@ -73,6 +73,9 @@ class Prospects extends Server {
       return (await this.req.post(URLs.revealProspect.path(), payload)).data;
     } catch (e) {
       console.log(URLs.revealProspect.error, e);
+      return {
+        error: e?.response?.data,
+      };
     }
   }
 
@@ -114,15 +117,9 @@ class Prospects extends Server {
       return (await this.req.post(URLs.saveTags.path(), payload)).data;
     } catch (e) {
       console.log(URLs.saveTags.error, e);
-    }
-  }
-
-  async saveTagsForBulkLeads(payload) {
-    try {
-      return (await this.req.post(URLs.saveTagsForBulkLeads.path(), payload))
-        .data;
-    } catch (e) {
-      console.log(URLs.saveTagsForBulkLeads.error, e);
+      return {
+        error: e?.response?.data,
+      };
     }
   }
 
@@ -131,6 +128,19 @@ class Prospects extends Server {
       return (await this.req.get(URLs.getSavedLeads.path(payload))).data;
     } catch (e) {
       console.log(URLs.getSavedLeads.error, e);
+    }
+  }
+
+  async singleAddToSequence(leadId, payload) {
+    try {
+      return (
+        await this.req.post(URLs.singleAddToSequence.path(leadId), payload)
+      ).data;
+    } catch (e) {
+      console.log(URLs.singleAddToSequence.error, e);
+      return {
+        error: e?.response?.data,
+      };
     }
   }
 
@@ -149,6 +159,9 @@ class Prospects extends Server {
       return (await this.req.post(URLs.bulkAddToSequence.path(), payload)).data;
     } catch (e) {
       console.log(URLs.bulkAddToSequence.error, e);
+      return {
+        error: e?.response?.data,
+      };
     }
   }
 
@@ -157,6 +170,9 @@ class Prospects extends Server {
       return (await this.req.post(URLs.bulkSaveTags.path(), payload)).data;
     } catch (e) {
       console.log(URLs.bulkSaveTags.error, e);
+      return {
+        error: e?.response?.data,
+      };
     }
   }
 }
