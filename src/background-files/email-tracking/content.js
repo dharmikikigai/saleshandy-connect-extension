@@ -18,7 +18,7 @@ function injectFloatingWindow() {
   modalDiv.src = chrome.runtime.getURL('frame.html');
   modalDiv.style.position = 'fixed';
   modalDiv.style.top = '50%';
-  modalDiv.style.right = '15px';
+  modalDiv.style.right = '12px';
   modalDiv.style.transform = 'translateY(-50%)';
   modalDiv.style.width = '332px';
   modalDiv.style.height = '686px';
