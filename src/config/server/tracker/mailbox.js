@@ -89,6 +89,7 @@ class Mailbox extends Server {
       return (await this.req.get(URLs.fetchMetaData.path())).data;
     } catch (e) {
       console.log(URLs.fetchMetaData.error, e);
+      return e?.response?.data;
     }
   }
 }

@@ -150,6 +150,8 @@ const ProspectList = ({ pageType, userMetaData }) => {
   ] = useState(false);
   const [isCopyIconHover, setIsCopyIconHover] = useState(false);
 
+  const leadFinderCredits = userMetaData?.leadFinderCredits;
+
   const setProspectsData = (data, rawData) => {
     try {
       if (
@@ -271,24 +273,33 @@ const ProspectList = ({ pageType, userMetaData }) => {
         payload,
       );
       if (bulkRevealRes) {
-        const { message, status, shouldPoll, title } = bulkRevealRes.payload;
-        if (status === 0) {
-          console.log('error', message);
-        } else if (status === 2) {
-          console.log('warning', message);
-        } else {
-          const newRevealingProspects = {
-            ...revealingProspects,
-            ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
-          };
-          setRevealingProspects(newRevealingProspects);
-          setIsPollingEnabled(shouldPoll);
+        if (bulkRevealRes.error) {
           setToasterData({
-            header: title || 'Lead reveal initiated',
-            body: message,
-            type: 'success',
+            header: 'Error',
+            body: bulkRevealRes?.error?.message,
+            type: 'danger',
           });
           setShowToaster(true);
+        } else {
+          const { message, status, shouldPoll, title } = bulkRevealRes.payload;
+          if (status === 0) {
+            console.log('error', message);
+          } else if (status === 2) {
+            console.log('warning', message);
+          } else {
+            const newRevealingProspects = {
+              ...revealingProspects,
+              ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+            };
+            setRevealingProspects(newRevealingProspects);
+            setIsPollingEnabled(shouldPoll);
+            setToasterData({
+              header: title || 'Lead reveal initiated',
+              body: message,
+              type: 'success',
+            });
+            setShowToaster(true);
+          }
         }
       }
     } catch (error) {
@@ -1133,7 +1144,12 @@ const ProspectList = ({ pageType, userMetaData }) => {
           (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
       );
     const shouldDisable =
-      selectedProspects.length === 0 || isAllRevealed || savedAllSelected;
+      selectedProspects.length === 0 ||
+      isAllRevealed ||
+      savedAllSelected ||
+      (leadFinderCredits < 1 * selectedProspects.length && type === 'email') ||
+      (leadFinderCredits < 2 * selectedProspects.length &&
+        type === 'emailphone');
     return (
       <div className="tooltip-container">
         <CustomButton

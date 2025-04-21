@@ -17,7 +17,7 @@ const handleClose = () => {
 
 const handleClick = () => {
   window.open(
-    'https://pyxis.lifeisgoodforlearner.com/settings/billing/subscriptions/lead-finder',
+    'https://pyxis.lifeisgoodforlearner.com/settings/billing/subscriptions/lead-finder#lead-finder-credit-plans',
     '_blank',
   );
 };
@@ -41,6 +41,26 @@ const Header = () => {
       }
     });
   };
+
+  useEffect(() => {
+    try {
+      const handleStorageChange = (changes) => {
+        if (changes.saleshandyMetaData) {
+          getLeadFinderCredits();
+        }
+      };
+
+      // Add listener for storage changes
+      chrome.storage.onChanged.addListener(handleStorageChange);
+
+      // Clean up listener on component unmount
+      return () => {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      };
+    } catch (error) {
+      console.error('Error in storage change useEffect:', error);
+    }
+  }, []);
 
   useEffect(() => {
     getLeadFinderCredits();
