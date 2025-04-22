@@ -111,7 +111,6 @@ const Main = () => {
 
       chrome.storage.local.get(['logoutTriggered'], (result) => {
         const logoutTriggered = result?.logoutTriggered;
-
         if (logoutTriggered && logoutTriggered === 'true') {
           setIsSaleshandyLoggedIn(false);
           checkFurther = false;
@@ -129,6 +128,8 @@ const Main = () => {
             setIsSaleshandyLoggedIn(false);
             setIsMetaDataLoaded(true);
           }
+        } else {
+          setIsMetaDataLoaded(true);
         }
       });
 
@@ -191,6 +192,33 @@ const Main = () => {
     });
   };
 
+  const removeUnwantedIds = () => {
+    const findOne = document.getElementById('common-screen-id');
+    if (findOne) {
+      findOne.style.display = 'none';
+    } else {
+      const findTwo = document.getElementById('common-search-id');
+      if (findTwo) {
+        findTwo.style.display = 'none';
+      } else {
+        const findThree = document.getElementById('prospect-list-container');
+        if (findThree) {
+          findThree.style.display = 'none';
+        } else {
+          const findFour = document.getElementById('single-profile-container');
+          if (findFour) {
+            findFour.style.display = 'none';
+          } else {
+            const findFive = document.getElementById('no-result-container');
+            if (findFive) {
+              findFive.style.display = 'none';
+            }
+          }
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     authCheck();
     pageCheck();
@@ -229,6 +257,7 @@ const Main = () => {
   ]);
 
   const renderContent = () => {
+    removeUnwantedIds();
     switch (currentView) {
       case VIEW_TYPES.LOADING:
         return <SingleProfileSkeleton />;
