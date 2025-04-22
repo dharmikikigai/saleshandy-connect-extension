@@ -28,7 +28,7 @@ const Popup = () => {
 
   const fetchSetting = () => {
     chrome.storage.local.get(['activeAllUrl'], async (result) => {
-      const activeUrl = result?.activeUrl;
+      const activeUrl = result?.activeAllUrl;
       if (activeUrl?.includes('mail.google.com')) {
         chrome.storage.local.get(['mailboxEmail'], async (request) => {
           if (request.mailboxEmail) {
@@ -111,7 +111,7 @@ const Popup = () => {
 
   const handleTrackingSetting = async () => {
     chrome.storage.local.get(['activeAllUrl'], async (result) => {
-      const activeUrl = result?.activeUrl;
+      const activeUrl = result?.activeAllUrl;
 
       if (activeUrl?.includes('mail.google.com')) {
         const trackingSetting = (
