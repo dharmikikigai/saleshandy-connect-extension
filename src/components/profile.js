@@ -31,28 +31,20 @@ const Profile = () => {
   };
 
   const removeUnwantedIds = () => {
-    const findOne = document.getElementById('common-screen-id');
-    if (findOne) {
-      findOne.style.display = 'none';
-    } else {
-      const findTwo = document.getElementById('common-search-id');
-      if (findTwo) {
-        findTwo.style.display = 'none';
-      } else {
-        const findThree = document.getElementById('prospect-list-container');
-        if (findThree) {
-          findThree.style.display = 'none';
-        } else {
-          const findFour = document.getElementById('single-profile-container');
-          if (findFour) {
-            findFour.style.display = 'none';
-          } else {
-            const findFive = document.getElementById('no-result-container');
-            if (findFive) {
-              findFive.style.display = 'none';
-            }
-          }
-        }
+    const ids = [
+      'common-screen-id',
+      'common-search-id',
+      'prospect-list-container',
+      'single-profile-container',
+      'no-result-container',
+      'no-prospect-container',
+      'rate-limit-container',
+    ];
+
+    for (const id of ids) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.style.display = 'none';
       }
     }
   };
