@@ -47,8 +47,8 @@ function injectBeaconOnLinkedInUrl() {
   beacon.style.position = 'fixed';
   beacon.style.top = '50%';
   beacon.style.right = '1px';
-  beacon.style.width = '40px';
-  beacon.style.height = '40px';
+  beacon.style.width = '50px';
+  beacon.style.height = '60px';
   beacon.style.backgroundImage = `url(chrome-extension://${chrome.runtime.id}/assets/icons/beacon.svg)`;
   beacon.style.backgroundSize = 'cover';
   beacon.style.cursor = 'pointer';
@@ -171,8 +171,7 @@ function openIframe() {
     closeButton.innerHTML = 'X';
     closeButton.style.position = 'absolute';
     closeButton.style.top = '10px';
-    closeButton.style.right = '10px';
-    closeButton.style.backgroundColor = 'red';
+    closeButton.style.right = '1px';
     closeButton.style.color = 'white';
     closeButton.style.border = 'none';
     closeButton.style.borderRadius = '50%';
