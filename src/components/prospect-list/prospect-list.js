@@ -71,7 +71,7 @@ const MAX_POLLING_LIMIT = 20;
 
 const ProspectList = ({ pageType, userMetaData }) => {
   const [isProspectsLoading, setIsProspectsLoading] = useState(false);
-  const [localProspects, setLocalProspects] = useState([]);
+  const [localProspects, setLocalProspects] = useState(new Set());
   const [prospects, setProspects] = useState([]);
   const [savedProspects, setSavedProspects] = useState([]);
   const [savedCount, setSavedCount] = useState(0);
@@ -152,55 +152,114 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
-  const setProspectsData = (data, rawData) => {
-    try {
-      if (
-        data.payload &&
-        data.payload.profiles &&
-        data.payload.profiles.length > 0
-      ) {
-        const prospectsData = rawData.map((item) => {
-          const prospect = data.payload.profiles.find(
-            (profile) =>
-              profile.linkedin_url ===
-              `https://www.linkedin.com/in/${item.source_id_2}`,
-          );
-          if (prospect) {
-            return {
-              ...prospect,
-              description: item.description,
-              logo: item.logo,
-            };
-          }
-          return item;
-        });
-        setProspects(prospectsData);
-      }
-    } catch (error) {
-      console.error('Error in setProspectsData:', error);
-    }
-  };
+  // Add a ref to track the latest localProspects state
+  const localProspectsRef = useRef(new Set());
+  const prospectsRef = useRef([]);
+
+  // Update the ref whenever localProspects changes
+  useEffect(() => {
+    localProspectsRef.current = localProspects;
+    prospectsRef.current = prospects;
+  }, [localProspects, prospects]);
 
   const fetchProspects = async () => {
     try {
       chrome.storage.local.get(['bulkInfo'], async (result) => {
         try {
           const bulkInfo = result?.bulkInfo?.people;
-          setLocalProspects(bulkInfo);
-          if (bulkInfo && bulkInfo.length > 0) {
-            const linkedinUrls = bulkInfo.map(
+          if (!bulkInfo) return;
+
+          // Use the ref to get the latest state of localProspects
+          const currentLocalProspects = localProspectsRef.current;
+          const currentProspects = prospectsRef.current;
+
+          // Filter out prospects that we've already fetched
+          const prospectsToFetch = bulkInfo.filter(
+            (item) => !currentLocalProspects.has(item.source_id_2),
+          );
+
+          if (prospectsToFetch.length > 0) {
+            setIsProspectsLoading(true);
+            const newLinkedinUrls = prospectsToFetch.map(
               (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
             );
-            setIsProspectsLoading(true);
+
             const payload = {
               start: 1,
-              take: linkedinUrls.length,
-              link: linkedinUrls,
+              take: newLinkedinUrls.length,
+              link: newLinkedinUrls,
             };
+
             const response = await prospectsInstance.getProspects(payload);
             if (response?.payload?.profiles) {
-              setProspectsData(response, bulkInfo);
+              // Create a new Set with all existing prospects plus the new ones
+              const updatedLocalProspects = new Set(currentLocalProspects);
+
+              // Add the newly fetched prospect IDs to the Set
+              prospectsToFetch.forEach((item) => {
+                updatedLocalProspects.add(item.source_id_2);
+              });
+
+              // Get the current prospects from state
+              const newProspects = [...currentProspects];
+
+              // Create a map of existing prospects by linkedin_url for quick lookup
+              const existingProspectsMap = new Map();
+              newProspects.forEach((prospect) => {
+                if (prospect.linkedin_url) {
+                  existingProspectsMap.set(prospect.linkedin_url, prospect);
+                }
+              });
+
+              // Process new prospects and merge with existing ones
+              response.payload.profiles.forEach((profile) => {
+                // Find matching local storage data
+                const localData = bulkInfo.find(
+                  (item) =>
+                    `https://www.linkedin.com/in/${item.source_id_2}` ===
+                    profile.linkedin_url,
+                );
+
+                // Merge API response with local storage data
+                const mergedProspect = {
+                  ...profile,
+                  description: localData?.description || profile.description,
+                  logo: localData?.logo || profile.logo,
+                  linkedin_url: localData?.linkedin_url || profile.linkedin_url,
+                };
+
+                // Update the map with the merged prospect
+                existingProspectsMap.set(profile.linkedin_url, mergedProspect);
+              });
+
+              // add the prospect that are not present in the response
+              prospectsToFetch.forEach((item) => {
+                if (
+                  !existingProspectsMap.has(
+                    `https://www.linkedin.com/in/${item.source_id_2}`,
+                  )
+                ) {
+                  const notPresentProspect = {
+                    ...item,
+                    linkedin_url: `https://www.linkedin.com/in/${item.source_id_2}`,
+                  };
+                  existingProspectsMap.set(
+                    `https://www.linkedin.com/in/${item.source_id_2}`,
+                    notPresentProspect,
+                  );
+                }
+              });
+
+              // Convert the map back to an array
+              const updatedProspects = Array.from(
+                existingProspectsMap.values(),
+              );
+
+              // Update prospects state and storage
+              setProspects(updatedProspects);
+              setLocalProspects(updatedLocalProspects);
             }
+
             if (response?.type === 'rate-limit') {
               setIsRateLimitReached(true);
             }
@@ -291,8 +350,12 @@ const ProspectList = ({ pageType, userMetaData }) => {
               ...revealingProspects,
               ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
             };
-            setRevealingProspects(newRevealingProspects);
-            setIsPollingEnabled(shouldPoll);
+            if (shouldPoll) {
+              setRevealingProspects(newRevealingProspects);
+              setIsPollingEnabled(true);
+            } else {
+              setIsPollingEnabled(false);
+            }
             setToasterData({
               header: title || 'Lead reveal initiated',
               body: message,
@@ -712,7 +775,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
         .writeText(text)
         .then(() => {
           setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
+          setTimeout(() => setIsCopied(false), 1000);
         })
         .catch((err) => {
           console.error('Failed to copy text: ', err);
@@ -724,7 +787,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
           try {
             document.execCommand('copy');
             setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
+            setTimeout(() => setIsCopied(false), 1000);
           } catch (fallbackErr) {
             console.error('Fallback: Oops, unable to copy', fallbackErr);
           }
@@ -1115,29 +1178,22 @@ const ProspectList = ({ pageType, userMetaData }) => {
           <span className="prospect-email-unavailable-text">
             Email unavailable
           </span>
-          <div className="tooltip-container">
-            <img src={alertCircle} alt="alert" />
-            {!prospect.id ? (
-              <div className="custom-tooltip tooltip-bottom">
-                Email is not available
-              </div>
-            ) : (
-              <div className="custom-tooltip tooltip-bottom">
-                Email is not available your
-                <br />
-                credit is refunded
-              </div>
-            )}
-          </div>
+          <img
+            src={alertCircle}
+            alt="alert"
+            data-tooltip-id="email-unavailable-tooltip"
+            data-tooltip-content={
+              !prospect.id
+                ? 'Email is not available'
+                : 'Email is not available your credit is refunded'
+            }
+          />
         </div>
       );
     }
     if (prospect?.isRevealed && prospect?.emails?.length > 0) {
       return (
-        <div
-          className="prospect-description-revealed"
-          onMouseLeave={() => setIsCopied(false)}
-        >
+        <div className="prospect-description-revealed">
           <img src={mail} alt="email" />
           <span
             className="prospect-description-revealed-email"
@@ -1378,7 +1434,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
       </div>
     );
   }
-  console.log('localProspects', localProspects);
+
   // actual ui
   return (
     <>
@@ -1552,7 +1608,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                   <div
                                     className="prospect-item-expanded-email"
                                     key={i}
-                                    onMouseLeave={() => setIsCopied(false)}
                                   >
                                     <img src={mail} alt="email" />
                                     <span
@@ -1612,7 +1667,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
                               <div
                                 className="prospect-item-expanded-phone"
                                 key={phone.number}
-                                onMouseLeave={() => setIsCopied(false)}
                               >
                                 <img src={phoneSignal} alt="phone-signal" />
                                 {phone?.number?.includes('X') ? (
@@ -1795,6 +1849,25 @@ const ProspectList = ({ pageType, userMetaData }) => {
           padding: '8px',
           display: 'flex',
           maxWidth: '184px',
+          textWrap: 'wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
+      />
+      <ReactTooltip
+        id="email-unavailable-tooltip"
+        place="bottom"
+        opacity="1"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          display: 'flex',
+          maxWidth: '167px',
           textWrap: 'wrap',
           wordBreak: 'break-word',
           overflowWrap: 'break-word',

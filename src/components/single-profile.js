@@ -140,6 +140,10 @@ const SingleProfile = ({ userMetaData }) => {
         } else {
           if (shouldPoll) {
             setIsPollingEnabled(true);
+          } else {
+            fetchProspect(prospect.linkedin_url);
+            setIsRevealing(false);
+            pollingAttemptsRef.current = 0;
           }
           setToasterData({
             header: title || 'Lead reveal initiated',
@@ -147,11 +151,6 @@ const SingleProfile = ({ userMetaData }) => {
             type: 'success',
           });
           setShowToaster(true);
-          console.log(
-            'success',
-            message ||
-              'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
-          );
         }
       }
       if (response?.error) {
@@ -443,7 +442,7 @@ const SingleProfile = ({ userMetaData }) => {
         .writeText(text)
         .then(() => {
           setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
+          setTimeout(() => setIsCopied(false), 1000);
         })
         .catch((err) => {
           console.error('Failed to copy text: ', err);
@@ -455,7 +454,7 @@ const SingleProfile = ({ userMetaData }) => {
           try {
             document.execCommand('copy');
             setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
+            setTimeout(() => setIsCopied(false), 1000);
           } catch (fallbackErr) {
             console.error('Fallback: Oops, unable to copy', fallbackErr);
           }
@@ -470,7 +469,7 @@ const SingleProfile = ({ userMetaData }) => {
         .writeText(text)
         .then(() => {
           setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
+          setTimeout(() => setIsCopied(false), 1000);
         })
         .catch((err) => {
           console.error('Failed to copy phone number: ', err);
@@ -482,7 +481,7 @@ const SingleProfile = ({ userMetaData }) => {
           try {
             document.execCommand('copy');
             setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
+            setTimeout(() => setIsCopied(false), 1000);
           } catch (fallbackErr) {
             console.error(
               'Fallback: Oops, unable to copy phone number',
@@ -1250,7 +1249,6 @@ const SingleProfile = ({ userMetaData }) => {
                           height: '16px',
                           alignItems: 'center',
                         }}
-                        onMouseLeave={() => setIsCopied(false)}
                       >
                         <img src={mail} alt="email" />
                         <span
@@ -1348,7 +1346,6 @@ const SingleProfile = ({ userMetaData }) => {
                               alignItems: 'center',
                               gap: '8px',
                             }}
-                            onMouseLeave={() => setIsCopied(false)}
                           >
                             <span
                               style={{
