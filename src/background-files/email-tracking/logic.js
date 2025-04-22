@@ -1766,7 +1766,7 @@ function mergeUniqueBy(arr1, arr2, key = 'source_id_2') {
 function BGActionDo(tab, tabId) {
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
-      console.log(request?.csrfToken, 'csrfToken');
+      console.log('csrfToken', request?.csrfToken);
       if (request.csrfToken) {
         const sourceId2 = findDescrP(tab.url, /in\/(.+?)(\/|$)/i);
         const apiUrl = `https://www.linkedin.com/voyager/api/identity/dash/profiles?q=memberIdentity&memberIdentity=${sourceId2}&decorationId=com.linkedin.voyager.dash.deco.identity.profile.FullProfileWithEntities-91`;
@@ -1775,7 +1775,6 @@ function BGActionDo(tab, tabId) {
           { method: 'getPersonData', tk: request.csrfToken, url: apiUrl },
           (response) => {
             if (!chrome.runtime.lastError) {
-              chrome.storage.local.set({ newData: true }, () => {});
               if (response && response.data) {
                 person = getUserInfo(JSON.parse(response.data));
               }
@@ -1788,7 +1787,7 @@ function BGActionDo(tab, tabId) {
                         { personInfo: person },
                         () => {},
                       );
-                      console.log('Person Info 1: ', person);
+                      console.log('[LinkedIn] Single View1:', person);
                       chrome.storage.local.set(
                         { companyLink: 'link is undefined' },
                         () => {},
@@ -1796,22 +1795,17 @@ function BGActionDo(tab, tabId) {
                     } else {
                       currentCompany(person.current[0], tabId);
                       retriveContactdata(sourceId2, tabId);
-                      chrome.storage.local.set(
-                        { personInfo: person },
-                        () => {},
-                      );
-                      console.log('Person Info 2: ', person);
+                      chrome.storage.local.set({ personInfo: person });
+                      console.log('[LinkedIn] Single View2:', person);
                     }
                   } else {
-                    chrome.storage.local.set({ personInfo: person }, () => {});
-                    console.log('Person Info 3: ', person);
+                    chrome.storage.local.set({ personInfo: person });
+                    console.log('[LinkedIn] Single View3:', person);
 
-                    chrome.storage.local.set({ companyLink: 'NA' }, () => {});
+                    chrome.storage.local.set({ companyLink: 'NA' });
                   }
                 }
               }
-            } else {
-              chrome.storage.local.set({ newData: false }, () => {});
             }
           },
         );
@@ -1820,7 +1814,6 @@ function BGActionDo(tab, tabId) {
   } else if (tab.url.toLowerCase().indexOf('/search/results/people') !== -1) {
     let tabUrl = tab.url;
     let urls = {};
-    console.log('Inside Result People');
     chrome.storage.local.get(
       [
         'csrfToken',
@@ -1864,20 +1857,29 @@ function BGActionDo(tab, tabId) {
                     if (isPre) {
                       try {
                         people = getPeople_pre(JSON.parse(response.data));
-                        console.log(people, 'People500');
+                        console.log(
+                          '[LinkedIn] Bulk View Pagination 1:',
+                          people,
+                        );
                       } catch (err) {
                         people = getPeople(response.data, false);
-                        console.log(people, 'People600');
+                        console.log(
+                          '[LinkedIn] Bulk View Pagination 2:',
+                          people,
+                        );
                       }
                     } else if (isGraph) {
                       people = getPeopleGraph(JSON.parse(response.data));
-                      console.log(people, 'People700');
+                      console.log('[LinkedIn] Bulk View Pagination 3:', people);
                     } else {
                       try {
                         people = getPeople_a(JSON.parse(response.data));
-                        console.log(people, 'People800');
+                        console.log(
+                          '[LinkedIn] Bulk View Pagination 4:',
+                          people,
+                        );
                       } catch (err) {
-                        console.log(err);
+                        console.log('[LinkedIn] Bulk View Pagination:', err);
                       }
                     }
                   }
@@ -1899,7 +1901,6 @@ function BGActionDo(tab, tabId) {
   } else if (tab.url.includes('/company/') && tab.url.includes('/people')) {
     let tabUrl = tab.url;
     let urls = {};
-    console.log(tabUrl, 'TabURl');
     chrome.storage.local.get(
       [
         'csrfToken',
@@ -1952,14 +1953,14 @@ function BGActionDo(tab, tabId) {
                       try {
                         people = getPeople_a(JSON.parse(response.data));
                       } catch (err) {
-                        console.log(err);
+                        console.log('[LinkedIn] Bulk View Company err:', err);
                       }
                     }
                   }
                 } else {
                   people = undefined;
                 }
-                console.log(people, 'People900');
+                console.log('[LinkedIn] Bulk View Company:', people);
                 if (people && people.length > 0) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
@@ -2059,7 +2060,7 @@ function BGActionDo(tab, tabId) {
                   }
                   personInfo.locality = person.locality;
                   personInfo.profile_image = person.logo;
-                  console.log(person, 'Person Info 5: ');
+                  console.log('[Sales Navigator] Single View:', person);
                   chrome.storage.local.set({ personInfo: person });
                 }
               },
@@ -2145,7 +2146,7 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  console.log(people, 'People1000');
+                  console.log('[Sales Navigator] Bulk View Filters', people);
 
                   // chrome.storage.local.set({ peopleInfo });
                 }
@@ -2156,132 +2157,89 @@ function BGActionDo(tab, tabId) {
       },
     );
   } else if (tab.url.toLowerCase().indexOf('/sales/lists/people') !== -1) {
-    chrome.tabs.sendMessage(
-      tabId,
-      {
-        method: 'getPersonData',
-        url: tab.url,
-      },
-      (response) => {
-        if (!chrome.runtime.lastError) {
-          if (response && response.data) {
-            response = response.data
-              .replace(/&quot;/gi, '"')
-              .replace(/&#92;/gi, '\\');
-          }
-          if (response) {
-            console.log(response, 'Response 1: ');
-            person = getUserInfoPS2(response);
-            console.log(person, 'Person Info 9: ');
-          }
-          if (person) {
-            let fnd = tab.url.match(/sales\/people\/(.+?),(.+?),(.+?)(\?|$)/i);
-            if (!fnd && tab.url.toLowerCase().indexOf('/lead/') !== -1) {
-              fnd = tab.url.match(/sales\/lead\/(.+?),(.+?),(.+?)(\?|$)/i);
-            }
-            if (person.name) {
-              if (person.current && person.current.length > 0) {
-                currentCompany(person.current[0], tabId);
-              }
-              chrome.tabs.sendMessage(tabId, {
-                method: 'getInnerHTML',
-              });
-            }
-            const personInfo = {};
-            personInfo.oldurl = tab.url;
-            personInfo.name = person.name;
-            if (person.source_id_2) {
-              personInfo.source_id_2 = person.source_id_2;
-            } else {
-              personInfo.source_id = person.source_id;
-            }
-            if (person.current && person.current.length > 0) {
-              personInfo.position = person.current[0].position;
-              personInfo.company_name = person.current[0].company_name;
-            }
-            personInfo.locality = person.locality;
-            personInfo.profile_image = person.logo;
-            console.log(personInfo, 'Person Info 7: ');
-            console.log(person, 'Person Info 6: ');
-
-            chrome.storage.local.set({ personInfo });
+    let tabUrl = tab.url;
+    let tabMethod = null;
+    let urls = {};
+    let params = '';
+    const currentPageNum = findDescrByRegEx(tab.url, /page=(\d+)&/i);
+    let currentPageIndex = parseInt(currentPageNum, 10) * 25;
+    currentPageIndex -= 25;
+    chrome.storage.local.get(
+      ['csrfToken', 'salesApiPeopleSearch_url'],
+      (request) => {
+        if (request.salesApiPeopleSearch_url) {
+          urls = JSON.parse(request.salesApiPeopleSearch_url);
+        }
+        if (urls[tabId]) {
+          tabUrl = urls[tabId].url;
+          tabMethod = urls[tabId].method;
+          if (
+            tabMethod === 'POST' ||
+            tabUrl === 'https://www.linkedin.com/sales-api/salesApiPeopleSearch'
+          ) {
+            const tempUrl = findDescrByRegEx(
+              tab.url,
+              /\/sales\/search\/people(.*)/i,
+            );
+            queryParams = getJsonFromUrl(tempUrl);
+            params = `q=searchQuery&query=${queryParams.query}&start=${
+              currentPageIndex || 0
+            }&count=25&trackingParam=(sessionId:${
+              queryParams.sessionId
+            })&decorationId=com.linkedin.sales.deco.desktop.searchv2.LeadSearchResult-7`;
           } else {
-            chrome.storage.local.get(['csrfToken'], (request) => {
-              if (request.csrfToken) {
-                let fnd = tab.url.match(
-                  /sales\/people\/(.+?),(.+?),(.+?)(\?|$)/i,
-                );
-                if (!fnd && tab.url.toLowerCase().indexOf('/lead/') !== -1) {
-                  fnd = tab.url.match(/sales\/lead\/(.+?),(.+?),(.+?)(\?|$)/i);
+            const currentApiIndex = parseInt(
+              findDescrByRegEx(tabUrl, /&start=(\d+)&count=/i),
+              10,
+            );
+            if (
+              currentPageIndex &&
+              currentApiIndex > -1 &&
+              currentPageIndex !== currentApiIndex
+            ) {
+              tabUrl = tabUrl.replace(
+                `&start=${currentApiIndex}`,
+                `&start=${currentPageIndex}`,
+              );
+            } else if (
+              currentApiIndex &&
+              !currentPageIndex &&
+              currentPageIndex !== 0
+            ) {
+              tabUrl = tabUrl.replace(`&start=${currentApiIndex}`, '&start=0');
+            }
+          }
+        }
+        if (request.csrfToken) {
+          chrome.tabs.sendMessage(
+            tabId,
+            {
+              method: 'getPersonData',
+              tk: request.csrfToken,
+              url: tabUrl,
+              request_method: tabMethod,
+              params,
+            },
+            (response) => {
+              if (!chrome.runtime.lastError) {
+                if (response) {
+                  if (response && response.data) {
+                    people = getPeopleSSP(JSON.parse(response.data));
+                  }
+                } else {
+                  people = undefined;
                 }
-                if (fnd && fnd.length > 3) {
-                  let authToken;
-                  let profileId;
-                  for (let iNo = 1; iNo < 4; iNo++) {
-                    if (fnd[iNo].length < 11) {
-                      authToken = fnd[iNo];
-                    }
-                    if (fnd[iNo].length > 11) {
-                      profileId = fnd[iNo];
-                    }
-                  }
-                  if (profileId && authToken) {
-                    let newUrl =
-                      'https://www.linkedin.com/sales-api/salesApiProfiles/(';
-                    newUrl += `profileId:${profileId},authType:NAME_SEARCH,authToken:${authToken})`;
-                    newUrl +=
-                      '?decoration=%28entityUrn%2CobjectUrn%2CpictureInfo%2CprofilePictureDisplayImage%2CfirstName%2ClastName%2CfullName%2Cheadline%2CmemberBadges%2Cdegree%2CprofileUnlockInfo%2Clocation%2ClistCount%2Cindustry%2CnumOfConnections%2CinmailRestriction%2CsavedLead%2CdefaultPosition%2CcontactInfo%2Csummary%2CcrmStatus%2CpendingInvitation%2Cunlocked%2CrelatedColleagueCompanyId%2CnumOfSharedConnections%2CshowTotalConnectionsPage%2CblockThirdPartyDataSharing%2CconnectedTime%2CnoteCount%2CflagshipProfileUrl%2CfullNamePronunciationAudio%2Cmemorialized%2CfullNamePronunciationAudio%2Cpositions*%2Ceducations*%29';
+                if (people && people.length > 0) {
+                  const peopleInfo = {};
+                  peopleInfo.oldurl = tab.url;
+                  peopleInfo.people = people;
+                  console.log('[Sales Navigator] Bulk View List', people);
 
-                    chrome.tabs.sendMessage(
-                      tabId,
-                      {
-                        method: 'getPersonData',
-                        tk: request.csrfToken,
-                        url: newUrl,
-                      },
-                      (response1) => {
-                        if (response1 && response1.data) {
-                          person = getUserInfoPS2(JSON.parse(response1.data));
-                        }
-                        if (person) {
-                          csrfToken = true;
-                          if (person.name) {
-                            if (person.current && person.current.length > 0) {
-                              currentCompany(person.current[0], tabId);
-                            }
-                            chrome.tabs.sendMessage(tabId, {
-                              method: 'getInnerHTML',
-                            });
-                          }
-                          const personInfo = {};
-                          personInfo.oldurl = tab.url;
-                          personInfo.name = person.name;
-                          if (person.source_id_2) {
-                            personInfo.source_id_2 = person.source_id_2;
-                          } else {
-                            personInfo.source_id = person.source_id;
-                          }
-                          if (person.current && person.current.length > 0) {
-                            personInfo.position = person.current[0].position;
-                            personInfo.company_name =
-                              person.current[0].company_name;
-                          }
-                          personInfo.locality = person.locality;
-                          personInfo.profile_image = person.logo;
-                          console.log(personInfo, '10001');
-                          console.log(person, '10002');
-
-                          chrome.storage.local.set({
-                            personInfo,
-                          });
-                        }
-                      },
-                    );
-                  }
+                  // chrome.storage.local.set({ peopleInfo });
                 }
               }
-            });
-          }
+            },
+          );
         }
       },
     );
@@ -2318,6 +2276,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
           chrome.storage.local.set({
             csrfToken: details.requestHeaders[iNo].value,
           });
+          console.log('csrfToken', details.requestHeaders[iNo].value);
           const localSv = [
             'salesApiPeopleSearch_url',
             'salesApiCompanySearch_url',
@@ -2401,7 +2360,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
               details.url.includes('voyager/api/graphql') &&
               details.url.includes('lazyLoadedActionsUrns')
             ) {
-              console.log();
               chrome.tabs.query(
                 { active: true, currentWindow: true },
                 (tabs) => {
