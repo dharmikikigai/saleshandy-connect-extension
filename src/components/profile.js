@@ -1124,9 +1124,7 @@ const Profile = () => {
                   // style={{ position: 'absolute', top: '627px', left: '145px' }}
                   style={{ cursor: 'pointer' }}
                   onClick={() => {
-                    handleClick(
-                      'https://pyxis.lifeisgoodforlearner.com/leads#people',
-                    );
+                    handleClick('https://www.youtube.com/watch?v=m55aDMo6nTA');
                   }}
                 >
                   <svg
