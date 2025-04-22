@@ -644,7 +644,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
           selectedProspects.includes(prospect.id) &&
           ((type === 'email' && !prospect.isRevealed) ||
             (type === 'emailphone' &&
-              ((prospect.isRevealed && prospect.reReveal) ||
+              ((prospect.isRevealed && prospect?.phones?.length > 0) ||
                 !prospect.isRevealed))),
       )
       .map((prospect) => prospect.id);
@@ -1234,7 +1234,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
       .every(
         (prospect) =>
           (type === 'email' && prospect.isRevealed) ||
-          (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
+          (type === 'emailphone' &&
+            prospect.isRevealed &&
+            prospect.phones.length === 0),
       );
     const shouldDisable =
       selectedProspects.length === 0 ||

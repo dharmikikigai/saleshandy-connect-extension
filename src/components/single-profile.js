@@ -1191,7 +1191,9 @@ const SingleProfile = ({ userMetaData }) => {
                               isRevealing ||
                               isPollingEnabled ||
                               btnLoadingStatus.addToSequence ||
-                              leadFinderCredits < 2
+                              leadFinderCredits < 2 ||
+                              (singleProfile.isRevealed &&
+                                singleProfile?.phones?.length === 0)
                             }
                             onClick={handleViewEmailPhoneAndFindPhoneBtn}
                           >
