@@ -199,9 +199,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
               prospectsToFetch.forEach((item) => {
                 updatedLocalProspects.add(item.source_id_2);
               });
-
+              let newProspects = [];
               // Get the current prospects from state
-              const newProspects = [...currentProspects];
+              if (pageType === 'continuous') {
+                newProspects = [...currentProspects];
+              }
 
               // Create a map of existing prospects by linkedin_url for quick lookup
               const existingProspectsMap = new Map();
