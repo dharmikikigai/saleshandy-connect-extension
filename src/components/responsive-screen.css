@@ -25,7 +25,7 @@
 
 @media (min-height: 741.6px) and (max-height: 1158.75px) {
   .single-profile-container {
-    max-height: 686px;
+    max-height: 780px;
     overflow-y: auto;
   }
   .single-profile-container::-webkit-scrollbar {
