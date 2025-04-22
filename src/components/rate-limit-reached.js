@@ -5,7 +5,7 @@ const RateLimitReached = () => (
   <>
     <Header />
     <div
-      className="no-result-container"
+      className="rate-limit-container"
       style={{
         width: '100%',
         height: '100%',

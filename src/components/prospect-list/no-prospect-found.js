@@ -2,7 +2,7 @@ import React from 'react';
 
 const NoProspectFound = () => (
   <div
-    className="no-result-container"
+    className="no-prospect-container"
     style={{
       width: '100%',
       height: '100%',
