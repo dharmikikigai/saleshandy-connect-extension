@@ -1,0 +1,6 @@
+.popup-platform-item:hover {
+  background-color: #f9fafb;
+}
+.custom-switch .switchToggle input:checked + label {
+  background: #1D4ED8 !important;
+}

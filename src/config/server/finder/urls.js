@@ -91,12 +91,6 @@ export default {
     error: 'Error in saving the tags',
   },
 
-  saveTagsForBulkLeads: {
-    type: REQUEST_TYPES.POST,
-    path: () => 'lead-finder/tag/bulk-assign',
-    error: 'Error in saving the tags',
-  },
-
   getSavedLeads: {
     type: REQUEST_TYPES.GET,
     path: ({ start, take, tags, createdDate }) => {
@@ -111,6 +105,12 @@ export default {
       return path;
     },
     error: 'Error in getting the saved leads',
+  },
+
+  singleAddToSequence: {
+    type: REQUEST_TYPES.POST,
+    path: (leadId) => `lead-finder/leads/add-to-sequence/${leadId}`,
+    error: 'Error in adding the lead to the sequence',
   },
 
   addToSequence: {

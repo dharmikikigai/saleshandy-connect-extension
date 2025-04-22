@@ -65,10 +65,9 @@ const SingleProfile = ({ userMetaData }) => {
   });
   const [isRateLimitReached, setIsRateLimitReached] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const sequencesProcessedRef = useRef(false);
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
-
-  console.log('isCopied', isCopied);
 
   const fetchProspect = async () => {
     try {
@@ -132,7 +131,7 @@ const SingleProfile = ({ userMetaData }) => {
 
       const response = await prospectsInstance.revealProspect(payload);
 
-      if (response) {
+      if (response?.payload) {
         const { message, status, shouldPoll, title } = response.payload;
         if (status === 0) {
           console.log('error', message);
@@ -154,6 +153,14 @@ const SingleProfile = ({ userMetaData }) => {
               'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
           );
         }
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
       }
     } catch (err) {
       console.error('Error revealing prospect:', err);
@@ -323,6 +330,8 @@ const SingleProfile = ({ userMetaData }) => {
         }
         setClientSequences(customSequenceOptions);
       } else {
+        setClientSequences([]);
+        setSelectedSequence(null);
         console.log(
           'No sequences found or empty response, using fallback sequences',
         );
@@ -339,13 +348,15 @@ const SingleProfile = ({ userMetaData }) => {
 
       if (prospect.isRevealed) {
         payload = {
-          leadIds: [prospect.id],
           sequenceId: data.sequenceId,
           stepId: data.stepId,
           tagIds: data.tagIds,
           newTags: data.newTags,
         };
-        response = await prospectsInstance.addToSequence(payload);
+        response = await prospectsInstance.singleAddToSequence(
+          prospect.id,
+          payload,
+        );
       } else {
         payload = {
           leadId: prospect.id,
@@ -358,7 +369,7 @@ const SingleProfile = ({ userMetaData }) => {
         response = await prospectsInstance.revealProspect(payload);
       }
 
-      if (response) {
+      if (response?.payload) {
         const { message, status, shouldPoll, title } = response.payload;
         if (status === 0) {
           console.log('error', message);
@@ -370,11 +381,19 @@ const SingleProfile = ({ userMetaData }) => {
           }
           setToasterData({
             header: title || 'Add to Sequence Initiated',
-            body: message,
+            body: message || 'Lead will be added to Sequence.',
             type: 'success',
           });
           setShowToaster(true);
         }
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
       }
     } catch (err) {
       console.error('Error revealing prospect:', err);
@@ -516,7 +535,22 @@ const SingleProfile = ({ userMetaData }) => {
         newTags,
       };
       const response = await prospectsInstance.saveTags(payload);
-      console.log('success', response);
+      if (response?.message) {
+        setToasterData({
+          header: 'Tags applied successfully',
+          body: response?.message,
+          type: 'success',
+        });
+        setShowToaster(true);
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
+      }
     } catch (err) {
       console.error('Error saving tags:', err);
     } finally {
@@ -539,6 +573,52 @@ const SingleProfile = ({ userMetaData }) => {
       fetchAgencyClients();
     }
   }, [userMetaData]);
+
+  useEffect(() => {
+    if (prospect?.sequences?.length > 0 && !sequencesProcessedRef.current) {
+      if (sequenceOptions?.length > 0) {
+        const newSequenceOptions = sequenceOptions.map((sequence) => {
+          if (sequence?.options?.length > 0) {
+            const newRecentOptions = sequence?.options?.map((option) => {
+              const isAlreadyIn = prospect?.sequences?.find(
+                (s) => s.sequenceId === option.value,
+              );
+              return { ...option, isAlreadyIn: !!isAlreadyIn };
+            });
+            return { ...sequence, options: newRecentOptions };
+          }
+
+          const isAlreadyIn = prospect?.sequences?.find(
+            (s) => s.sequenceId === sequence.value,
+          );
+          return { ...sequence, isAlreadyIn: !!isAlreadyIn };
+        });
+        setSequenceOptions(newSequenceOptions);
+      }
+
+      if (clientSequences?.length > 0) {
+        const newClientSequences = clientSequences.map((sequence) => {
+          if (sequence?.options?.length > 0) {
+            const newRecentOptions = sequence?.options?.map((option) => {
+              const isAlreadyIn = prospect?.sequences?.find(
+                (s) => s.sequenceId === option.value,
+              );
+              return { ...option, isAlreadyIn: !!isAlreadyIn };
+            });
+            return { ...sequence, options: newRecentOptions };
+          }
+
+          const isAlreadyIn = prospect?.sequences?.find(
+            (s) => s.sequenceId === sequence.value,
+          );
+          return { ...sequence, isAlreadyIn: !!isAlreadyIn };
+        });
+        setClientSequences(newClientSequences);
+      }
+
+      sequencesProcessedRef.current = true;
+    }
+  }, [prospect]);
 
   useEffect(() => {
     try {
@@ -1170,6 +1250,7 @@ const SingleProfile = ({ userMetaData }) => {
                           height: '16px',
                           alignItems: 'center',
                         }}
+                        onMouseLeave={() => setIsCopied(false)}
                       >
                         <img src={mail} alt="email" />
                         <span
@@ -1203,8 +1284,6 @@ const SingleProfile = ({ userMetaData }) => {
                               }}
                               onClick={() => handleEmailCopy(email?.email)}
                               data-tooltip-id="my-tooltip-copy"
-                              onMouseEnter={() => setIsCopied(true)}
-                              onMouseLeave={() => setIsCopied(false)}
                             >
                               <img src={copy} alt="copy" />
                             </div>
@@ -1269,6 +1348,7 @@ const SingleProfile = ({ userMetaData }) => {
                               alignItems: 'center',
                               gap: '8px',
                             }}
+                            onMouseLeave={() => setIsCopied(false)}
                           >
                             <span
                               style={{
@@ -1301,8 +1381,6 @@ const SingleProfile = ({ userMetaData }) => {
                                   handlePhoneNumberCopy(phone?.number)
                                 }
                                 data-tooltip-id="my-tooltip-copy"
-                                onMouseEnter={() => setIsCopied(true)}
-                                onMouseLeave={() => setIsCopied(false)}
                               >
                                 <img src={copy} alt="copy" />
                               </span>
@@ -1519,7 +1597,7 @@ const SingleProfile = ({ userMetaData }) => {
       <ReactTooltip
         id="my-tooltip-copy"
         place="bottom"
-        content="Copy"
+        content={isCopied ? 'Copied' : 'Copy'}
         opacity="1"
         style={{
           fontSize: '12px',
