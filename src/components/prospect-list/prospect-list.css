@@ -308,14 +308,14 @@ input[type='checkbox'] {
 }
 
 .prospect-list-items-container {
-  height: 78vh;
+  height: 80vh;
   overflow-y: auto;
   padding-top: 4px;
 }
 
 .prospect-list-items-container-skeleton {
   overflow: hidden;
-  height: 525px;
+  height: 80vh;
 }
 
 /* Webkit */

@@ -1,5 +1,7 @@
+/* eslint-disable react/destructuring-assignment */
 import React, { useEffect, useState } from 'react';
-import Select from 'react-select';
+import Select, { components } from 'react-select';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { DateTime } from 'luxon';
 import DatePicker from 'react-datepicker';
 import moment from 'moment-timezone';
@@ -7,10 +9,38 @@ import { CustomButton } from './add-tags';
 import cross from '../../assets/icons/cross.svg';
 import ChevronLeft from '../../assets/icons/chevronLeft.svg';
 import ChevronRight from '../../assets/icons/chevronRight.svg';
+import ChevronDown from '../../assets/icons/chevronDown.svg';
 import prospectsInstance from '../../config/server/finder/prospects';
 import 'react-datepicker/dist/react-datepicker.css';
 
 export const getCurrentTimeInUTC = () => DateTime.local();
+
+const CustomOption = (props) => {
+  const fullLabel = props.label;
+  const shouldShowTooltip = fullLabel.length > 25;
+  const truncatedLabel = shouldShowTooltip
+    ? `${fullLabel.slice(0, 25)}..`
+    : fullLabel;
+
+  return (
+    <div
+      {...(shouldShowTooltip && {
+        'data-tooltip-id': 'step-option-tooltip',
+        'data-tooltip-content': fullLabel,
+      })}
+    >
+      <components.Option {...props} innerProps={{ ...props.innerProps }}>
+        {truncatedLabel}
+      </components.Option>
+    </div>
+  );
+};
+
+const DropdownIndicator = (props) => (
+  <components.DropdownIndicator {...props}>
+    <img src={ChevronDown} alt="down-chevron" />
+  </components.DropdownIndicator>
+);
 
 export const DateFilter = {
   TODAY: 'Today',
@@ -149,6 +179,10 @@ const ProspectFilterModal = ({
               value={selectedTags}
               onChange={setSelectedTags}
               placeholder="Select Tags"
+              components={{
+                Option: CustomOption,
+                DropdownIndicator,
+              }}
               styles={{
                 control: (base, state) => ({
                   ...base,
@@ -163,9 +197,9 @@ const ProspectFilterModal = ({
                     borderColor: 'none',
                   },
                   cursor: 'pointer',
-                  height: '32px',
                   minHeight: '32px',
                   flexWrap: 'no-wrap',
+                  backgroundColor: '#F9FAFB',
                 }),
                 indicatorSeparator: (base) => ({
                   ...base,
@@ -233,6 +267,26 @@ const ProspectFilterModal = ({
                 }),
               }}
             />
+            <ReactTooltip
+              id="step-option-tooltip"
+              place="bottom"
+              opacity="1"
+              style={{
+                fontSize: '12px',
+                fontWeight: '500',
+                lineHeight: '16px',
+                textAlign: 'left',
+                borderRadius: '4px',
+                backgroundColor: '#1F2937',
+                padding: '8px',
+                zIndex: '99',
+                display: 'flex',
+                maxWidth: '184px',
+                textWrap: 'wrap',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            />
           </div>
           <div className="prospect-filter date-filter">
             <span>Date</span>
@@ -251,6 +305,10 @@ const ProspectFilterModal = ({
                   setShowCustomDateInput(false);
                 }
               }}
+              components={{
+                Option: CustomOption,
+                DropdownIndicator,
+              }}
               placeholder="Select"
               styles={{
                 control: (base, state) => ({
@@ -268,6 +326,7 @@ const ProspectFilterModal = ({
                   cursor: 'pointer',
                   minHeight: '32px',
                   flexWrap: 'no-wrap',
+                  backgroundColor: '#F9FAFB',
                 }),
                 indicatorSeparator: (base) => ({
                   ...base,
@@ -375,6 +434,26 @@ const ProspectFilterModal = ({
                 )}
               />
             )}
+            <ReactTooltip
+              id="step-option-tooltip"
+              place="bottom"
+              opacity="1"
+              style={{
+                fontSize: '12px',
+                fontWeight: '500',
+                lineHeight: '16px',
+                textAlign: 'left',
+                borderRadius: '4px',
+                backgroundColor: '#1F2937',
+                padding: '8px',
+                zIndex: '99',
+                display: 'flex',
+                maxWidth: '184px',
+                textWrap: 'wrap',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            />
           </div>
         </div>
 
