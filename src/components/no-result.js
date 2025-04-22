@@ -9,8 +9,8 @@ const NoResult = () => (
       className="no-result-container"
       style={{
         width: '100%',
-        height: '100%',
-        padding: '0px 0px 16px 0px',
+        height: '732px',
+        padding: '0px 0px 48px 0px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -23,7 +23,6 @@ const NoResult = () => (
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '153px 42px',
         }}
       >
         <div

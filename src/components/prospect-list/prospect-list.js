@@ -1116,7 +1116,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   const getProspectListItemsSkeleton = () => (
     <div className="prospect-list-items-container prospect-list-items-container-skeleton">
-      {Array.from({ length: 8 }).map((_, index) => (
+      {Array.from({ length: 10 }).map((_, index) => (
         <div className="prospect-item" key={index}>
           <SkeletonLoading width={16} height={16} borderRadius={2} />
           <div className="prospect-item-info">

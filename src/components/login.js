@@ -48,15 +48,13 @@ const Login = () => {
                 'var(--blue-gra, linear-gradient(246deg, #DCE1FE 3.34%, #EFF2FE 87.55%))',
               height: '780px',
               width: '332px',
-              padding: '16px 0px 163.21px 0px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '131.211px',
             }}
           >
             <div
               style={{
-                padding: '0px 16px',
+                padding: '16px 16px 0px 16px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -80,6 +78,7 @@ const Login = () => {
                 justifyContent: 'center',
                 alignItems: 'center',
                 width: '100%',
+                flex: 1,
               }}
             >
               <Container
