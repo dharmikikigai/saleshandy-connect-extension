@@ -1,4 +1,5 @@
 const FLOATING_WINDOW_ID = 'saleshandy-iframe';
+const BEACON_ID = 'saleshandy-beacon';
 
 function reloadIframe() {
   const iframe = document.getElementById(FLOATING_WINDOW_ID);
@@ -11,6 +12,12 @@ function injectFloatingWindow() {
   const existingModal = document.getElementById(FLOATING_WINDOW_ID);
   if (existingModal) {
     return;
+  }
+
+  const beaconModal = document.getElementById(BEACON_ID);
+
+  if (beaconModal) {
+    beaconModal.remove();
   }
 
   const modalDiv = document.createElement('iframe');
@@ -37,8 +44,10 @@ function injectFloatingWindow() {
 }
 
 function injectBeaconOnLinkedInUrl() {
-  const existingModal = document.getElementById('saleshandy-beacon');
-  if (existingModal) {
+  const existingModal = document.getElementById(BEACON_ID);
+  const iframeModal = document.getElementById(FLOATING_WINDOW_ID);
+
+  if (existingModal || iframeModal) {
     return;
   }
 
@@ -223,7 +232,8 @@ function closeDiv() {
     // Wait for the transition to complete before removing the element
     setTimeout(() => {
       element.remove();
-    }, 500); // Timeout should match the duration of the CSS transition (500ms)
+      injectBeaconOnLinkedInUrl();
+    }, 100); // Timeout should match the duration of the CSS transition (500ms)
   }
 }
 
