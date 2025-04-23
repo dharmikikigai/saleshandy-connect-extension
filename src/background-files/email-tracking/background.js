@@ -469,3 +469,14 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.runtime.setUninstallURL(
   'https://docs.google.com/forms/d/e/1FAIpQLScQKIzS-dmruh9lu0KkgnnV6-__rdaSMDafzqdEIsb7AXdC8w/viewform',
 );
+
+chrome.cookies.onChanged.addListener((changeInfo) => {
+  const c = changeInfo.cookie;
+  if (
+    c.domain === 'pyxis.lifeisgoodforlearner.com' &&
+    c.name === 'token' &&
+    !changeInfo.removed
+  ) {
+    gmailReloadAfterUpdate();
+  }
+});
