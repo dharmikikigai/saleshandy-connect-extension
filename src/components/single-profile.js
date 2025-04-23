@@ -1193,7 +1193,7 @@ const SingleProfile = ({ userMetaData }) => {
                               btnLoadingStatus.addToSequence ||
                               leadFinderCredits < 2 ||
                               (singleProfile.isRevealed &&
-                                singleProfile?.phones?.length === 0)
+                                singleProfile?.teaser?.phones?.length === 0)
                             }
                             onClick={handleViewEmailPhoneAndFindPhoneBtn}
                           >
@@ -1240,57 +1240,86 @@ const SingleProfile = ({ userMetaData }) => {
                   }}
                 >
                   {/* Emails */}
-                  {singleProfile?.emails?.length > 0 &&
-                    singleProfile?.emails?.map((email) => (
-                      <div
-                        key={email?.email}
-                        className="email prospect-item-expanded-email"
-                        style={{
-                          display: 'flex',
-                          gap: '8px',
-                          height: '16px',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <img src={mail} alt="email" />
-                        <span
+
+                  {singleProfile?.isRevealed
+                    ? singleProfile?.emails?.length > 0 &&
+                      singleProfile?.emails?.map((email) => (
+                        <div
+                          key={email?.email}
+                          className="email prospect-item-expanded-email"
                           style={{
-                            color: '#1f2937',
-                            fontSize: '14px',
-                            fontWeight: '400',
-                            lineHeight: '16px',
+                            display: 'flex',
+                            gap: '8px',
+                            height: '16px',
+                            alignItems: 'center',
                           }}
                         >
-                          {email?.email ? (
-                            <span>
-                              <span>{email?.email || null}</span>
-                            </span>
-                          ) : (
-                            <>
-                              <span>
-                                &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                              </span>
-                              @{email}
-                            </>
-                          )}
-                        </span>
-                        {singleProfile.isRevealed === true && (
-                          <>
-                            <img src={circleCheck} alt="check-circle" />
-                            <div
-                              className="copy-icon"
-                              style={{
-                                cursor: 'pointer',
-                              }}
-                              onClick={() => handleEmailCopy(email?.email)}
-                              data-tooltip-id="my-tooltip-copy"
+                          <img src={mail} alt="email" />
+                          <span
+                            style={{
+                              color: '#1f2937',
+                              fontSize: '14px',
+                              fontWeight: '400',
+                              lineHeight: '16px',
+                            }}
+                          >
+                            <span
+                              data-tooltip-id={
+                                email?.email?.length > 23
+                                  ? 'prospect-data-tooltip'
+                                  : null
+                              }
+                              data-tooltip-content={email?.email}
                             >
-                              <img src={copy} alt="copy" />
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
+                              <span>
+                                {(email?.email?.length > 23
+                                  ? `${email?.email?.slice(0, 23)}..`
+                                  : email?.email) || null}
+                              </span>
+                            </span>
+                          </span>
+                          <img src={circleCheck} alt="check-circle" />
+                          <div
+                            className="copy-icon"
+                            style={{
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => handleEmailCopy(email?.email)}
+                            data-tooltip-id="my-tooltip-copy"
+                          >
+                            <img src={copy} alt="copy" />
+                          </div>
+                        </div>
+                      ))
+                    : singleProfile?.teaser?.emails?.length > 0 &&
+                      singleProfile?.teaser?.emails?.map((email) => (
+                        <div
+                          key={email}
+                          className="email prospect-item-expanded-email"
+                          style={{
+                            display: 'flex',
+                            gap: '8px',
+                            height: '16px',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <img src={mail} alt="email" />
+                          <span
+                            style={{
+                              color: '#1f2937',
+                              fontSize: '14px',
+                              fontWeight: '400',
+                              lineHeight: '16px',
+                            }}
+                          >
+                            <span>
+                              &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                            </span>
+                            @{email}
+                          </span>
+                        </div>
+                      ))}
+                  {/* email unavailable */}
                   {singleProfile?.isRevealed &&
                     singleProfile?.emails?.length === 0 && (
                       <div className="prospect-email-unavailable">
@@ -1320,57 +1349,48 @@ const SingleProfile = ({ userMetaData }) => {
                     )}
 
                   {/* PhoneNumber */}
-                  {singleProfile?.phones?.length > 0 &&
-                    singleProfile?.phones?.map((phone, phoneIndex) => (
-                      <div
-                        key={phone?.number}
-                        className="phone1"
-                        style={{
-                          display: 'flex',
-                          gap: '8px',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <img src={phoneSignal} alt="phone-signal" />
+                  {singleProfile?.isRevealed && !singleProfile?.reReveal
+                    ? singleProfile?.phones?.length > 0 &&
+                      singleProfile?.phones?.map((phone) => (
                         <div
+                          key={phone?.number}
+                          className="phone1"
                           style={{
                             display: 'flex',
-                            justifyContent: 'space-between',
+                            gap: '8px',
                             alignItems: 'center',
-                            width: '100%',
-                            height: '20px',
                           }}
                         >
+                          <img src={phoneSignal} alt="phone-signal" />
                           <div
-                            className="prospect-item-expanded-phone"
                             style={{
                               display: 'flex',
+                              justifyContent: 'space-between',
                               alignItems: 'center',
-                              gap: '8px',
+                              width: '100%',
+                              height: '20px',
                             }}
                           >
-                            <span
+                            <div
+                              className="prospect-item-expanded-phone"
                               style={{
-                                color: '#1f2937',
-                                fontSize: '14px',
-                                fontWeight: '400',
-                                lineHeight: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
                               }}
                             >
-                              {phone?.number?.includes('X') ? (
-                                <>
-                                  {phone?.number?.slice(0, 3)}
-                                  <span className="list-dots">
-                                    &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                  </span>
-                                </>
-                              ) : (
-                                phone?.number
-                              )}
-                            </span>
+                              <span
+                                style={{
+                                  color: '#1f2937',
+                                  fontSize: '14px',
+                                  fontWeight: '400',
+                                  lineHeight: '16px',
+                                }}
+                              >
+                                {phone?.number}
+                              </span>
 
-                            {/* Phone Number Copy Icon */}
-                            {!phone?.number?.includes('X') && (
+                              {/* Phone Number Copy Icon */}
                               <span
                                 className="copy-icon"
                                 style={{
@@ -1383,79 +1403,126 @@ const SingleProfile = ({ userMetaData }) => {
                               >
                                 <img src={copy} alt="copy" />
                               </span>
-                            )}
+                            </div>
                           </div>
-
-                          {/* Find Phone  */}
-                          {phoneIndex === 0 &&
-                            singleProfile?.isRevealed &&
-                            singleProfile?.reReveal && (
+                        </div>
+                      ))
+                    : singleProfile?.teaser?.phones?.length > 0 &&
+                      singleProfile?.teaser?.phones?.map(
+                        (phone, phoneIndex) => (
+                          <div
+                            key={phone?.number}
+                            className="phone1"
+                            style={{
+                              display: 'flex',
+                              gap: '8px',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <img src={phoneSignal} alt="phone-signal" />
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                width: '100%',
+                                height: '20px',
+                              }}
+                            >
                               <div
-                                style={
-                                  isRevealing
-                                    ? {
-                                        opacity: '0.35',
-                                        cursor: 'not-allowed',
-                                        padding: '2px 4px',
-                                        alignItems: 'center',
-                                        display: 'flex',
-                                        gap: '2px',
-                                        border: '1px solid #BFDBFE',
-                                        backgroundColor: '#EFF6FF',
-                                      }
-                                    : {
-                                        backgroundColor: '#EFF6FF',
-                                        borderRadius: '4px',
-                                        border: '1px solid #BFDBFE',
-                                        cursor: 'pointer',
-                                        padding: '2px 4px',
-                                        alignItems: 'center',
-                                        display: 'flex',
-                                        gap: '2px',
-                                      }
-                                }
-                                onClick={() => {
-                                  if (!isRevealing) {
-                                    handleViewEmailPhoneAndFindPhoneBtn();
-                                  }
+                                className="prospect-item-expanded-phone"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
                                 }}
                               >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="12"
-                                  height="12"
-                                  viewBox="0 0 12 12"
-                                  fill="none"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    clipRule="evenodd"
-                                    d="M5 2.5C3.34315 2.5 2 3.84315 2 5.5C2 7.15685 3.34315 8.5 5 8.5C6.65685 8.5 8 7.15685 8 5.5C8 3.84315 6.65685 2.5 5 2.5ZM1 5.5C1 3.29086 2.79086 1.5 5 1.5C7.20914 1.5 9 3.29086 9 5.5C9 7.70914 7.20914 9.5 5 9.5C2.79086 9.5 1 7.70914 1 5.5Z"
-                                    fill="#1D4ED8"
-                                  />
-                                  <path
-                                    fillRule="evenodd"
-                                    clipRule="evenodd"
-                                    d="M7.14645 7.64645C7.34171 7.45118 7.65829 7.45118 7.85355 7.64645L10.8536 10.6464C11.0488 10.8417 11.0488 11.1583 10.8536 11.3536C10.6583 11.5488 10.3417 11.5488 10.1464 11.3536L7.14645 8.35355C6.95118 8.15829 6.95118 7.84171 7.14645 7.64645Z"
-                                    fill="#1D4ED8"
-                                  />
-                                </svg>
                                 <span
-                                  className="find-phone-txt"
                                   style={{
-                                    color: '#1D4ED8',
-                                    fontSize: '12px',
-                                    fontWeight: '500',
+                                    color: '#1f2937',
+                                    fontSize: '14px',
+                                    fontWeight: '400',
                                     lineHeight: '16px',
                                   }}
                                 >
-                                  Find Phone
+                                  {phone?.number?.slice(0, 3)}
+                                  <span className="list-dots">
+                                    &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                  </span>
                                 </span>
                               </div>
-                            )}
-                        </div>
-                      </div>
-                    ))}
+
+                              {/* Find Phone  */}
+                              {phoneIndex === 0 &&
+                                singleProfile?.isRevealed &&
+                                singleProfile?.reReveal && (
+                                  <div
+                                    style={
+                                      isRevealing
+                                        ? {
+                                            opacity: '0.35',
+                                            cursor: 'not-allowed',
+                                            padding: '2px 4px',
+                                            alignItems: 'center',
+                                            display: 'flex',
+                                            gap: '2px',
+                                            border: '1px solid #BFDBFE',
+                                            backgroundColor: '#EFF6FF',
+                                          }
+                                        : {
+                                            backgroundColor: '#EFF6FF',
+                                            borderRadius: '4px',
+                                            border: '1px solid #BFDBFE',
+                                            cursor: 'pointer',
+                                            padding: '2px 4px',
+                                            alignItems: 'center',
+                                            display: 'flex',
+                                            gap: '2px',
+                                          }
+                                    }
+                                    onClick={() => {
+                                      if (!isRevealing) {
+                                        handleViewEmailPhoneAndFindPhoneBtn();
+                                      }
+                                    }}
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="12"
+                                      height="12"
+                                      viewBox="0 0 12 12"
+                                      fill="none"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        clipRule="evenodd"
+                                        d="M5 2.5C3.34315 2.5 2 3.84315 2 5.5C2 7.15685 3.34315 8.5 5 8.5C6.65685 8.5 8 7.15685 8 5.5C8 3.84315 6.65685 2.5 5 2.5ZM1 5.5C1 3.29086 2.79086 1.5 5 1.5C7.20914 1.5 9 3.29086 9 5.5C9 7.70914 7.20914 9.5 5 9.5C2.79086 9.5 1 7.70914 1 5.5Z"
+                                        fill="#1D4ED8"
+                                      />
+                                      <path
+                                        fillRule="evenodd"
+                                        clipRule="evenodd"
+                                        d="M7.14645 7.64645C7.34171 7.45118 7.65829 7.45118 7.85355 7.64645L10.8536 10.6464C11.0488 10.8417 11.0488 11.1583 10.8536 11.3536C10.6583 11.5488 10.3417 11.5488 10.1464 11.3536L7.14645 8.35355C6.95118 8.15829 6.95118 7.84171 7.14645 7.64645Z"
+                                        fill="#1D4ED8"
+                                      />
+                                    </svg>
+                                    <span
+                                      className="find-phone-txt"
+                                      style={{
+                                        color: '#1D4ED8',
+                                        fontSize: '12px',
+                                        fontWeight: '500',
+                                        lineHeight: '16px',
+                                      }}
+                                    >
+                                      Find Phone
+                                    </span>
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        ),
+                      )}
                 </div>
                 <div
                   style={{
@@ -1652,6 +1719,25 @@ const SingleProfile = ({ userMetaData }) => {
           borderRadius: '4px',
           backgroundColor: '#1F2937',
           padding: '8px',
+        }}
+      />
+      <ReactTooltip
+        id="prospect-data-tooltip"
+        place="bottom"
+        opacity="1"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'left',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          display: 'flex',
+          maxWidth: '190px',
+          textWrap: 'wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
         }}
       />
       {!prospect?.isRevealed && expandedSection !== 'sequence' && (

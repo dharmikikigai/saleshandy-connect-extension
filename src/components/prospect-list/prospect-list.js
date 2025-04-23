@@ -330,6 +330,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   const bulkRevealProspects = async (payload) => {
     try {
+      setSelectedRevealType(payload?.revealType);
       const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
         payload,
       );
@@ -350,7 +351,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
           } else {
             const newRevealingProspects = {
               ...revealingProspects,
-              ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+              ...Object.fromEntries(payload?.leadIds?.map((id) => [id, true])),
             };
             if (shouldPoll) {
               setRevealingProspects(newRevealingProspects);
@@ -613,15 +614,33 @@ const ProspectList = ({ pageType, userMetaData }) => {
           await addToSequence(payload);
         }
       } else {
-        payload = {
-          leadIds: selectedProspects,
-          revealType: 'email',
-          tagIds: data.tagIds,
-          newTags: data.newTags,
-          sequenceId: data.sequenceId,
-          stepId: data.stepId,
-        };
-        await bulkRevealProspects(payload);
+        const revealedLeadIds = selectedProspects.filter(
+          (prospect) => prospects.find((p) => p.id === prospect)?.isRevealed,
+        );
+        const nonRevealedLeadIds = selectedProspects.filter(
+          (prospect) => !prospects.find((p) => p.id === prospect)?.isRevealed,
+        );
+        if (revealedLeadIds?.length > 0) {
+          payload = {
+            leadIds: revealedLeadIds,
+            tagIds: data.tagIds,
+            newTags: data.newTags,
+            sequenceId: data.sequenceId,
+            stepId: data.stepId,
+          };
+          await addToSequence(payload);
+        }
+        if (nonRevealedLeadIds?.length > 0) {
+          payload = {
+            leadIds: nonRevealedLeadIds,
+            revealType: 'email',
+            tagIds: data.tagIds,
+            newTags: data.newTags,
+            sequenceId: data.sequenceId,
+            stepId: data.stepId,
+          };
+          await bulkRevealProspects(payload);
+        }
       }
     } catch (error) {
       console.error('Error in handleAddToSequence:', error);
@@ -644,7 +663,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
           selectedProspects.includes(prospect.id) &&
           ((type === 'email' && !prospect.isRevealed) ||
             (type === 'emailphone' &&
-              ((prospect.isRevealed && prospect?.phones?.length > 0) ||
+              ((prospect.isRevealed &&
+                prospect.reReveal &&
+                prospect?.teaser?.phones?.length > 0) ||
                 !prospect.isRevealed))),
       )
       .map((prospect) => prospect.id);
@@ -729,7 +750,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
             (p) => p.id === profile.id,
           );
           if (prospectIndex !== -1) {
-            updatedProspects[prospectIndex] = profile;
+            updatedProspects[prospectIndex] = {
+              ...profile,
+              description: updatedProspects[prospectIndex]?.description,
+              logo: updatedProspects[prospectIndex]?.logo,
+            };
           }
         });
         setProspects(updatedProspects);
@@ -1604,98 +1629,114 @@ const ProspectList = ({ pageType, userMetaData }) => {
                           </div>
                         </div>
                       </div>
+                      {/* emails */}
                       {expendedProspect === prospect.id && (
                         <div className="prospect-item-expanded">
-                          {prospect?.emails?.length > 0 &&
-                            (prospect.isRevealed
-                              ? prospect?.emails?.slice(1).map((e, i) => (
-                                  <div
-                                    className="prospect-item-expanded-email"
-                                    key={i}
+                          {prospect?.isRevealed
+                            ? prospect?.emails?.length > 0 &&
+                              prospect?.emails?.slice(1).map((e, i) => (
+                                <div
+                                  className="prospect-item-expanded-email"
+                                  key={i}
+                                >
+                                  <img src={mail} alt="email" />
+                                  <span
+                                    className="prospect-description-revealed-email"
+                                    data-tooltip-id={
+                                      e?.email?.length > 18
+                                        ? 'prospect-data-tooltip'
+                                        : null
+                                    }
+                                    data-tooltip-content={e?.email}
                                   >
-                                    <img src={mail} alt="email" />
-                                    <span
-                                      className="prospect-description-revealed-email"
-                                      data-tooltip-id={
-                                        e?.email?.length > 18
-                                          ? 'prospect-data-tooltip'
-                                          : null
-                                      }
-                                      data-tooltip-content={e?.email}
-                                    >
-                                      {e?.email?.length > 18
-                                        ? `${e?.email?.slice(0, 18)}..`
-                                        : e?.email}
-                                    </span>
-                                    <img src={circleCheck} alt="circle-check" />
-                                    <div
-                                      className="copy-icon"
-                                      onClick={() => copyToClipboard(e.email)}
-                                      data-tooltip-id="my-tooltip-copy"
-                                    >
-                                      <img src={copy} alt="copy" />
-                                    </div>
+                                    {e?.email?.length > 18
+                                      ? `${e?.email?.slice(0, 18)}..`
+                                      : e?.email}
+                                  </span>
+                                  <img src={circleCheck} alt="circle-check" />
+                                  <div
+                                    className="copy-icon"
+                                    onClick={() => copyToClipboard(e.email)}
+                                    data-tooltip-id="my-tooltip-copy"
+                                  >
+                                    <img src={copy} alt="copy" />
                                   </div>
-                                ))
-                              : prospect?.emails?.map((e, i) => (
-                                  <div
-                                    className="prospect-item-expanded-email"
-                                    key={i}
-                                  >
-                                    <img src={mail} alt="email" />
-                                    <span
-                                      data-tooltip-id={
-                                        e?.email?.length > 18
-                                          ? 'prospect-data-tooltip'
-                                          : null
-                                      }
-                                      data-tooltip-content={e?.email || e}
-                                    >
-                                      {e?.email ? (
-                                        e?.email?.length > 18 ? (
-                                          `${e?.email?.slice(0, 18)}..`
-                                        ) : (
-                                          e?.email
-                                        )
+                                </div>
+                              ))
+                            : prospect?.teaser?.emails?.map((e, i) => (
+                                <div
+                                  className="prospect-item-expanded-email"
+                                  key={i}
+                                >
+                                  <img src={mail} alt="email" />
+                                  <span>
+                                    <span className="list-dots">
+                                      {e?.length > 13 ? (
+                                        <>
+                                          &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;@
+                                          {`${e.slice(0, 13)}..`}
+                                        </>
                                       ) : (
-                                        <span className="list-dots">
+                                        <>
                                           &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;@
                                           {e}
-                                        </span>
+                                        </>
                                       )}
                                     </span>
-                                  </div>
-                                )))}
-                          {prospect?.phones?.length > 0 &&
-                            prospect?.phones?.map((phone) => (
-                              <div
-                                className="prospect-item-expanded-phone"
-                                key={phone.number}
-                              >
-                                <img src={phoneSignal} alt="phone-signal" />
-                                {phone?.number?.includes('X') ? (
-                                  <span>
-                                    {phone?.number?.slice(0, 3)}
-                                    <span className="list-dots">
-                                      &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                    </span>
                                   </span>
-                                ) : (
-                                  <>
-                                    <span>{phone?.number}</span>
-                                    <div
-                                      className="copy-icon"
-                                      onClick={() =>
-                                        copyToClipboard(phone?.number)
-                                      }
-                                      data-tooltip-id="my-tooltip-copy"
-                                    >
-                                      <img src={copy} alt="copy" />
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))}
+                                </div>
+                              ))}
+                          {/* phones */}
+                          {prospect?.isRevealed && !prospect?.reReveal
+                            ? prospect?.phones?.length > 0 &&
+                              prospect?.phones?.map((phone) => (
+                                <div
+                                  className="prospect-item-expanded-phone"
+                                  key={phone.number}
+                                >
+                                  <img src={phoneSignal} alt="phone-signal" />
+                                  <span>{phone?.number}</span>
+                                  <div
+                                    className="copy-icon"
+                                    onClick={() =>
+                                      copyToClipboard(phone?.number)
+                                    }
+                                    data-tooltip-id="my-tooltip-copy"
+                                  >
+                                    <img src={copy} alt="copy" />
+                                  </div>
+                                </div>
+                              ))
+                            : prospect?.teaser?.phones?.length > 0 &&
+                              prospect?.teaser?.phones?.map((phone) => (
+                                <div
+                                  className="prospect-item-expanded-phone"
+                                  key={phone.number}
+                                >
+                                  <img src={phoneSignal} alt="phone-signal" />
+                                  {phone?.number?.includes('X') ? (
+                                    <span>
+                                      {phone?.number?.slice(0, 3)}
+                                      <span className="list-dots">
+                                        &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <span>{phone?.number}</span>
+                                      <div
+                                        className="copy-icon"
+                                        onClick={() =>
+                                          copyToClipboard(phone?.number)
+                                        }
+                                        data-tooltip-id="my-tooltip-copy"
+                                      >
+                                        <img src={copy} alt="copy" />
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              ))}
                           {prospect?.sequences?.length > 0 && (
                             <div className="prospect-item-expanded-sequences">
                               <div className="prospect-item-expanded-sequences-title">
@@ -1715,7 +1756,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     className="prospect-item-expanded-sequences-item"
                                     key={sequence?.sequenceId}
                                     data-tooltip-id={
-                                      sequence?.sequenceName?.length > 26
+                                      sequence?.sequenceName?.length > 23
                                         ? 'prospect-data-tooltip'
                                         : null
                                     }
@@ -1724,10 +1765,10 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     }
                                   >
                                     <span>
-                                      {sequence?.sequenceName?.length > 26
+                                      {sequence?.sequenceName?.length > 23
                                         ? `${sequence?.sequenceName?.slice(
                                             0,
-                                            26,
+                                            23,
                                           )}..`
                                         : sequence?.sequenceName}
                                     </span>
@@ -1842,7 +1883,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
         id="prospect-data-tooltip"
         place="bottom"
         opacity="1"
-        content={email}
         style={{
           fontSize: '12px',
           fontWeight: '500',
