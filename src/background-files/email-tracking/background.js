@@ -112,15 +112,10 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
             const personInfo = req?.personInfo;
 
             if (!cleanedUrl.includes(personInfo?.sourceId2)) {
-              console.log(
-                cleanedUrl,
-                personInfo.sourceId2,
-                tab.url,
-                'personInfo.sourceId2 Activate',
-              );
               chrome.storage.local.remove(['personInfo']);
             }
           });
+
           chrome.storage.local.remove(['bulkInfo']);
         }
       }
