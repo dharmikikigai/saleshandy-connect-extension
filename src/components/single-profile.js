@@ -141,7 +141,6 @@ const SingleProfile = ({ userMetaData }) => {
           if (shouldPoll) {
             setIsPollingEnabled(true);
           } else {
-            console.log('revealProspect');
             fetchProspect(prospect.linkedin_url);
             setIsRevealing(false);
             pollingAttemptsRef.current = 0;
@@ -332,9 +331,6 @@ const SingleProfile = ({ userMetaData }) => {
       } else {
         setClientSequences([]);
         setSelectedSequence(null);
-        console.log(
-          'No sequences found or empty response, using fallback sequences',
-        );
       }
     } catch (err) {
       console.error('Error fetching sequences:', err);
@@ -358,6 +354,7 @@ const SingleProfile = ({ userMetaData }) => {
           payload,
         );
       } else {
+        setIsRevealing(true);
         payload = {
           leadId: prospect.id,
           revealType: 'email',
@@ -563,7 +560,6 @@ const SingleProfile = ({ userMetaData }) => {
   };
 
   useEffect(() => {
-    console.log('General');
     fetchProspect();
     fetchTags();
     fetchSequences();
@@ -625,7 +621,6 @@ const SingleProfile = ({ userMetaData }) => {
     try {
       const handleStorageChange = (changes) => {
         if (changes.personInfo) {
-          console.log('OnChange');
           fetchProspect();
         }
       };
@@ -702,7 +697,6 @@ const SingleProfile = ({ userMetaData }) => {
   useEffect(() => {
     if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
       // Only refresh prospects when polling is actually stopped
-      console.log('Polling');
       fetchProspect(prospect.linkedin_url);
       setIsRevealing(false);
       pollingAttemptsRef.current = 0;
