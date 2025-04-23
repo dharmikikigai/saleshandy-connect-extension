@@ -1259,9 +1259,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
       .every(
         (prospect) =>
           (type === 'email' && prospect.isRevealed) ||
-          (type === 'emailphone' &&
-            prospect.isRevealed &&
-            prospect.phones.length === 0),
+          (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
       );
     const shouldDisable =
       selectedProspects.length === 0 ||
