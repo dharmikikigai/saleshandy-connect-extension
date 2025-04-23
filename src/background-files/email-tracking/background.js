@@ -499,6 +499,18 @@ chrome.cookies.onChanged.addListener((changeInfo) => {
     c.name === 'token' &&
     !changeInfo.removed
   ) {
-    gmailReloadAfterUpdate();
+    chrome.storage.local.get(['authToken'], (req) => {
+      const authenticationToken = req?.authToken;
+
+      if (
+        authenticationToken !== undefined &&
+        authenticationToken !== null &&
+        authenticationToken !== ''
+      ) {
+        console.log('Already LoggedIn');
+      } else {
+        gmailReloadAfterUpdate();
+      }
+    });
   }
 });
