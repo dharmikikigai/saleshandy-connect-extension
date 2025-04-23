@@ -55,12 +55,13 @@ function injectBeaconOnLinkedInUrl() {
   beacon.style.borderRadius = '7px 0 0 7px';
   beacon.style.zIndex = '9999999999999999999999999999999999999';
   beacon.style.transition = 'all 0.3s ease'; // Add transition for smooth hover effect
+  beacon.style.userSelect = 'none'; // Disable text selection
 
   // Create the drag handle
   const dragHandle = document.createElement('div');
   dragHandle.id = 'drag-handle';
   dragHandle.style.position = 'absolute';
-  dragHandle.style.bottom = '-25px'; // Position the drag icon at the bottom of the beacon
+  dragHandle.style.bottom = '-18px'; // Position the drag icon at the bottom of the beacon
   dragHandle.style.left = '60%'; // Center horizontally
   dragHandle.style.transform = 'translateX(-50%)'; // Center it properly
   dragHandle.style.cursor = 'grab';
@@ -72,6 +73,7 @@ function injectBeaconOnLinkedInUrl() {
   dragHandle.style.display = 'flex';
   dragHandle.style.justifyContent = 'center';
   dragHandle.style.alignItems = 'center';
+  dragHandle.style.userSelect = 'none'; // Disable text selection on the drag handle
 
   // Initially hide the drag icon
   dragHandle.style.opacity = '0'; // Make it invisible by default
@@ -93,10 +95,14 @@ function injectBeaconOnLinkedInUrl() {
 
   // Drag logic only for the drag handle
   dragHandle.addEventListener('mousedown', (event) => {
+    event.stopPropagation(); // Prevent event propagation to parent elements
     isDragging = true;
     offsetY = event.clientY - beacon.getBoundingClientRect().top;
-
     dragHandle.style.cursor = 'grabbing';
+
+    // Disable selection and pointer events on the LinkedIn page elements during drag
+    document.body.style.userSelect = 'none'; // Disable text selection globally
+    document.body.style.pointerEvents = 'none'; // Disable pointer events on the page
   });
 
   document.addEventListener('mousemove', (event) => {
@@ -118,6 +124,10 @@ function injectBeaconOnLinkedInUrl() {
     if (isDragging) {
       isDragging = false;
       dragHandle.style.cursor = 'grab';
+
+      // Restore pointer events and text selection after drag
+      document.body.style.pointerEvents = 'auto'; // Re-enable pointer events
+      document.body.style.userSelect = 'auto'; // Re-enable text selection
     }
   });
 
@@ -130,6 +140,14 @@ function injectBeaconOnLinkedInUrl() {
     dragHandle.style.opacity = '0'; // Hide the drag icon when not hovered
   });
 
+  // Prevent interactions with LinkedIn elements while dragging
+  document.body.addEventListener('mousedown', (event) => {
+    if (isDragging) {
+      event.preventDefault(); // Prevent page interactions during drag
+    }
+  });
+
+  // Handle clicks on the beacon to trigger the floating window
   document.body.addEventListener('click', (event) => {
     if (event.target && event.target.id === 'saleshandy-beacon') {
       const element = document.getElementById(FLOATING_WINDOW_ID);
