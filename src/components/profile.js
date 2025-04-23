@@ -569,9 +569,7 @@ const Profile = () => {
                   <div
                     className="button-hover-effect"
                     onClick={() =>
-                      handleClick(
-                        'https://pyxis.lifeisgoodforlearner.com/leads#people',
-                      )
+                      handleClick('https://my.saleshandy.com/leads#people')
                     }
                     style={{
                       cursor: 'pointer',
@@ -666,9 +664,7 @@ const Profile = () => {
                   <div
                     className="button-hover-effect"
                     onClick={() =>
-                      handleClick(
-                        'https://pyxis.lifeisgoodforlearner.com/prospects',
-                      )
+                      handleClick('https://my.saleshandy.com/prospects')
                     }
                     style={{
                       cursor: 'pointer',
@@ -751,9 +747,7 @@ const Profile = () => {
                   <div
                     className="button-hover-effect"
                     onClick={() =>
-                      handleClick(
-                        'https://pyxis.lifeisgoodforlearner.com/sequence',
-                      )
+                      handleClick('https://my.saleshandy.com/sequence')
                     }
                     style={{
                       cursor: 'pointer',
@@ -867,9 +861,7 @@ const Profile = () => {
                     <div
                       className="button-hover-effect"
                       onClick={() =>
-                        handleClick(
-                          'https://pyxis.lifeisgoodforlearner.com/email-insights',
-                        )
+                        handleClick('https://my.saleshandy.com/email-insights')
                       }
                       style={{
                         cursor: 'pointer',

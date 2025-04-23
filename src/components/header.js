@@ -17,7 +17,7 @@ const handleClose = () => {
 
 const handleClick = () => {
   window.open(
-    'https://pyxis.lifeisgoodforlearner.com/settings/billing/subscriptions/lead-finder#lead-finder-credit-plans',
+    'https://my.saleshandy.com/settings/billing/subscriptions/lead-finder#lead-finder-credit-plans',
     '_blank',
   );
 };

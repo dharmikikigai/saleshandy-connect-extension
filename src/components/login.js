@@ -29,7 +29,7 @@ const Login = () => {
       } else {
         chrome.runtime.sendMessage({
           method: 'openNewPage',
-          link: 'https://pyxis.lifeisgoodforlearner.com/login',
+          link: 'https://my.saleshandy.com/login',
         });
       }
     });
@@ -256,7 +256,7 @@ const Login = () => {
                             display: 'flex',
                             alignItems: 'start',
                           }}
-                          href="https://pyxis.lifeisgoodforlearner.com/signup"
+                          href="https://my.saleshandy.com/signup"
                           className="text-decoration-none fw-medium"
                           target="_blank"
                           rel="noopener noreferrer"

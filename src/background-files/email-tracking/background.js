@@ -3,7 +3,7 @@ import io from '../gmail/socket.io';
 
 async function getAndSetAuthToken() {
   chrome.cookies.get(
-    { url: 'https://pyxis.lifeisgoodforlearner.com', name: 'token' },
+    { url: 'https://my.saleshandy.com', name: 'token' },
     (cookie) => {
       if (cookie) {
         chrome.storage.local.set({ authToken: cookie.value });
@@ -499,7 +499,7 @@ chrome.runtime.setUninstallURL(
 chrome.cookies.onChanged.addListener((changeInfo) => {
   const c = changeInfo.cookie;
   if (
-    c.domain === 'pyxis.lifeisgoodforlearner.com' &&
+    c.domain === 'my.saleshandy.com' &&
     c.name === 'token' &&
     !changeInfo.removed
   ) {
