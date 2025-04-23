@@ -49,6 +49,18 @@ async function updateMailboxEmail(tabId) {
   chrome.tabs.sendMessage(tabId, { method: 'updateMailboxEmail' });
 }
 
+let lastUrl = '';
+
+function cleanUrl(url) {
+  if (url.includes('overlay')) {
+    return lastUrl;
+  }
+  // Clean the URL by removing query parameters
+  const urlObj = new URL(url);
+  urlObj.search = ''; // Remove query parameters
+  return urlObj.toString();
+}
+
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   await fetchAndSetActiveUrl();
   chrome.tabs.get(activeInfo.tabId, async (tab) => {
@@ -79,20 +91,26 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
         updateMailboxEmail(tab.id);
       }
     }
+
+    if (currentUrl.includes('linkedin.com') && tab.status === 'complete') {
+      const cleanedUrl = cleanUrl(currentUrl);
+
+      // Only log if the cleaned URL is different from the last one
+      if (cleanedUrl !== lastUrl) {
+        lastUrl = cleanedUrl; // Update last URL with cleaned URL
+        chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
+        if (
+          currentUrl.includes('linkedin.com/in/') ||
+          currentUrl.includes('linkedin.com/search/results/people/') ||
+          (currentUrl.includes('linkedin.com/company/') &&
+            currentUrl.includes('/people'))
+        ) {
+          chrome.storage.local.remove(['personInfo', 'bulkInfo']);
+        }
+      }
+    }
   });
 });
-
-let lastUrl = '';
-
-function cleanUrl(url) {
-  if (url.includes('overlay')) {
-    return lastUrl;
-  }
-  // Clean the URL by removing query parameters
-  const urlObj = new URL(url);
-  urlObj.search = ''; // Remove query parameters
-  return urlObj.toString();
-}
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const currentUrl = tab.url;
@@ -132,7 +150,15 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (cleanedUrl !== lastUrl) {
       lastUrl = cleanedUrl; // Update last URL with cleaned URL
       chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
-      chrome.storage.local.remove(['personInfo', 'bulkInfo']);
+
+      if (
+        currentUrl.includes('linkedin.com/in/') ||
+        currentUrl.includes('linkedin.com/search/results/people/') ||
+        (currentUrl.includes('linkedin.com/company/') &&
+          currentUrl.includes('/people'))
+      ) {
+        chrome.storage.local.remove(['personInfo', 'bulkInfo']);
+      }
     }
   }
 });
