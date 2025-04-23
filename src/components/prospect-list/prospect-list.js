@@ -199,9 +199,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
               prospectsToFetch.forEach((item) => {
                 updatedLocalProspects.add(item.source_id_2);
               });
-
+              let newProspects = [];
               // Get the current prospects from state
-              const newProspects = [...currentProspects];
+              if (pageType === 'continuous') {
+                newProspects = [...currentProspects];
+              }
 
               // Create a map of existing prospects by linkedin_url for quick lookup
               const existingProspectsMap = new Map();
@@ -642,7 +644,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
           selectedProspects.includes(prospect.id) &&
           ((type === 'email' && !prospect.isRevealed) ||
             (type === 'emailphone' &&
-              ((prospect.isRevealed && prospect.reReveal) ||
+              ((prospect.isRevealed && prospect?.phones?.length > 0) ||
                 !prospect.isRevealed))),
       )
       .map((prospect) => prospect.id);
@@ -1232,7 +1234,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
       .every(
         (prospect) =>
           (type === 'email' && prospect.isRevealed) ||
-          (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
+          (type === 'emailphone' &&
+            prospect.isRevealed &&
+            prospect.phones.length === 0),
       );
     const shouldDisable =
       selectedProspects.length === 0 ||
