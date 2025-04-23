@@ -1148,7 +1148,6 @@ function BGActionDo(tab, tabId) {
   } else if (tab.url.includes('/company/') && tab.url.includes('/people')) {
     let tabUrl = tab.url;
     let urls = {};
-    console.log(tabUrl, 'TabURl');
     chrome.storage.local.get(
       [
         'csrfToken',

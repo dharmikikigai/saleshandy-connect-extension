@@ -146,8 +146,15 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (currentUrl.includes('linkedin.com') && changeInfo.status === 'complete') {
     const cleanedUrl = cleanUrl(currentUrl);
 
-    // Only log if the cleaned URL is different from the last one
+    if (
+      cleanedUrl === lastUrl &&
+      cleanedUrl.includes('linkedin.com/company/')
+    ) {
+      chrome.storage.local.remove(['bulkInfo']);
+    }
+
     if (cleanedUrl !== lastUrl) {
+      // Only log if the cleaned URL is different from the last one
       lastUrl = cleanedUrl; // Update last URL with cleaned URL
       chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
 
