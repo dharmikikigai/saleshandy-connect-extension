@@ -132,10 +132,8 @@ InboxSDK.load(2, 'sdk_sh_connect_3d6289d8a5').then(async (sdk) => {
   // Fetching the email address of current mailbox through inbox sdk.
   const currentUserEmail = sdk.User.getEmailAddress();
 
-  console.log(currentUserEmail, 'currentUserEmail');
   // Shows the welcome popup
   async function showWelcomePopup() {
-    console.log('Welcome popup shown');
     const fontPreLoad = document.createElement('link');
     fontPreLoad.rel = 'preconnect';
     fontPreLoad.href = 'https://fonts.googleapis.com';
@@ -169,7 +167,6 @@ InboxSDK.load(2, 'sdk_sh_connect_3d6289d8a5').then(async (sdk) => {
   // Checking and handling the welcome popup in local storage.
   const isWelcomeMessageShown = `${currentUserEmail} welcome message shown`;
   chrome.storage.local.get([isWelcomeMessageShown], (req) => {
-    console.log(req, 'req Linkedin Winid');
     if (
       req[isWelcomeMessageShown] === undefined ||
       req[isWelcomeMessageShown] === false
@@ -198,10 +195,6 @@ InboxSDK.load(2, 'sdk_sh_connect_3d6289d8a5').then(async (sdk) => {
         email: currentUserEmail,
       })
     )?.payload;
-
-    console.log(mailboxId, 'mailboxId');
-    console.log(isTrackingEnabled, 'isTrackingEnabled');
-    console.log(userId, 'userId');
 
     chrome.storage.local.set({
       [currentUserEmail]: { mailboxId, isTrackingEnabled, userId },
@@ -616,7 +609,6 @@ InboxSDK.load(2, 'sdk_sh_connect_3d6289d8a5').then(async (sdk) => {
             )?.payload;
 
             normal = false;
-            console.log(requestPayload, 'requestPayload');
 
             if (trackingData) {
               links = trackingData.links;

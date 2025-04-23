@@ -96,7 +96,6 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
     if (currentUrl.includes('linkedin.com') && tab.status === 'complete') {
       const cleanedUrl = cleanUrl(currentUrl);
 
-      console.log(cleanedUrl, lastUrl, 'Hare Krishna -------------');
       // Only log if the cleaned URL is different from the last one
       if (cleanedUrl !== lastUrl) {
         chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
@@ -126,8 +125,6 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const currentUrl = tabs[0].url;
-
-    console.log(currentUrl, 'Current URL UP');
 
     await fetchAndSetActiveUrl();
 
@@ -188,7 +185,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
               chrome.storage.local.remove(['personInfo']);
             }
           });
-          console.log();
           chrome.storage.local.remove(['bulkInfo']);
         }
       }

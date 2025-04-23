@@ -28,6 +28,7 @@ let person = {};
 let currentTabUrl = null;
 let isPre = false;
 let isGraph = false;
+let oldestUrl;
 
 function getAll(field, data, type) {
   for (key in data) {
@@ -1008,7 +1009,6 @@ function mergeUniqueBy(arr1, arr2, key = 'source_id_2') {
 function BGActionDo(tab, tabId) {
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
-      console.log(request?.csrfToken, 'csrfToken');
       let currentUrlTab;
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         currentUrlTab = tabs[0].url;
@@ -1031,29 +1031,19 @@ function BGActionDo(tab, tabId) {
                 if (person.name) {
                   if (person.current && person.current.length > 0) {
                     if (person.current[0].source_id === undefined) {
-                      console.log(currentUrlTab, person?.sourceId2, 'Logic');
                       if (currentUrlTab.includes(person?.sourceId2)) {
                         chrome.storage.local.set({ personInfo: person });
                       }
-
-                      console.log('Person Info 1: ', person);
                     } else {
                       currentCompany(person.current[0], tabId);
                       retriveContactdata(sourceId2, tabId);
-                      console.log(currentUrlTab, person?.sourceId2, 'Logic');
 
                       if (currentUrlTab.includes(person?.sourceId2)) {
                         chrome.storage.local.set({ personInfo: person });
                       }
-                      console.log('Person Info 2: ', person);
                     }
-                  } else {
-                    console.log(currentUrlTab, person?.sourceId2, 'Logic');
-
-                    if (currentUrlTab.includes(person?.sourceId2)) {
-                      chrome.storage.local.set({ personInfo: person });
-                    }
-                    console.log('Person Info 3: ', person);
+                  } else if (currentUrlTab.includes(person?.sourceId2)) {
+                    chrome.storage.local.set({ personInfo: person });
                   }
                 }
               }
@@ -1067,7 +1057,6 @@ function BGActionDo(tab, tabId) {
   } else if (tab.url.toLowerCase().indexOf('/search/results/people') !== -1) {
     let tabUrl = tab.url;
     let urls = {};
-    console.log('Inside Result People');
     chrome.storage.local.get(
       [
         'csrfToken',
@@ -1076,13 +1065,6 @@ function BGActionDo(tab, tabId) {
         'graphApiPeopleSearch_url',
       ],
       (request) => {
-        console.log(
-          request.csrfToken,
-          request.defaultApiPeopleSearch_url,
-          request.premiumApiPeopleSearch_url,
-          request.graphApiPeopleSearch_url,
-          '----------------------------------',
-        );
         if (request.graphApiPeopleSearch_url) {
           urls = JSON.parse(request.graphApiPeopleSearch_url);
           isGraph = true;
@@ -1118,18 +1100,14 @@ function BGActionDo(tab, tabId) {
                     if (isPre) {
                       try {
                         people = getPeople_pre(JSON.parse(response.data));
-                        console.log(people, 'People500');
                       } catch (err) {
                         people = getPeople(response.data, false);
-                        console.log(people, 'People600');
                       }
                     } else if (isGraph) {
                       people = getPeopleGraph(JSON.parse(response.data));
-                      console.log(people, 'People700');
                     } else {
                       try {
                         people = getPeople_a(JSON.parse(response.data));
-                        console.log(people, 'People800');
                       } catch (err) {
                         console.log(err);
                       }
@@ -1212,15 +1190,10 @@ function BGActionDo(tab, tabId) {
                 } else {
                   people = undefined;
                 }
-                console.log(people, 'People900');
                 if (people && people.length > 0) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-
-                  chrome.tabs.sendMessage(tab.id, {
-                    method: 'bulk-prospect-reload',
-                  });
 
                   chrome.storage.local.get(['bulkInfo'], (request1) => {
                     if (request1?.bulkInfo?.oldurl === tab.url) {
@@ -1243,6 +1216,11 @@ function BGActionDo(tab, tabId) {
                   });
                 } else {
                   chrome.tabs.reload(tabId);
+                }
+
+                if (oldestUrl !== tab.url) {
+                  chrome.tabs.reload(tabId);
+                  oldestUrl = tab.url;
                 }
               }
             },
@@ -1372,7 +1350,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
               details.url.includes('voyager/api/graphql') &&
               details.url.includes('lazyLoadedActionsUrns')
             ) {
-              console.log();
               chrome.tabs.query(
                 { active: true, currentWindow: true },
                 (tabs) => {
