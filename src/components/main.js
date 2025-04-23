@@ -216,6 +216,8 @@ const Main = () => {
     pageCheck();
   }, []);
 
+  console.log(currentView, 'Current View');
+
   useEffect(() => {
     if (!authCheckLoading && !pageCheckLoading && isMetaDataLoaded) {
       if (!isSaleshandyLoggedIn) {

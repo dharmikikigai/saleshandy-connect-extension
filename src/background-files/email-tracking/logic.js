@@ -1031,6 +1031,7 @@ function BGActionDo(tab, tabId) {
                 if (person.name) {
                   if (person.current && person.current.length > 0) {
                     if (person.current[0].source_id === undefined) {
+                      console.log(currentUrlTab, person?.sourceId2, 'Logic');
                       if (currentUrlTab.includes(person?.sourceId2)) {
                         chrome.storage.local.set({ personInfo: person });
                       }
@@ -1039,12 +1040,16 @@ function BGActionDo(tab, tabId) {
                     } else {
                       currentCompany(person.current[0], tabId);
                       retriveContactdata(sourceId2, tabId);
+                      console.log(currentUrlTab, person?.sourceId2, 'Logic');
+
                       if (currentUrlTab.includes(person?.sourceId2)) {
                         chrome.storage.local.set({ personInfo: person });
                       }
                       console.log('Person Info 2: ', person);
                     }
                   } else {
+                    console.log(currentUrlTab, person?.sourceId2, 'Logic');
+
                     if (currentUrlTab.includes(person?.sourceId2)) {
                       chrome.storage.local.set({ personInfo: person });
                     }

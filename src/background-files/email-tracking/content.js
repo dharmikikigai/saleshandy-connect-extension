@@ -53,7 +53,7 @@ function injectBeaconOnLinkedInUrl() {
   beacon.style.backgroundSize = 'cover';
   beacon.style.cursor = 'pointer';
   beacon.style.borderRadius = '7px 0 0 7px';
-  beacon.style.zIndex = '9999999999999999999999999999999999999';
+  beacon.style.zIndex = '9888888';
   beacon.style.transition = 'all 0.3s ease'; // Add transition for smooth hover effect
   beacon.style.userSelect = 'none'; // Disable text selection
 
