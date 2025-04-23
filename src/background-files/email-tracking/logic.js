@@ -1009,6 +1009,11 @@ function BGActionDo(tab, tabId) {
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
       console.log(request?.csrfToken, 'csrfToken');
+      let currentUrlTab;
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        currentUrlTab = tabs[0].url;
+      });
+
       if (request.csrfToken) {
         const sourceId2 = findDescrP(tab.url, /in\/(.+?)(\/|$)/i);
         const apiUrl = `https://www.linkedin.com/voyager/api/identity/dash/profiles?q=memberIdentity&memberIdentity=${sourceId2}&decorationId=com.linkedin.voyager.dash.deco.identity.profile.FullProfileWithEntities-91`;
@@ -1026,29 +1031,24 @@ function BGActionDo(tab, tabId) {
                 if (person.name) {
                   if (person.current && person.current.length > 0) {
                     if (person.current[0].source_id === undefined) {
-                      chrome.storage.local.set(
-                        { personInfo: person },
-                        () => {},
-                      );
+                      if (currentUrlTab.includes(person?.sourceId2)) {
+                        chrome.storage.local.set({ personInfo: person });
+                      }
+
                       console.log('Person Info 1: ', person);
-                      chrome.storage.local.set(
-                        { companyLink: 'link is undefined' },
-                        () => {},
-                      );
                     } else {
                       currentCompany(person.current[0], tabId);
                       retriveContactdata(sourceId2, tabId);
-                      chrome.storage.local.set(
-                        { personInfo: person },
-                        () => {},
-                      );
+                      if (currentUrlTab.includes(person?.sourceId2)) {
+                        chrome.storage.local.set({ personInfo: person });
+                      }
                       console.log('Person Info 2: ', person);
                     }
                   } else {
-                    chrome.storage.local.set({ personInfo: person }, () => {});
+                    if (currentUrlTab.includes(person?.sourceId2)) {
+                      chrome.storage.local.set({ personInfo: person });
+                    }
                     console.log('Person Info 3: ', person);
-
-                    chrome.storage.local.set({ companyLink: 'NA' }, () => {});
                   }
                 }
               }
