@@ -188,7 +188,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
               chrome.storage.local.remove(['personInfo']);
             }
           });
-          console.log();
           chrome.storage.local.remove(['bulkInfo']);
         }
       }
