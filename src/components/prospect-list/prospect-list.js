@@ -265,6 +265,18 @@ const ProspectList = ({ pageType, userMetaData }) => {
             if (response?.type === 'rate-limit') {
               setIsRateLimitReached(true);
             }
+            if (response?.error) {
+              setToasterData({
+                header: 'Error',
+                body:
+                  response?.message ||
+                  (response?.messages &&
+                    response?.messages?.length > 0 &&
+                    response?.messages[0]),
+                type: 'danger',
+              });
+              setShowToaster(true);
+            }
             setIsProspectsLoading(false);
           }
         } catch (error) {
