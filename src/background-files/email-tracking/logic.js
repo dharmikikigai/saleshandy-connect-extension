@@ -28,6 +28,7 @@ let person = {};
 let currentTabUrl = null;
 let isPre = false;
 let isGraph = false;
+let oldestUrl;
 
 function getAll(field, data, type) {
   for (key in data) {
@@ -1218,10 +1219,6 @@ function BGActionDo(tab, tabId) {
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
 
-                  chrome.tabs.sendMessage(tab.id, {
-                    method: 'bulk-prospect-reload',
-                  });
-
                   chrome.storage.local.get(['bulkInfo'], (request1) => {
                     if (request1?.bulkInfo?.oldurl === tab.url) {
                       peopleInfo.people = mergeUniqueBy(
@@ -1243,6 +1240,11 @@ function BGActionDo(tab, tabId) {
                   });
                 } else {
                   chrome.tabs.reload(tabId);
+                }
+
+                if (oldestUrl !== tab.url) {
+                  chrome.tabs.reload(tabId);
+                  oldestUrl = tab.url;
                 }
               }
             },
