@@ -69,6 +69,13 @@ const SingleProfile = ({ userMetaData }) => {
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request?.method === 'personInfo-data-set') {
+      const data = sessionStorage.getItem('set-personInfo');
+      console.log('Single Data:', data);
+    }
+  });
+
   const fetchProspect = async () => {
     try {
       chrome.storage.local.get(['personInfo'], async (result) => {

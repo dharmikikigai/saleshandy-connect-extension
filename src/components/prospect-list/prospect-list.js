@@ -162,6 +162,13 @@ const ProspectList = ({ pageType, userMetaData }) => {
     prospectsRef.current = prospects;
   }, [localProspects, prospects]);
 
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request?.method === 'bulkInfo-data-set') {
+      const data = sessionStorage.getItem('set-bulkInfo');
+      console.log('Bulk Data:', data);
+    }
+  });
+
   const fetchProspects = async () => {
     try {
       chrome.storage.local.get(['bulkInfo'], async (result) => {
