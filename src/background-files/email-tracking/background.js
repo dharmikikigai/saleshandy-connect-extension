@@ -126,7 +126,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const currentUrl = tabs[0].url;
 
-    if (!currentUrl?.url) {
+    if (!currentUrl) {
       return;
     }
 
