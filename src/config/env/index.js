@@ -6,7 +6,7 @@ const environments = {
   master: 'production',
 };
 
-const CURRENT_ENV = environments.master;
+const CURRENT_ENV = environments.staging;
 
 const ENV_CONFIG =
   CURRENT_ENV === environments.master ? prodConfig : stagingConfig;
