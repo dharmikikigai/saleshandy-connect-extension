@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Button, Card, Container } from 'react-bootstrap';
 import Main from './main';
-
 import saleshandyConnect from '../assets/icons/shConnectLogo.svg';
 import minus from '../assets/icons/minus.svg';
+import ENV_CONFIG from '../config/env';
 
 const handleClose = () => {
   chrome.runtime.sendMessage({
@@ -29,7 +29,7 @@ const Login = () => {
       } else {
         chrome.runtime.sendMessage({
           method: 'openNewPage',
-          link: 'https://my.saleshandy.com/login',
+          link: `${ENV_CONFIG.WEB_APP_URL}/login`,
         });
       }
     });
@@ -256,7 +256,7 @@ const Login = () => {
                             display: 'flex',
                             alignItems: 'start',
                           }}
-                          href="https://my.saleshandy.com/signup"
+                          href={`${ENV_CONFIG.WEB_APP_URL}/signup`}
                           className="text-decoration-none fw-medium"
                           target="_blank"
                           rel="noopener noreferrer"

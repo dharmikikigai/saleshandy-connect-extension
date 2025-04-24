@@ -5,6 +5,7 @@ import { Switch } from '@saleshandy/designs';
 import Main from './main';
 import Gmail from '../assets/icons/gmail.svg';
 import mailboxInstance from '../config/server/tracker/mailbox';
+import ENV_CONFIG from '../config/env';
 
 const Profile = () => {
   const [logout, setLogout] = useState(false);
@@ -568,7 +569,7 @@ const Profile = () => {
                   <div
                     className="button-hover-effect"
                     onClick={() =>
-                      handleClick('https://my.saleshandy.com/leads#people')
+                      handleClick(`${ENV_CONFIG.WEB_APP_URL}/leads#people`)
                     }
                     style={{
                       cursor: 'pointer',
@@ -663,7 +664,7 @@ const Profile = () => {
                   <div
                     className="button-hover-effect"
                     onClick={() =>
-                      handleClick('https://my.saleshandy.com/prospects')
+                      handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospects`)
                     }
                     style={{
                       cursor: 'pointer',
@@ -746,7 +747,7 @@ const Profile = () => {
                   <div
                     className="button-hover-effect"
                     onClick={() =>
-                      handleClick('https://my.saleshandy.com/sequence')
+                      handleClick(`${ENV_CONFIG.WEB_APP_URL}/sequence`)
                     }
                     style={{
                       cursor: 'pointer',
@@ -860,7 +861,7 @@ const Profile = () => {
                     <div
                       className="button-hover-effect"
                       onClick={() =>
-                        handleClick('https://my.saleshandy.com/email-insights')
+                        handleClick(`${ENV_CONFIG.WEB_APP_URL}/email-insights`)
                       }
                       style={{
                         cursor: 'pointer',

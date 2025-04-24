@@ -4,6 +4,7 @@ export const environments = {
   WEB_APP_URL: 'https://my.saleshandy.com',
   SIGN_UP_URL: 'https://www.saleshandy.com/signup/?p=v3',
   SOCKET_URL: 'https://appsocket.saleshandy.com',
+  WEB_DOMAIN: 'my.saleshandy.com',
 };
 
 export default environments;

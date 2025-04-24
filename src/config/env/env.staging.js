@@ -4,6 +4,7 @@ export const environments = {
   WEB_APP_URL: 'https://pyxis.lifeisgoodforlearner.com/',
   SIGN_UP_URL: 'https://pyxis.lifeisgoodforlearner.com/signup',
   SOCKET_URL: 'https://appsocket.lifeisgoodforlearner.com',
+  WEB_DOMAIN: 'pyxis.lifeisgoodforlearner.com',
 };
 
 export default environments;

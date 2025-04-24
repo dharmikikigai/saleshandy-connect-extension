@@ -3,6 +3,7 @@ import { Switch } from '@saleshandy/designs';
 import mailboxInstance from '../config/server/tracker/mailbox';
 import Gmail from '../assets/icons/gmail.svg';
 import './popup.css';
+import ENV_CONFIG from '../config/env';
 
 const handleClose = () => {
   window.close();
@@ -578,7 +579,7 @@ const Popup = () => {
               {/* View Lead Finder link svg */}
               <div
                 onClick={() =>
-                  handleClick('https://my.saleshandy.com/leads#people')
+                  handleClick(`${ENV_CONFIG.WEB_APP_URL}/leads#people`)
                 }
                 style={{
                   cursor: 'pointer',
@@ -675,7 +676,7 @@ const Popup = () => {
               {/* View Prospects link svg */}
               <div
                 onClick={() =>
-                  handleClick('https://my.saleshandy.com/prospects')
+                  handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospect`)
                 }
                 style={{
                   cursor: 'pointer',
@@ -760,7 +761,7 @@ const Popup = () => {
               {/* Sequence link svg */}
               <div
                 onClick={() =>
-                  handleClick('https://my.saleshandy.com/sequence')
+                  handleClick(`${ENV_CONFIG.WEB_APP_URL}/sequence`)
                 }
                 style={{
                   cursor: 'pointer',
@@ -906,7 +907,7 @@ const Popup = () => {
             {/* Email Tracking link svg */}
             <div
               onClick={() =>
-                handleClick('https://my.saleshandy.com/email-insights')
+                handleClick(`${ENV_CONFIG.WEB_APP_URL}/email-insights`)
               }
               onMouseEnter={() => setEmailReportTooltip(true)}
               onMouseLeave={() => setEmailReportTooltip(false)}

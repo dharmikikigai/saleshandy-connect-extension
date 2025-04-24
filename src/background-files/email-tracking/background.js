@@ -1,9 +1,10 @@
 /* eslint-disable no-unused-vars */
 import io from '../gmail/socket.io';
+import ENV_CONFIG from '../../config/env/index';
 
 async function getAndSetAuthToken() {
   chrome.cookies.get(
-    { url: 'https://my.saleshandy.com', name: 'token' },
+    { url: ENV_CONFIG.WEB_APP_URL, name: 'token' },
     (cookie) => {
       if (cookie) {
         chrome.storage.local.set({ authToken: cookie.value });
@@ -17,7 +18,7 @@ async function getAndSetAuthToken() {
 async function fetchAndSetActiveUrl() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currentTab = tabs[0];
-    if (currentTab) {
+    if (currentTab?.url) {
       chrome.storage.local.set({ activeAllUrl: currentTab.url });
       if (currentTab.url.includes('linkedin.com')) {
         chrome.storage.local.set({ activeUrl: currentTab.url });
@@ -38,8 +39,6 @@ async function onBeaconClickActivity(tab) {
     (cookie) => {
       if (cookie) {
         chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
-      } else {
-        console.log('User is not logged in');
       }
     },
   );
@@ -64,8 +63,11 @@ function cleanUrl(url) {
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   await fetchAndSetActiveUrl();
   chrome.tabs.get(activeInfo.tabId, async (tab) => {
-    const currentUrl = tab.url;
-    console.log(currentUrl, 'Current URL Ac');
+    const currentUrl = tab?.url;
+
+    if (!currentUrl) {
+      return;
+    }
 
     if (tab.status === 'complete') {
       await getAndSetAuthToken();
@@ -82,8 +84,6 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
                   chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
                 }
               });
-            } else {
-              console.log('User is not logged in');
             }
           },
         );
@@ -126,6 +126,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
     const currentUrl = tabs[0].url;
 
+    if (!currentUrl?.url) {
+      return;
+    }
+
     await fetchAndSetActiveUrl();
 
     if (changeInfo.status === 'complete') {
@@ -143,8 +147,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
                   chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
                 }
               });
-            } else {
-              console.log('User is not logged in');
             }
           },
         );
@@ -495,7 +497,7 @@ chrome.runtime.setUninstallURL(
 chrome.cookies.onChanged.addListener((changeInfo) => {
   const c = changeInfo.cookie;
   if (
-    c.domain === 'my.saleshandy.com' &&
+    c.domain === ENV_CONFIG.WEB_DOMAIN &&
     c.name === 'token' &&
     !changeInfo.removed
   ) {
@@ -503,12 +505,10 @@ chrome.cookies.onChanged.addListener((changeInfo) => {
       const authenticationToken = req?.authToken;
 
       if (
-        authenticationToken !== undefined &&
-        authenticationToken !== null &&
-        authenticationToken !== ''
+        authenticationToken === undefined ||
+        authenticationToken === null ||
+        authenticationToken === ''
       ) {
-        console.log('Already LoggedIn');
-      } else {
         gmailReloadAfterUpdate();
       }
     });

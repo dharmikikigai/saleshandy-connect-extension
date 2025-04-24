@@ -1358,8 +1358,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 
                     BGActionDo(activeTab, activeTab.id);
                     // You can access the tab details like activeTab.id, activeTab.url, activeTab.title, etc.
-                  } else {
-                    console.log('No active tab found.');
                   }
                 },
               );

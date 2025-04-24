@@ -8,6 +8,7 @@ import diamond from '../assets/icons/diamond.svg';
 import verticalDots from '../assets/icons/dotsVertical.svg';
 import minus from '../assets/icons/minus.svg';
 import './responsive-screen.css';
+import ENV_CONFIG from '../config/env';
 
 const handleClose = () => {
   chrome.runtime.sendMessage({
@@ -17,7 +18,7 @@ const handleClose = () => {
 
 const handleClick = () => {
   window.open(
-    'https://my.saleshandy.com/settings/billing/subscriptions/lead-finder#lead-finder-credit-plans',
+    `${ENV_CONFIG.WEB_APP_URL}/settings/billing/subscriptions/lead-finder#lead-finder-credit-plans`,
     '_blank',
   );
 };
