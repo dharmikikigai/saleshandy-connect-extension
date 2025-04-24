@@ -1,4 +1,5 @@
 const FLOATING_WINDOW_ID = 'saleshandy-iframe';
+const BEACON_ID = 'saleshandy-beacon';
 
 function reloadIframe() {
   const iframe = document.getElementById(FLOATING_WINDOW_ID);
@@ -9,6 +10,13 @@ function reloadIframe() {
 
 function injectFloatingWindow() {
   const existingModal = document.getElementById(FLOATING_WINDOW_ID);
+
+  const beaconModal = document.getElementById(BEACON_ID);
+
+  if (beaconModal) {
+    beaconModal.remove();
+  }
+
   if (existingModal) {
     existingModal.style.display = 'flex';
     return;
@@ -38,13 +46,15 @@ function injectFloatingWindow() {
 }
 
 function injectBeaconOnLinkedInUrl() {
-  const existingModal = document.getElementById('saleshandy-beacon');
-  if (existingModal) {
+  const existingModal = document.getElementById(BEACON_ID);
+  const iframe = document.getElementById(FLOATING_WINDOW_ID);
+
+  if (existingModal || iframe?.style?.display === 'flex') {
     return;
   }
 
   const beacon = document.createElement('div');
-  beacon.id = 'saleshandy-beacon';
+  beacon.id = BEACON_ID;
   beacon.style.position = 'fixed';
   beacon.style.top = '50%';
   beacon.style.right = '1px';
@@ -54,7 +64,7 @@ function injectBeaconOnLinkedInUrl() {
   beacon.style.backgroundSize = 'cover';
   beacon.style.cursor = 'pointer';
   beacon.style.borderRadius = '7px 0 0 7px';
-  beacon.style.zIndex = '9888888';
+  beacon.style.zIndex = '99999999999999999999999999999999999999';
   beacon.style.transition = 'all 0.3s ease'; // Add transition for smooth hover effect
   beacon.style.userSelect = 'none'; // Disable text selection
 
@@ -150,16 +160,7 @@ function injectBeaconOnLinkedInUrl() {
 
   // Handle clicks on the beacon to trigger the floating window
   document.body.addEventListener('click', (event) => {
-    if (event.target && event.target.id === 'saleshandy-beacon') {
-      const element = document.getElementById(FLOATING_WINDOW_ID);
-
-      if (element) {
-        element.style.display = 'flex'; // Hide the element after the transition
-        chrome.storage.local.set({ isModalClosed: false });
-
-        return;
-      }
-
+    if (event.target && event.target.id === BEACON_ID) {
       injectFloatingWindow();
     }
   });
@@ -217,6 +218,7 @@ function closeDiv() {
     chrome.storage.local.set({ isModalClosed: true });
 
     element.style.display = 'none';
+    injectBeaconOnLinkedInUrl();
   }
 }
 
