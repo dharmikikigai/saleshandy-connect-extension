@@ -55,6 +55,13 @@ const Main = () => {
     type: 'danger',
   });
 
+  chrome.runtime.onMessage.addListener((request) => {
+    console.log('Message Received Hare krishna');
+    if (request?.method === 'setKey') {
+      sessionStorage.setItem('krishna', request?.person?.sourceId2);
+    }
+  });
+
   const getMetaData = async () => {
     if (!chrome?.storage?.local) {
       setIsMetaDataLoaded(true);

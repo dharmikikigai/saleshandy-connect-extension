@@ -1033,6 +1033,11 @@ function BGActionDo(tab, tabId) {
                     if (person.current[0].source_id === undefined) {
                       if (currentUrlTab.includes(person?.sourceId2)) {
                         chrome.storage.local.set({ personInfo: person });
+                        console.log(tab.id, 'TAB IDDDDD');
+                        chrome.tabs.sendMessage(tab.id, {
+                          method: 'setKey',
+                          person,
+                        });
                       }
                     } else {
                       currentCompany(person.current[0], tabId);
@@ -1040,10 +1045,18 @@ function BGActionDo(tab, tabId) {
 
                       if (currentUrlTab.includes(person?.sourceId2)) {
                         chrome.storage.local.set({ personInfo: person });
+                        chrome.tabs.sendMessage(tab.id, {
+                          method: 'setKey',
+                          person,
+                        });
                       }
                     }
                   } else if (currentUrlTab.includes(person?.sourceId2)) {
                     chrome.storage.local.set({ personInfo: person });
+                    chrome.tabs.sendMessage(tab.id, {
+                      method: 'setKey',
+                      person,
+                    });
                   }
                 }
               }

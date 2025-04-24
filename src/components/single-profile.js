@@ -69,6 +69,9 @@ const SingleProfile = ({ userMetaData }) => {
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
+  const data = sessionStorage.getItem('krishna');
+  console.log('Session data:', data);
+
   const fetchProspect = async () => {
     try {
       chrome.storage.local.get(['personInfo'], async (result) => {

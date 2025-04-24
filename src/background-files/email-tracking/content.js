@@ -153,6 +153,7 @@ function injectBeaconOnLinkedInUrl() {
       const element = document.getElementById(FLOATING_WINDOW_ID);
 
       if (element) {
+        element.style.display = 'flex';
         return;
       }
 
@@ -210,21 +211,25 @@ function closeDiv() {
   const element = document.getElementById(FLOATING_WINDOW_ID);
 
   if (element) {
-    chrome.storage.local.set({ isModalClosed: true });
-    // Apply inline CSS for transition
-    element.style.transition = 'transform 0.5s ease-out';
-
-    // Start position: set the initial transform
-    element.style.transform = 'translate(0, 0)'; // Starts from current position
-
-    // Move the element to the right corner
-    element.style.transform = 'translate(100vw, -100vh)'; // Move it out to the top-right corner
-
-    // Wait for the transition to complete before removing the element
-    setTimeout(() => {
-      element.remove();
-    }, 500); // Timeout should match the duration of the CSS transition (500ms)
+    element.style.display = 'none';
   }
+
+  // if (element) {
+  //   chrome.storage.local.set({ isModalClosed: true });
+  //   // Apply inline CSS for transition
+  //   element.style.transition = 'transform 0.5s ease-out';
+
+  //   // Start position: set the initial transform
+  //   element.style.transform = 'translate(0, 0)'; // Starts from current position
+
+  //   // Move the element to the right corner
+  //   element.style.transform = 'translate(100vw, -100vh)'; // Move it out to the top-right corner
+
+  //   // Wait for the transition to complete before removing the element
+  //   setTimeout(() => {
+  //     element.remove();
+  //   }, 500); // Timeout should match the duration of the CSS transition (500ms)
+  // }
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
