@@ -1030,7 +1030,7 @@ function BGActionDo(tab, tabId) {
                   if (person.current && person.current.length > 0) {
                     if (person.current[0].source_id === undefined) {
                       if (currentUrlTab.includes(person?.sourceId2)) {
-                        // chrome.storage.local.set({ personInfo: person });
+                        chrome.storage.local.set({ personInfo: person });
                         chrome.tabs.sendMessage(tab.id, {
                           method: 'set-personInfo',
                           person,
@@ -1044,7 +1044,7 @@ function BGActionDo(tab, tabId) {
                       retriveContactdata(sourceId2, tabId);
 
                       if (currentUrlTab.includes(person?.sourceId2)) {
-                        // chrome.storage.local.set({ personInfo: person });
+                        chrome.storage.local.set({ personInfo: person });
                         chrome.tabs.sendMessage(tab.id, {
                           method: 'set-personInfo',
                           person,
@@ -1055,7 +1055,7 @@ function BGActionDo(tab, tabId) {
                       }
                     }
                   } else if (currentUrlTab.includes(person?.sourceId2)) {
-                    // chrome.storage.local.set({ personInfo: person });
+                    chrome.storage.local.set({ personInfo: person });
                     chrome.tabs.sendMessage(tab.id, {
                       method: 'set-personInfo',
                       person,
@@ -1137,7 +1137,7 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  // chrome.storage.local.set({ bulkInfo: peopleInfo });
+                  chrome.storage.local.set({ bulkInfo: peopleInfo });
                   chrome.tabs.sendMessage(tab.id, {
                     method: 'set-bulkInfo',
                     peopleInfo,
@@ -1225,9 +1225,9 @@ function BGActionDo(tab, tabId) {
                         request1.bulkInfo.people,
                         peopleInfo.people,
                       );
-                      // chrome.storage.local.set({
-                      //   bulkInfo: peopleInfo,
-                      // });
+                      chrome.storage.local.set({
+                        bulkInfo: peopleInfo,
+                      });
                       chrome.tabs.sendMessage(tab.id, {
                         method: 'set-bulkInfo',
                         peopleInfo,
@@ -1236,7 +1236,7 @@ function BGActionDo(tab, tabId) {
                         method: 'bulkInfo-data-set',
                       });
                     } else {
-                      // chrome.storage.local.set({ bulkInfo: peopleInfo });
+                      chrome.storage.local.set({ bulkInfo: peopleInfo });
                       chrome.tabs.sendMessage(tab.id, {
                         method: 'set-bulkInfo',
                         peopleInfo,
@@ -1275,12 +1275,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     currentTabUrl = tab.url;
 
-    // if (
-    //   currentTabUrl.includes('linkedin.com/company/') &&
-    //   currentTabUrl.includes('/people')
-    // ) {
-    //   chrome.tabs.reload(tabId);
-    // }
     if (currentTabUrl.includes('linkedin.com')) {
       BGActionDo(tab, tabId);
     }
@@ -1389,7 +1383,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
                     const activeTab = tabs[0];
 
                     BGActionDo(activeTab, activeTab.id);
-                    // You can access the tab details like activeTab.id, activeTab.url, activeTab.title, etc.
                   }
                 },
               );
