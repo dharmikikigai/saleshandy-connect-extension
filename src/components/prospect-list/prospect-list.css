@@ -1001,14 +1001,14 @@ body.modal-open {
 .react-datepicker__day,
 .react-datepicker__day-name {
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 2rem !important;
-  height: 2rem !important;
+  width: 28px !important;
+  height: 28px !important;
   text-align: center !important;
-  line-height: 1.25rem !important;
+  line-height: 16px !important;
   color: rgb(156, 163, 175) !important;
   padding: 6px 0px !important;
   margin: 0px !important;
