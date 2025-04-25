@@ -1183,26 +1183,10 @@ const ProspectList = ({ pageType, userMetaData }) => {
           prospect.sequences.length > 0 ||
           prospect.tags.length > 0))
     ) {
-      return (
-        <div
-          className={`prospect-item-expand-icon ${
-            !prospect.id ? 'disabled' : 'cursor-pointer'
-          }`}
-          onClick={() =>
-            setExpendedProspect(
-              expendedProspect === prospect?.id ? null : prospect?.id,
-            )
-          }
-        >
-          <img
-            src={expendedProspect === prospect?.id ? chevronUp : chevronDown}
-            alt="chevron-down"
-          />
-        </div>
-      );
+      return true;
     }
 
-    return null;
+    return false;
   };
 
   const getProspectDescription = (prospect) => {
@@ -1232,7 +1216,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
     if (prospect?.isRevealed && prospect?.emails?.length > 0) {
       return (
-        <div className="prospect-description-revealed">
+        <div className="prospect-description-revealed cursor-pointer">
           <img src={mail} alt="email" />
           <span
             className="prospect-description-revealed-email"
@@ -1271,7 +1255,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
       .every(
         (prospect) =>
           (type === 'email' && prospect.isRevealed) ||
-          (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
+          (type === 'emailphone' &&
+            prospect.isRevealed &&
+            !(prospect.reReveal && prospect?.teaser?.phones?.length > 0)),
       );
     const shouldDisable =
       selectedProspects.length === 0 ||
@@ -1615,7 +1601,20 @@ const ProspectList = ({ pageType, userMetaData }) => {
                               !prospect.id || prospect.isRevealed
                                 ? 'prospect-item-details-unavailable'
                                 : ''
+                            } ${
+                              prospect.id &&
+                              getExpandIcon(prospect) &&
+                              'cursor-pointer'
                             }`}
+                            {...(prospect.id &&
+                              getExpandIcon(prospect) && {
+                                onClick: () =>
+                                  setExpendedProspect(
+                                    expendedProspect === prospect?.id
+                                      ? null
+                                      : prospect?.id,
+                                  ),
+                              })}
                           >
                             <div className="prospect-name">
                               <span
@@ -1633,7 +1632,30 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     />
                                   )}
                               </span>
-                              {getExpandIcon(prospect)}
+                              {getExpandIcon(prospect) && (
+                                <div
+                                  className={`prospect-item-expand-icon ${
+                                    !prospect.id ? 'disabled' : 'cursor-pointer'
+                                  }`}
+                                  {...(prospect.id && {
+                                    onClick: () =>
+                                      setExpendedProspect(
+                                        expendedProspect === prospect?.id
+                                          ? null
+                                          : prospect?.id,
+                                      ),
+                                  })}
+                                >
+                                  <img
+                                    src={
+                                      expendedProspect === prospect?.id
+                                        ? chevronUp
+                                        : chevronDown
+                                    }
+                                    alt="chevron-down"
+                                  />
+                                </div>
+                              )}
                             </div>
                             {getProspectDescription(prospect)}
                           </div>
@@ -1646,7 +1668,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
                             ? prospect?.emails?.length > 0 &&
                               prospect?.emails?.slice(1).map((e, i) => (
                                 <div
-                                  className="prospect-item-expanded-email"
+                                  className="prospect-item-expanded-email cursor-pointer"
                                   key={i}
                                 >
                                   <img src={mail} alt="email" />
@@ -1701,7 +1723,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
                             ? prospect?.phones?.length > 0 &&
                               prospect?.phones?.map((phone) => (
                                 <div
-                                  className="prospect-item-expanded-phone"
+                                  className="prospect-item-expanded-phone cursor-pointer"
                                   key={phone.number}
                                 >
                                   <img src={phoneSignal} alt="phone-signal" />

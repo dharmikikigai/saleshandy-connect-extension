@@ -320,14 +320,14 @@ input[type='checkbox'] {
 
 /* Webkit */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 5px;
 }
 ::-webkit-scrollbar-thumb {
   background-color: #e5e7eb;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #fff;
+  background: transparent;
 }
 ::-webkit-scrollbar-button {
   display: none;
@@ -752,12 +752,6 @@ body.modal-open {
   }
 }
 
-.prospect-item-expanded-email,
-.prospect-item-expanded-phone,
-.prospect-description-revealed {
-  cursor: pointer;
-}
-
 .copy-icon {
   opacity: 0;
   display: flex;
@@ -1057,4 +1051,7 @@ body.modal-open {
 
 .custom-switch .switchToggle input:checked + label {
   background: #1d4ed8 !important;
+}
+.popup-platform-item:hover {
+  background-color: #f9fafb;
 }

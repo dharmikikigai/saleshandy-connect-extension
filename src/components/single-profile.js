@@ -740,6 +740,7 @@ const SingleProfile = ({ userMetaData }) => {
                 display: 'flex',
                 flexDirection: 'column',
                 marginTop: '16px',
+                marginRight: '-5px',
               }}
             >
               <div
@@ -817,7 +818,7 @@ const SingleProfile = ({ userMetaData }) => {
                       color: '#6b7280',
                       fontSize: '14px',
                       fontWeight: '400',
-                      lineHeight: '16px',
+                      lineHeight: '20px',
                     }}
                   >
                     {singleProfile?.headline && (
@@ -1234,7 +1235,10 @@ const SingleProfile = ({ userMetaData }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '16px',
-                    padding: '0px 16px',
+                    margin: '0px 16px',
+                    maxHeight: '328px',
+                    overflowY: 'scroll',
+                    overflowX: 'hidden',
                   }}
                 >
                   {/* Emails */}
@@ -1684,6 +1688,12 @@ const SingleProfile = ({ userMetaData }) => {
               <br />
               lead reveal is in progress
             </>
+          ) : prospect?.isRevealed && prospect?.teaser?.phones?.length === 0 ? (
+            <>
+              Lead does not have any
+              <br />
+              phone number
+            </>
           ) : (
             '2 Credits Required'
           )
@@ -1732,7 +1742,7 @@ const SingleProfile = ({ userMetaData }) => {
           backgroundColor: '#1F2937',
           padding: '8px',
           display: 'flex',
-          maxWidth: '190px',
+          maxWidth: '220px',
           textWrap: 'wrap',
           wordBreak: 'break-word',
           overflowWrap: 'break-word',
