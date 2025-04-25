@@ -228,7 +228,6 @@ function currentCompany(comp, tabId) {
           }
 
           const company = getCompanyInfo(resp);
-          chrome.storage.local.set({ companyLink: company.url });
 
           if (company && company.name && company.source_id) {
             person.currentCompanyInfo = company;
@@ -1022,7 +1021,6 @@ function BGActionDo(tab, tabId) {
           { method: 'getPersonData', tk: request.csrfToken, url: apiUrl },
           (response) => {
             if (!chrome.runtime.lastError) {
-              chrome.storage.local.set({ newData: true }, () => {});
               if (response && response.data) {
                 person = getUserInfo(JSON.parse(response.data));
               }
@@ -1033,6 +1031,13 @@ function BGActionDo(tab, tabId) {
                     if (person.current[0].source_id === undefined) {
                       if (currentUrlTab.includes(person?.sourceId2)) {
                         chrome.storage.local.set({ personInfo: person });
+                        chrome.tabs.sendMessage(tab.id, {
+                          method: 'set-personInfo',
+                          person,
+                        });
+                        chrome.tabs.sendMessage(tab.id, {
+                          method: 'personInfo-data-set',
+                        });
                       }
                     } else {
                       currentCompany(person.current[0], tabId);
@@ -1040,15 +1045,27 @@ function BGActionDo(tab, tabId) {
 
                       if (currentUrlTab.includes(person?.sourceId2)) {
                         chrome.storage.local.set({ personInfo: person });
+                        chrome.tabs.sendMessage(tab.id, {
+                          method: 'set-personInfo',
+                          person,
+                        });
+                        chrome.tabs.sendMessage(tab.id, {
+                          method: 'personInfo-data-set',
+                        });
                       }
                     }
                   } else if (currentUrlTab.includes(person?.sourceId2)) {
                     chrome.storage.local.set({ personInfo: person });
+                    chrome.tabs.sendMessage(tab.id, {
+                      method: 'set-personInfo',
+                      person,
+                    });
+                    chrome.tabs.sendMessage(tab.id, {
+                      method: 'personInfo-data-set',
+                    });
                   }
                 }
               }
-            } else {
-              chrome.storage.local.set({ newData: false }, () => {});
             }
           },
         );
@@ -1120,7 +1137,14 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  chrome.storage.local.set({ bulkInfo: peopleInfo }, () => {});
+                  chrome.storage.local.set({ bulkInfo: peopleInfo });
+                  chrome.tabs.sendMessage(tab.id, {
+                    method: 'set-bulkInfo',
+                    peopleInfo,
+                  });
+                  chrome.tabs.sendMessage(tab.id, {
+                    method: 'bulkInfo-data-set',
+                  });
                 }
               }
             },
@@ -1201,17 +1225,25 @@ function BGActionDo(tab, tabId) {
                         request1.bulkInfo.people,
                         peopleInfo.people,
                       );
-                      chrome.storage.local.set(
-                        {
-                          bulkInfo: peopleInfo,
-                        },
-                        () => {},
-                      );
+                      chrome.storage.local.set({
+                        bulkInfo: peopleInfo,
+                      });
+                      chrome.tabs.sendMessage(tab.id, {
+                        method: 'set-bulkInfo',
+                        peopleInfo,
+                      });
+                      chrome.tabs.sendMessage(tab.id, {
+                        method: 'bulkInfo-data-set',
+                      });
                     } else {
-                      chrome.storage.local.set(
-                        { bulkInfo: peopleInfo },
-                        () => {},
-                      );
+                      chrome.storage.local.set({ bulkInfo: peopleInfo });
+                      chrome.tabs.sendMessage(tab.id, {
+                        method: 'set-bulkInfo',
+                        peopleInfo,
+                      });
+                      chrome.tabs.sendMessage(tab.id, {
+                        method: 'bulkInfo-data-set',
+                      });
                     }
                   });
                 } else {
@@ -1243,12 +1275,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     currentTabUrl = tab.url;
 
-    // if (
-    //   currentTabUrl.includes('linkedin.com/company/') &&
-    //   currentTabUrl.includes('/people')
-    // ) {
-    //   chrome.tabs.reload(tabId);
-    // }
     if (currentTabUrl.includes('linkedin.com')) {
       BGActionDo(tab, tabId);
     }
@@ -1357,7 +1383,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
                     const activeTab = tabs[0];
 
                     BGActionDo(activeTab, activeTab.id);
-                    // You can access the tab details like activeTab.id, activeTab.url, activeTab.title, etc.
                   }
                 },
               );

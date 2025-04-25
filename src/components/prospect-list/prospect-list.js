@@ -164,6 +164,17 @@ const ProspectList = ({ pageType, userMetaData }) => {
     selectedProspectsRef.current = selectedProspects;
   }, [localProspects, prospects, selectedProspects]);
 
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request?.method === 'bulkInfo-data-set') {
+      console.log('Render the component');
+    }
+  });
+
+  const data = sessionStorage.getItem('set-bulkInfo');
+  if (data) {
+    console.log('Bulk Data:', JSON.stringify(data));
+  }
+
   const fetchProspects = async () => {
     try {
       chrome.storage.local.get(['bulkInfo'], async (result) => {
@@ -600,6 +611,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
   };
 
+  // eslint-disable-next-line no-shadow
   const handleAddToSequence = async (data) => {
     try {
       setRevealProspectLoading({
