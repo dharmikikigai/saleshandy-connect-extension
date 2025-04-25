@@ -164,10 +164,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   chrome.runtime.onMessage.addListener((request) => {
     if (request?.method === 'bulkInfo-data-set') {
-      const data = sessionStorage.getItem('set-bulkInfo');
-      console.log('Bulk Data:', data);
+      console.log('Render the component');
     }
   });
+
+  const data = sessionStorage.getItem('set-bulkInfo');
+  if (data) {
+    console.log('Bulk Data:', JSON.stringify(data));
+  }
 
   const fetchProspects = async () => {
     try {
@@ -592,6 +596,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
   };
 
+  // eslint-disable-next-line no-shadow
   const handleAddToSequence = async (data) => {
     try {
       setRevealProspectLoading({

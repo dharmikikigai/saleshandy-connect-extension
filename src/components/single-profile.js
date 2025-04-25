@@ -71,10 +71,14 @@ const SingleProfile = ({ userMetaData }) => {
 
   chrome.runtime.onMessage.addListener((request) => {
     if (request?.method === 'personInfo-data-set') {
-      const data = sessionStorage.getItem('set-personInfo');
-      console.log('Single Data:', data);
+      console.log('Render the component');
     }
   });
+
+  const data = sessionStorage.getItem('set-personInfo');
+  if (data) {
+    console.log('Single Data:', data);
+  }
 
   const fetchProspect = async () => {
     try {
@@ -344,6 +348,7 @@ const SingleProfile = ({ userMetaData }) => {
     }
   };
 
+  // eslint-disable-next-line no-shadow
   const handleAddToSequence = async (data) => {
     try {
       let payload = {};
