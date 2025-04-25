@@ -812,13 +812,19 @@ const SingleProfile = ({ userMetaData }) => {
                     gap: '8px',
                   }}
                 >
-                  {/* User Designation */}
+                  {/* User Description */}
                   <div
                     style={{
                       color: '#6b7280',
                       fontSize: '14px',
                       fontWeight: '400',
                       lineHeight: '20px',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxHeight: '60px',
                     }}
                   >
                     {singleProfile?.headline && (
@@ -1333,20 +1339,16 @@ const SingleProfile = ({ userMetaData }) => {
                         <span className="prospect-email-unavailable-text">
                           Email unavailable
                         </span>
-                        <div className="tooltip-container">
-                          <img src={alertCircle} alt="alert" />
-                          {!singleProfile.id ? (
-                            <div className="custom-tooltip tooltip-bottom">
-                              Email is not available
-                            </div>
-                          ) : (
-                            <div className="custom-tooltip tooltip-bottom">
-                              Email is not available your
-                              <br />
-                              credit is refunded
-                            </div>
-                          )}
-                        </div>
+                        <img
+                          src={alertCircle}
+                          alt="alert"
+                          data-tooltip-id="email-unavailable-tooltip"
+                          data-tooltip-content={
+                            !prospect.id
+                              ? 'Email is not available'
+                              : 'Email is not available your credit is refunded'
+                          }
+                        />
                       </div>
                     )}
 
@@ -1765,6 +1767,25 @@ const SingleProfile = ({ userMetaData }) => {
           }}
         />
       )}
+      <ReactTooltip
+        id="email-unavailable-tooltip"
+        place="bottom"
+        opacity="1"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          display: 'flex',
+          maxWidth: '167px',
+          textWrap: 'wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
+      />
     </>
   );
 };

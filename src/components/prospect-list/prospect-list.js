@@ -155,12 +155,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
   // Add a ref to track the latest localProspects state
   const localProspectsRef = useRef(new Set());
   const prospectsRef = useRef([]);
+  const selectedProspectsRef = useRef([]);
 
   // Update the ref whenever localProspects changes
   useEffect(() => {
     localProspectsRef.current = localProspects;
     prospectsRef.current = prospects;
-  }, [localProspects, prospects]);
+    selectedProspectsRef.current = selectedProspects;
+  }, [localProspects, prospects, selectedProspects]);
 
   const fetchProspects = async () => {
     try {
@@ -172,7 +174,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
           // Use the ref to get the latest state of localProspects
           const currentLocalProspects = localProspectsRef.current;
           const currentProspects = prospectsRef.current;
-
+          const currentSelectedProspects = selectedProspectsRef.current;
           // Filter out prospects that we've already fetched
           const prospectsToFetch = bulkInfo.filter(
             (item) => !currentLocalProspects.has(item.source_id_2),
@@ -200,9 +202,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
                 updatedLocalProspects.add(item.source_id_2);
               });
               let newProspects = [];
+              let newSelectableProspects = [];
               // Get the current prospects from state
               if (pageType === 'continuous') {
                 newProspects = [...currentProspects];
+                newSelectableProspects = [...currentSelectedProspects];
               }
 
               // Create a map of existing prospects by linkedin_url for quick lookup
@@ -232,6 +236,16 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
                 // Update the map with the merged prospect
                 existingProspectsMap.set(profile.linkedin_url, mergedProspect);
+
+                // add the prospect to the new selectable prospects
+                if (
+                  profile.id &&
+                  !profile.isRevealing &&
+                  (!profile.isRevealed ||
+                    (profile.isRevealed && !profile.isCreditRefunded))
+                ) {
+                  newSelectableProspects.push(profile.id);
+                }
               });
 
               // add the prospect that are not present in the response
@@ -260,6 +274,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
               // Update prospects state and storage
               setProspects(updatedProspects);
               setLocalProspects(updatedLocalProspects);
+              setSelectedProspects(newSelectableProspects);
             }
 
             if (response?.type === 'rate-limit') {
