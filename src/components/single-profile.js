@@ -72,7 +72,7 @@ const SingleProfile = ({ userMetaData }) => {
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
-  const fetchProspect = async () => {
+  const fetchProspect = async (linkedinUrlParam, forceRefresh = false) => {
     try {
       // Cancel any in-progress requests
       if (abortControllerRef.current) {
@@ -97,7 +97,46 @@ const SingleProfile = ({ userMetaData }) => {
       setIsLoading(true);
       apiInProgressRef.current = true;
 
-      const linkedinUrl = `https://www.linkedin.com/in/${localData.sourceId2}`;
+      const linkedinUrl =
+        linkedinUrlParam ||
+        `https://www.linkedin.com/in/${localData.sourceId2}`;
+
+      // Check if we have cached data for this profile
+      const cachedDataKey = `prospect_data_${localData.sourceId2}`;
+      const cachedDataStr = sessionStorage.getItem(cachedDataKey);
+
+      // Only use cache if forceRefresh is false
+      if (!forceRefresh && cachedDataStr) {
+        try {
+          const cachedData = JSON.parse(cachedDataStr);
+
+          setProspect({
+            ...cachedData.profile,
+            headline: localData.headline,
+            locality: localData.locality,
+            logo: localData.logo,
+          });
+
+          if (cachedData.profile?.tags?.length > 0) {
+            setSelectedTags(
+              cachedData.profile?.tags?.map((tag) => ({
+                value: tag.id,
+                label: tag.name,
+                data: tag,
+              })),
+            );
+          }
+
+          setIsLoading(false);
+          apiInProgressRef.current = false;
+
+          // If cached data exists and is used, return early to avoid API call
+          return;
+        } catch (e) {
+          console.error('Error parsing cached prospect data:', e);
+          // Continue with API call if cache parsing fails
+        }
+      }
 
       const payload = {
         start: 1,
@@ -159,16 +198,31 @@ const SingleProfile = ({ userMetaData }) => {
 
       if (response) {
         if (response?.payload?.profiles?.length > 0) {
+          const profileData = response?.payload?.profiles[0];
+
+          // Store the fetched data in session storage
+          try {
+            sessionStorage.setItem(
+              cachedDataKey,
+              JSON.stringify({
+                profile: profileData,
+                timestamp: Date.now(),
+              }),
+            );
+          } catch (e) {
+            console.error('Error caching prospect data:', e);
+          }
+
           setProspect({
-            ...response?.payload?.profiles[0],
+            ...profileData,
             headline: localData.headline,
             locality: localData.locality,
             logo: localData.logo,
           });
 
-          if (response?.payload?.profiles[0]?.tags?.length > 0) {
+          if (profileData?.tags?.length > 0) {
             setSelectedTags(
-              response?.payload?.profiles[0]?.tags?.map((tag) => ({
+              profileData?.tags?.map((tag) => ({
                 value: tag.id,
                 label: tag.name,
                 data: tag,
@@ -199,8 +253,6 @@ const SingleProfile = ({ userMetaData }) => {
   useEffect(() => {
     const messageListener = async (request) => {
       if (request?.method === 'personInfo-data-set') {
-        console.log('Render the component');
-
         // Get the latest person info directly from sessionStorage
         try {
           const latestPersonInfo = JSON.parse(
@@ -300,7 +352,7 @@ const SingleProfile = ({ userMetaData }) => {
           if (shouldPoll) {
             setIsPollingEnabled(true);
           } else {
-            fetchProspect(prospect.linkedin_url);
+            fetchProspect(prospect.linkedin_url, true); // Force refresh after reveal
             setIsRevealing(false);
             pollingAttemptsRef.current = 0;
           }
@@ -831,7 +883,7 @@ const SingleProfile = ({ userMetaData }) => {
   useEffect(() => {
     if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
       // Only refresh prospects when polling is actually stopped
-      fetchProspect(prospect.linkedin_url);
+      fetchProspect(prospect.linkedin_url, true); // Force refresh after polling completes
       setIsRevealing(false);
       pollingAttemptsRef.current = 0;
       metaCall();

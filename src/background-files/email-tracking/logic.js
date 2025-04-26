@@ -1134,7 +1134,6 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  chrome.storage.local.set({ bulkInfo: peopleInfo });
                   chrome.tabs.sendMessage(tab.id, {
                     method: 'set-bulkInfo',
                     peopleInfo,
@@ -1222,9 +1221,6 @@ function BGActionDo(tab, tabId) {
                         request1.bulkInfo.people,
                         peopleInfo.people,
                       );
-                      chrome.storage.local.set({
-                        bulkInfo: peopleInfo,
-                      });
                       chrome.tabs.sendMessage(tab.id, {
                         method: 'set-bulkInfo',
                         peopleInfo,
@@ -1233,7 +1229,6 @@ function BGActionDo(tab, tabId) {
                         method: 'bulkInfo-data-set',
                       });
                     } else {
-                      chrome.storage.local.set({ bulkInfo: peopleInfo });
                       chrome.tabs.sendMessage(tab.id, {
                         method: 'set-bulkInfo',
                         peopleInfo,

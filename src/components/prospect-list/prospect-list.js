@@ -157,6 +157,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
   const prospectsRef = useRef([]);
   const selectedProspectsRef = useRef([]);
 
+  // Add these new refs at the same spot as the other refs
+  const abortControllerRef = useRef(null);
+  const apiInProgressRef = useRef(false);
+  const lastProcessedBulkInfoRef = useRef(null);
+
+  // First, add a ref to track the last processed bulkInfo
+  const lastProcessedBulkInfoSourceRef = useRef(null);
+
   // Update the ref whenever localProspects changes
   useEffect(() => {
     localProspectsRef.current = localProspects;
@@ -164,154 +172,245 @@ const ProspectList = ({ pageType, userMetaData }) => {
     selectedProspectsRef.current = selectedProspects;
   }, [localProspects, prospects, selectedProspects]);
 
-  chrome.runtime.onMessage.addListener((request) => {
-    if (request?.method === 'bulkInfo-data-set') {
-      console.log('Render the component');
-    }
-  });
-
-  const data = sessionStorage.getItem('set-bulkInfo');
-  if (data) {
-    console.log('Bulk Data:', JSON.stringify(data));
-  }
-
-  const fetchProspects = async () => {
+  const fetchProspects = async (forceRefresh = false) => {
     try {
-      chrome.storage.local.get(['bulkInfo'], async (result) => {
-        try {
-          const bulkInfo = result?.bulkInfo?.people;
-          if (!bulkInfo) return;
+      // Cancel any in-progress requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
 
-          // Use the ref to get the latest state of localProspects
-          const currentLocalProspects = localProspectsRef.current;
-          const currentProspects = prospectsRef.current;
-          const currentSelectedProspects = selectedProspectsRef.current;
-          // Filter out prospects that we've already fetched
-          const prospectsToFetch = bulkInfo.filter(
+      // Create a new abort controller for this request
+      abortControllerRef.current = new AbortController();
+
+      // Get data from sessionStorage
+      const storedBulkInfo = sessionStorage.getItem('bulkInfo');
+      if (!storedBulkInfo) return;
+
+      const bulkInfoObj = JSON.parse(storedBulkInfo);
+      const bulkInfo = bulkInfoObj?.people;
+      if (!bulkInfo) return;
+
+      // Create a source identifier for consistency checks
+      const sourceIdentifier = bulkInfo.map((p) => p.source_id_2).join(',');
+
+      // If this is the same bulkInfo we just processed and not forcing refresh, skip
+      if (
+        !forceRefresh &&
+        sourceIdentifier === lastProcessedBulkInfoSourceRef.current &&
+        apiInProgressRef.current
+      ) {
+        return;
+      }
+
+      // Store current bulkInfo for future comparisons
+      lastProcessedBulkInfoRef.current = storedBulkInfo;
+      lastProcessedBulkInfoSourceRef.current = sourceIdentifier;
+
+      // Use the ref to get the latest state of localProspects
+      const currentLocalProspects = localProspectsRef.current;
+      const currentProspects = prospectsRef.current;
+      const currentSelectedProspects = selectedProspectsRef.current;
+
+      // Filter out prospects that we've already fetched (unless force refresh)
+      const prospectsToFetch = forceRefresh
+        ? bulkInfo
+        : bulkInfo.filter(
             (item) => !currentLocalProspects.has(item.source_id_2),
           );
 
-          if (prospectsToFetch.length > 0) {
-            setIsProspectsLoading(true);
-            const newLinkedinUrls = prospectsToFetch.map(
-              (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
+      if (prospectsToFetch.length > 0) {
+        setIsProspectsLoading(true);
+        apiInProgressRef.current = true;
+
+        const newLinkedinUrls = prospectsToFetch.map(
+          (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
+        );
+
+        const payload = {
+          start: 1,
+          take: newLinkedinUrls.length,
+          link: newLinkedinUrls,
+        };
+
+        const { signal } = abortControllerRef.current;
+
+        // Add a small delay to allow for rapid navigation without firing API calls
+        await new Promise((resolve) => {
+          setTimeout(resolve, 300);
+        });
+
+        // Check if we've been aborted during the delay
+        if (signal.aborted) {
+          setIsProspectsLoading(false);
+          apiInProgressRef.current = false;
+          return;
+        }
+
+        // Check if the bulkInfo has changed during the delay
+        const currentBulkInfo = sessionStorage.getItem('bulkInfo');
+        const currentBulkInfoObj = currentBulkInfo
+          ? JSON.parse(currentBulkInfo)
+          : null;
+        const currentSourceIdentifier = currentBulkInfoObj?.people
+          ?.map((p) => p.source_id_2)
+          .join(',');
+
+        if (currentSourceIdentifier !== sourceIdentifier) {
+          setIsProspectsLoading(false);
+          apiInProgressRef.current = false;
+          return;
+        }
+
+        const response = await prospectsInstance.getProspects(payload);
+
+        // Check if aborted or bulkInfo changed during API call
+        const finalBulkInfo = sessionStorage.getItem('bulkInfo');
+        const finalBulkInfoObj = finalBulkInfo
+          ? JSON.parse(finalBulkInfo)
+          : null;
+        const finalSourceIdentifier = finalBulkInfoObj?.people
+          ?.map((p) => p.source_id_2)
+          .join(',');
+
+        if (signal.aborted || finalSourceIdentifier !== sourceIdentifier) {
+          setIsProspectsLoading(false);
+          apiInProgressRef.current = false;
+          return;
+        }
+
+        if (response?.payload?.profiles) {
+          // Create a new Set with all existing prospects plus the new ones
+          const updatedLocalProspects = new Set(currentLocalProspects);
+
+          // Add the newly fetched prospect IDs to the Set
+          prospectsToFetch.forEach((item) => {
+            updatedLocalProspects.add(item.source_id_2);
+          });
+
+          let newProspects = [];
+          let newSelectableProspects = [];
+
+          // Get the current prospects from state
+          if (pageType === 'continuous') {
+            newProspects = [...currentProspects];
+            newSelectableProspects = [...currentSelectedProspects];
+          }
+
+          // Create a map of existing prospects by linkedin_url for quick lookup
+          const existingProspectsMap = new Map();
+          newProspects.forEach((prospect) => {
+            if (prospect.linkedin_url) {
+              existingProspectsMap.set(prospect.linkedin_url, prospect);
+            }
+          });
+
+          // Process new prospects and merge with existing ones
+          response.payload.profiles.forEach((profile) => {
+            // Find matching local storage data
+            const localData = bulkInfo.find(
+              (item) =>
+                `https://www.linkedin.com/in/${item.source_id_2}` ===
+                profile.linkedin_url,
             );
 
-            const payload = {
-              start: 1,
-              take: newLinkedinUrls.length,
-              link: newLinkedinUrls,
+            // Merge API response with local storage data
+            const mergedProspect = {
+              ...profile,
+              description: localData?.description || profile.description,
+              logo: localData?.logo || profile.logo,
+              linkedin_url: localData?.linkedin_url || profile.linkedin_url,
             };
 
-            const response = await prospectsInstance.getProspects(payload);
-            if (response?.payload?.profiles) {
-              // Create a new Set with all existing prospects plus the new ones
-              const updatedLocalProspects = new Set(currentLocalProspects);
+            // Update the map with the merged prospect
+            existingProspectsMap.set(profile.linkedin_url, mergedProspect);
 
-              // Add the newly fetched prospect IDs to the Set
-              prospectsToFetch.forEach((item) => {
-                updatedLocalProspects.add(item.source_id_2);
-              });
-              let newProspects = [];
-              let newSelectableProspects = [];
-              // Get the current prospects from state
-              if (pageType === 'continuous') {
-                newProspects = [...currentProspects];
-                newSelectableProspects = [...currentSelectedProspects];
-              }
+            // add the prospect to the new selectable prospects
+            if (
+              profile.id &&
+              !profile.isRevealing &&
+              (!profile.isRevealed ||
+                (profile.isRevealed && !profile.isCreditRefunded))
+            ) {
+              newSelectableProspects.push(profile.id);
+            }
+          });
 
-              // Create a map of existing prospects by linkedin_url for quick lookup
-              const existingProspectsMap = new Map();
-              newProspects.forEach((prospect) => {
-                if (prospect.linkedin_url) {
-                  existingProspectsMap.set(prospect.linkedin_url, prospect);
-                }
-              });
-
-              // Process new prospects and merge with existing ones
-              response.payload.profiles.forEach((profile) => {
-                // Find matching local storage data
-                const localData = bulkInfo.find(
-                  (item) =>
-                    `https://www.linkedin.com/in/${item.source_id_2}` ===
-                    profile.linkedin_url,
-                );
-
-                // Merge API response with local storage data
-                const mergedProspect = {
-                  ...profile,
-                  description: localData?.description || profile.description,
-                  logo: localData?.logo || profile.logo,
-                  linkedin_url: localData?.linkedin_url || profile.linkedin_url,
-                };
-
-                // Update the map with the merged prospect
-                existingProspectsMap.set(profile.linkedin_url, mergedProspect);
-
-                // add the prospect to the new selectable prospects
-                if (
-                  profile.id &&
-                  !profile.isRevealing &&
-                  (!profile.isRevealed ||
-                    (profile.isRevealed && !profile.isCreditRefunded))
-                ) {
-                  newSelectableProspects.push(profile.id);
-                }
-              });
-
-              // add the prospect that are not present in the response
-              prospectsToFetch.forEach((item) => {
-                if (
-                  !existingProspectsMap.has(
-                    `https://www.linkedin.com/in/${item.source_id_2}`,
-                  )
-                ) {
-                  const notPresentProspect = {
-                    ...item,
-                    linkedin_url: `https://www.linkedin.com/in/${item.source_id_2}`,
-                  };
-                  existingProspectsMap.set(
-                    `https://www.linkedin.com/in/${item.source_id_2}`,
-                    notPresentProspect,
-                  );
-                }
-              });
-
-              // Convert the map back to an array
-              const updatedProspects = Array.from(
-                existingProspectsMap.values(),
+          // add the prospect that are not present in the response
+          prospectsToFetch.forEach((item) => {
+            if (
+              !existingProspectsMap.has(
+                `https://www.linkedin.com/in/${item.source_id_2}`,
+              )
+            ) {
+              const notPresentProspect = {
+                ...item,
+                linkedin_url: `https://www.linkedin.com/in/${item.source_id_2}`,
+              };
+              existingProspectsMap.set(
+                `https://www.linkedin.com/in/${item.source_id_2}`,
+                notPresentProspect,
               );
+            }
+          });
 
-              // Update prospects state and storage
-              setProspects(updatedProspects);
-              setLocalProspects(updatedLocalProspects);
-              setSelectedProspects(newSelectableProspects);
-            }
+          // Convert the map back to an array
+          const updatedProspects = Array.from(existingProspectsMap.values());
 
-            if (response?.type === 'rate-limit') {
-              setIsRateLimitReached(true);
+          // Cache the results for each prospect
+          prospectsToFetch.forEach((item) => {
+            const sourceId2 = item.source_id_2;
+            const prospect = updatedProspects.find(
+              (p) =>
+                p.linkedin_url === `https://www.linkedin.com/in/${sourceId2}`,
+            );
+
+            if (prospect) {
+              try {
+                const cacheKey = `prospect_list_data_${sourceId2}`;
+                sessionStorage.setItem(
+                  cacheKey,
+                  JSON.stringify({
+                    prospect,
+                    timestamp: Date.now(),
+                  }),
+                );
+              } catch (e) {
+                console.error('Error caching prospect data:', e);
+              }
             }
-            if (response?.error) {
-              setToasterData({
-                header: 'Error',
-                body:
-                  response?.message ||
-                  (response?.messages &&
-                    response?.messages?.length > 0 &&
-                    response?.messages[0]),
-                type: 'danger',
-              });
-              setShowToaster(true);
-            }
-            setIsProspectsLoading(false);
-          }
-        } catch (error) {
-          console.error('Error in fetchProspects callback:', error);
-          setIsProspectsLoading(false);
+          });
+
+          // Update prospects state and storage
+          setProspects(updatedProspects);
+          setLocalProspects(updatedLocalProspects);
+          setSelectedProspects(newSelectableProspects);
         }
-      });
+
+        if (response?.type === 'rate-limit') {
+          setIsRateLimitReached(true);
+        }
+        if (response?.error) {
+          setToasterData({
+            header: 'Error',
+            body:
+              response?.message ||
+              (response?.messages &&
+                response?.messages?.length > 0 &&
+                response?.messages[0]),
+            type: 'danger',
+          });
+          setShowToaster(true);
+        }
+        setIsProspectsLoading(false);
+        apiInProgressRef.current = false;
+      }
     } catch (error) {
-      console.error('Error in fetchProspects:', error);
+      // Don't show errors for aborted requests
+      if (error.name !== 'AbortError') {
+        console.error('Error in fetchProspects:', error);
+      }
+      setIsProspectsLoading(false);
+      apiInProgressRef.current = false;
     }
   };
 
@@ -714,15 +813,51 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   const handleFetchLead = async () => {
     try {
+      // Cancel any in-progress requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create a new abort controller for this request
+      abortControllerRef.current = new AbortController();
+
       const allRevealingProspectIds = Object.keys(revealingProspects)
         .filter((id) => revealingProspects[id] === true)
         .map(Number);
+
+      if (allRevealingProspectIds.length === 0) {
+        return;
+      }
+
+      apiInProgressRef.current = true;
+
       const payload = {
         leadIds: allRevealingProspectIds,
         revealType: selectedRevealType,
         isBulkAction: true,
       };
+
+      const { signal } = abortControllerRef.current;
+
+      // Add a small delay to prevent too many rapid calls
+      await new Promise((resolve) => {
+        setTimeout(resolve, 200);
+      });
+
+      // Check if we've been aborted during the delay
+      if (signal.aborted) {
+        apiInProgressRef.current = false;
+        return;
+      }
+
       const response = await prospectsInstance.leadStatus(payload);
+
+      // Check if aborted during API call
+      if (signal.aborted) {
+        apiInProgressRef.current = false;
+        return;
+      }
+
       if (
         response &&
         response.payload &&
@@ -739,6 +874,27 @@ const ProspectList = ({ pageType, userMetaData }) => {
             );
             if (prospectIndex !== -1) {
               updatedProspects[prospectIndex] = profile;
+
+              // Update cache for this prospect
+              try {
+                const prospect = profile;
+                const linkedinPathMatch = prospect.linkedin_url.match(
+                  /\/in\/([^/]+)/,
+                );
+                if (linkedinPathMatch && linkedinPathMatch[1]) {
+                  const sourceId2 = linkedinPathMatch[1];
+                  const cacheKey = `prospect_list_data_${sourceId2}`;
+                  sessionStorage.setItem(
+                    cacheKey,
+                    JSON.stringify({
+                      prospect,
+                      timestamp: Date.now(),
+                    }),
+                  );
+                }
+              } catch (e) {
+                console.error('Error caching prospect data:', e);
+              }
             }
           }
         });
@@ -758,13 +914,27 @@ const ProspectList = ({ pageType, userMetaData }) => {
         });
         setShowToaster(true);
       }
+
+      apiInProgressRef.current = false;
     } catch (error) {
-      console.error('Error in handleFetchLead:', error);
+      // Don't show errors for aborted requests
+      if (error.name !== 'AbortError') {
+        console.error('Error in handleFetchLead:', error);
+      }
+      apiInProgressRef.current = false;
     }
   };
 
   const refreshProspects = async () => {
     try {
+      // Cancel any in-progress requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create a new abort controller for this request
+      abortControllerRef.current = new AbortController();
+
       const linkedinUrls = [];
       Object.keys(revealingProspects).forEach((id) => {
         // Convert id to number for comparison if prospects have numeric IDs
@@ -775,31 +945,84 @@ const ProspectList = ({ pageType, userMetaData }) => {
           linkedinUrls.push(prospect.linkedin_url);
         }
       });
+
       if (linkedinUrls.length > 0) {
+        apiInProgressRef.current = true;
+
         const payload = {
           start: 1,
           take: linkedinUrls.length,
           link: linkedinUrls,
         };
-        const response = await prospectsInstance.getProspects(payload);
-        setRevealingProspects({});
-        const updatedProspects = [...prospects];
-        response.payload.profiles.forEach((profile) => {
-          const prospectIndex = updatedProspects.findIndex(
-            (p) => p.id === profile.id,
-          );
-          if (prospectIndex !== -1) {
-            updatedProspects[prospectIndex] = {
-              ...profile,
-              description: updatedProspects[prospectIndex]?.description,
-              logo: updatedProspects[prospectIndex]?.logo,
-            };
-          }
+
+        const { signal } = abortControllerRef.current;
+
+        // Add a small delay to allow for rapid navigation without firing API calls
+        await new Promise((resolve) => {
+          setTimeout(resolve, 300);
         });
-        setProspects(updatedProspects);
+
+        // Check if we've been aborted during the delay
+        if (signal.aborted) {
+          apiInProgressRef.current = false;
+          return;
+        }
+
+        const response = await prospectsInstance.getProspects(payload);
+
+        // Check if aborted during API call
+        if (signal.aborted) {
+          apiInProgressRef.current = false;
+          return;
+        }
+
+        if (response?.payload?.profiles) {
+          setRevealingProspects({});
+          const updatedProspects = [...prospects];
+          response.payload.profiles.forEach((profile) => {
+            const prospectIndex = updatedProspects.findIndex(
+              (p) => p.id === profile.id,
+            );
+            if (prospectIndex !== -1) {
+              updatedProspects[prospectIndex] = {
+                ...profile,
+                description: updatedProspects[prospectIndex]?.description,
+                logo: updatedProspects[prospectIndex]?.logo,
+              };
+
+              // Update cache for this prospect
+              try {
+                const prospect = updatedProspects[prospectIndex];
+                const linkedinPathMatch = prospect.linkedin_url.match(
+                  /\/in\/([^/]+)/,
+                );
+                if (linkedinPathMatch && linkedinPathMatch[1]) {
+                  const sourceId2 = linkedinPathMatch[1];
+                  const cacheKey = `prospect_list_data_${sourceId2}`;
+                  sessionStorage.setItem(
+                    cacheKey,
+                    JSON.stringify({
+                      prospect,
+                      timestamp: Date.now(),
+                    }),
+                  );
+                }
+              } catch (e) {
+                console.error('Error caching prospect data:', e);
+              }
+            }
+          });
+          setProspects(updatedProspects);
+        }
+
+        apiInProgressRef.current = false;
       }
     } catch (error) {
-      console.error('Error in refreshProspects:', error);
+      // Don't show errors for aborted requests
+      if (error.name !== 'AbortError') {
+        console.error('Error in refreshProspects:', error);
+      }
+      apiInProgressRef.current = false;
     }
   };
 
@@ -1007,31 +1230,105 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   useEffect(() => {
     try {
-      fetchProspects();
-      getSavedLeads();
+      // Initial load function to avoid duplicate code
+      const initialLoad = async () => {
+        // Check if data already exists in sessionStorage
+        const storedBulkInfo = sessionStorage.getItem('bulkInfo');
+        if (storedBulkInfo) {
+          try {
+            const bulkInfoObj = JSON.parse(storedBulkInfo);
+            // Set reference for first source ID to prevent duplicate processing
+            if (bulkInfoObj?.people?.length > 0) {
+              // Store a hash or identifier of the bulkInfo to avoid reprocessing
+              const sourceIdentifier = bulkInfoObj.people
+                .map((p) => p.source_id_2)
+                .join(',');
+
+              // Only process if this is a new bulk info or forced refresh
+              if (
+                sourceIdentifier &&
+                sourceIdentifier !== lastProcessedBulkInfoSourceRef.current
+              ) {
+                lastProcessedBulkInfoSourceRef.current = sourceIdentifier;
+                await fetchProspects(false); // Not forcing refresh for initial load
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing bulkInfo:', error);
+          }
+        }
+
+        // Also fetch saved leads
+        getSavedLeads();
+      };
+
+      // Reset tracking state
+      lastProcessedBulkInfoSourceRef.current = null;
+      initialLoad();
+
+      // Clean up function to abort any pending requests when component unmounts
+      return () => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      };
     } catch (error) {
       console.error('Error in initial useEffect:', error);
     }
   }, []);
 
-  // Add effect to listen for local storage changes
+  // Update the useEffect for message listener
   useEffect(() => {
     try {
-      const handleStorageChange = (changes) => {
-        if (changes.bulkInfo) {
-          fetchProspects();
+      const messageListener = async (request) => {
+        if (request?.method === 'bulkInfo-data-set') {
+          // Get the latest bulkInfo directly from sessionStorage
+          try {
+            const latestBulkInfo = sessionStorage.getItem('bulkInfo');
+            if (latestBulkInfo) {
+              const bulkInfoObj = JSON.parse(latestBulkInfo);
+
+              if (bulkInfoObj?.people?.length > 0) {
+                // Create an identifier for this bulkInfo
+                const sourceIdentifier = bulkInfoObj.people
+                  .map((p) => p.source_id_2)
+                  .join(',');
+
+                // Only force refresh if this is new bulkInfo
+                if (
+                  sourceIdentifier &&
+                  sourceIdentifier !== lastProcessedBulkInfoSourceRef.current
+                ) {
+                  // First update the reference to avoid race conditions
+                  lastProcessedBulkInfoSourceRef.current = sourceIdentifier;
+
+                  // Cancel ongoing requests if any
+                  if (apiInProgressRef.current) {
+                    if (abortControllerRef.current) {
+                      abortControllerRef.current.abort();
+                    }
+                  }
+
+                  // Now fetch with forced refresh for explicit message
+                  await fetchProspects(true);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error processing bulkInfo message:', error);
+          }
         }
       };
 
-      // Add listener for storage changes
-      chrome.storage.onChanged.addListener(handleStorageChange);
+      // Add message listener
+      chrome.runtime.onMessage.addListener(messageListener);
 
       // Clean up listener on component unmount
       return () => {
-        chrome.storage.onChanged.removeListener(handleStorageChange);
+        chrome.runtime.onMessage.removeListener(messageListener);
       };
     } catch (error) {
-      console.error('Error in storage change useEffect:', error);
+      console.error('Error in message listener useEffect:', error);
     }
   }, []);
 

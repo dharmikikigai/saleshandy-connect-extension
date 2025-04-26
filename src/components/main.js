@@ -57,11 +57,9 @@ const Main = () => {
 
   chrome.runtime.onMessage.addListener((request) => {
     if (request?.method === 'set-bulkInfo') {
-      console.log('set-bulkInfo', request?.peopleInfo);
       sessionStorage.setItem('bulkInfo', JSON.stringify(request?.peopleInfo));
     }
     if (request?.method === 'set-personInfo') {
-      console.log('set-personInfo', request?.person);
       sessionStorage.setItem('personInfo', JSON.stringify(request?.person));
     }
   });
