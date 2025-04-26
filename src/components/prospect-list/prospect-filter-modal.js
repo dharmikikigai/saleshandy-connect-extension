@@ -234,11 +234,11 @@ const ProspectFilterModal = ({
               : DateTime.fromJSDate(dateFilterCustomValue[1]);
 
             const formattedStartDate = startDate
-              .setZone(timeZone)
-              .toFormat('d LLL, yy');
+              ?.setZone(timeZone)
+              ?.toFormat('d LLL, yy');
             const formattedEndDate = endDate
-              .setZone(timeZone)
-              .toFormat('d LLL, yy');
+              ?.setZone(timeZone)
+              ?.toFormat('d LLL, yy');
             const offset = startDate.setZone(timeZone).toFormat('ZZ');
             const gmtOffset = `GMT${offset}`;
 
@@ -258,11 +258,11 @@ const ProspectFilterModal = ({
       // Handle predefined date options
       if (option && option.startDate && option.endDate) {
         const formattedStartDate = option.startDate
-          .setZone(timeZone)
-          .toFormat('d LLL, yy');
+          ?.setZone(timeZone)
+          ?.toFormat('d LLL, yy');
         const formattedEndDate = option.endDate
-          .setZone(timeZone)
-          .toFormat('d LLL, yy');
+          ?.setZone(timeZone)
+          ?.toFormat('d LLL, yy');
         const offset = option.startDate.setZone(timeZone).toFormat('ZZ');
         const gmtOffset = `GMT${offset}`;
 

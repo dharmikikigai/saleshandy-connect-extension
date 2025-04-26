@@ -1030,7 +1030,6 @@ function BGActionDo(tab, tabId) {
                   if (person.current && person.current.length > 0) {
                     if (person.current[0].source_id === undefined) {
                       if (currentUrlTab.includes(person?.sourceId2)) {
-                        chrome.storage.local.set({ personInfo: person });
                         chrome.tabs.sendMessage(tab.id, {
                           method: 'set-personInfo',
                           person,
@@ -1044,7 +1043,6 @@ function BGActionDo(tab, tabId) {
                       retriveContactdata(sourceId2, tabId);
 
                       if (currentUrlTab.includes(person?.sourceId2)) {
-                        chrome.storage.local.set({ personInfo: person });
                         chrome.tabs.sendMessage(tab.id, {
                           method: 'set-personInfo',
                           person,
@@ -1055,7 +1053,6 @@ function BGActionDo(tab, tabId) {
                       }
                     }
                   } else if (currentUrlTab.includes(person?.sourceId2)) {
-                    chrome.storage.local.set({ personInfo: person });
                     chrome.tabs.sendMessage(tab.id, {
                       method: 'set-personInfo',
                       person,
