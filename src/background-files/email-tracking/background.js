@@ -77,13 +77,16 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
           { url: 'https://www.linkedin.com', name: 'li_at' },
           (cookie) => {
             if (cookie) {
-              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
               chrome.storage.local.get(['isModalClosed'], (req) => {
                 const isModalClosed = req?.isModalClosed;
                 if (isModalClosed === undefined || isModalClosed === false) {
                   chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+                } else {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDivOff' });
                 }
               });
+
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
             }
           },
         );
@@ -124,7 +127,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-    const currentUrl = tabs[0].url;
+    const currentUrl = tabs[0]?.url;
 
     if (!currentUrl) {
       return;
@@ -140,13 +143,16 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
           { url: 'https://www.linkedin.com', name: 'li_at' },
           (cookie) => {
             if (cookie) {
-              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
               chrome.storage.local.get(['isModalClosed'], (req) => {
                 const isModalClosed = req?.isModalClosed;
                 if (isModalClosed === undefined || isModalClosed === false) {
                   chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+                } else {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDivOff' });
                 }
               });
+
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
             }
           },
         );
@@ -465,11 +471,11 @@ function gmailReloadAfterUpdate() {
         let currentTab;
         for (; j < t; j++) {
           currentTab = currentWindow.tabs[j];
-          if (currentTab.url && currentTab.url.includes('mail.google.com')) {
+          if (currentTab?.url && currentTab?.url.includes('mail.google.com')) {
             chrome.tabs.reload(currentTab.id);
           }
 
-          if (currentTab.url && currentTab.url.includes('linkedin.com')) {
+          if (currentTab?.url && currentTab?.url.includes('linkedin.com')) {
             chrome.tabs.reload(currentTab.id);
           }
         }

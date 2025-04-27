@@ -8,13 +8,15 @@ function reloadIframe() {
   }
 }
 
-function injectFloatingWindow() {
+function injectFloatingWindow(design = 'flex') {
   const existingModal = document.getElementById(FLOATING_WINDOW_ID);
 
   const beaconModal = document.getElementById(BEACON_ID);
 
-  if (beaconModal) {
+  console.log('injectFloatingWindow', existingModal, beaconModal);
+  if (beaconModal && design === 'flex') {
     beaconModal.remove();
+    console.log('removing the beacon');
   }
 
   if (existingModal) {
@@ -35,7 +37,7 @@ function injectFloatingWindow() {
   modalDiv.style.borderRadius = '10px';
   modalDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
   modalDiv.style.zIndex = '99999999999999999999999999999999999999';
-  modalDiv.style.display = 'flex';
+  modalDiv.style.display = design;
   modalDiv.style.flexDirection = 'column';
   modalDiv.style.alignItems = 'center';
   modalDiv.style.justifyContent = 'flex-start';
@@ -52,6 +54,8 @@ function injectBeaconOnLinkedInUrl() {
   if (existingModal || iframe?.style?.display === 'flex') {
     return;
   }
+
+  console.log('injectBeaconOnLinkedInUrl');
 
   const beacon = document.createElement('div');
   beacon.id = BEACON_ID;
@@ -225,6 +229,11 @@ function closeDiv() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.method === 'createDiv') {
     injectFloatingWindow();
+    sendResponse({ status: 'success', message: 'Div Modal created' });
+  }
+
+  if (request.method === 'createDivOff') {
+    injectFloatingWindow('none');
     sendResponse({ status: 'success', message: 'Div Modal created' });
   }
 

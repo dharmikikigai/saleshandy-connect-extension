@@ -1006,6 +1006,7 @@ function mergeUniqueBy(arr1, arr2, key = 'source_id_2') {
 }
 
 function BGActionDo(tab, tabId) {
+  console.log('BGActionDo', tab?.url);
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
       let currentUrlTab;
@@ -1257,6 +1258,7 @@ function BGActionDo(tab, tabId) {
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
+    console.log('Tab Activate:', tab?.url);
     if (tab.status === 'complete' && tab.url.includes('linkedin.com')) {
       BGActionDo(tab, activeInfo.tabId);
     }
@@ -1265,6 +1267,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
+    console.log('Tab Updated:', tab?.url);
     currentTabUrl = tab.url;
 
     if (currentTabUrl.includes('linkedin.com')) {
@@ -1275,6 +1278,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
+    console.log('OnBeforeSendHeaders:', details?.url);
     if (
       details.url.indexOf('sales-api') > 0 ||
       details.url.indexOf('voyager/api/') > 0 ||
@@ -1373,6 +1377,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
                 (tabs) => {
                   if (tabs.length > 0) {
                     const activeTab = tabs[0];
+                    console.log('On API Call:', activeTab?.url);
 
                     BGActionDo(activeTab, activeTab.id);
                   }
