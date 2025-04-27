@@ -19,6 +19,7 @@ async function fetchAndSetActiveUrl() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currentTab = tabs[0];
     if (currentTab?.url) {
+      console.log('fetchAndSetActiveUrl', currentTab?.url);
       chrome.storage.local.set({ activeAllUrl: currentTab.url });
       if (currentTab.url.includes('linkedin.com')) {
         chrome.storage.local.set({ activeUrl: currentTab.url });
@@ -68,7 +69,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
     if (!currentUrl) {
       return;
     }
-
+    console.log('onActivated', currentUrl);
     if (tab.status === 'complete') {
       await getAndSetAuthToken();
 
@@ -132,6 +133,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (!currentUrl) {
       return;
     }
+
+    console.log('onUpdated', currentUrl);
 
     await fetchAndSetActiveUrl();
 
@@ -471,12 +474,14 @@ function gmailReloadAfterUpdate() {
         let currentTab;
         for (; j < t; j++) {
           currentTab = currentWindow.tabs[j];
-          if (currentTab?.url && currentTab?.url.includes('mail.google.com')) {
-            chrome.tabs.reload(currentTab.id);
-          }
+          if (currentTab?.url) {
+            if (currentTab.url.includes('mail.google.com')) {
+              chrome.tabs.reload(currentTab.id);
+            }
 
-          if (currentTab?.url && currentTab?.url.includes('linkedin.com')) {
-            chrome.tabs.reload(currentTab.id);
+            if (currentTab.url.includes('linkedin.com')) {
+              chrome.tabs.reload(currentTab.id);
+            }
           }
         }
       }

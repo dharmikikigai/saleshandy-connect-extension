@@ -1258,9 +1258,10 @@ function BGActionDo(tab, tabId) {
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
-    console.log('Tab Activate:', tab?.url);
-    if (tab.status === 'complete' && tab.url.includes('linkedin.com')) {
-      BGActionDo(tab, activeInfo.tabId);
+    if (tab?.url) {
+      if (tab.status === 'complete' && tab.url.includes('linkedin.com')) {
+        BGActionDo(tab, activeInfo.tabId);
+      }
     }
   });
 });
@@ -1268,7 +1269,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
     console.log('Tab Updated:', tab?.url);
-    currentTabUrl = tab.url;
+    currentTabUrl = tab?.url;
 
     if (currentTabUrl.includes('linkedin.com')) {
       BGActionDo(tab, tabId);
@@ -1278,7 +1279,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
-    console.log('OnBeforeSendHeaders:', details?.url);
     if (
       details.url.indexOf('sales-api') > 0 ||
       details.url.indexOf('voyager/api/') > 0 ||
