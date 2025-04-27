@@ -1,5 +1,5 @@
 /* eslint-disable react/destructuring-assignment */
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import CreatableSelect from 'react-select/creatable';
 import Select, { components } from 'react-select';
 import { Button, Spinner } from 'react-bootstrap';
@@ -193,15 +193,21 @@ const AddToSequence = ({
   isAgency,
   isDisabled,
 }) => {
-  // const [isExpanded, setIsExpanded] = useState(false);
-  // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
-  //   null,
-  // );
-  // const [selectedSequence, setSelectedSequence] = useState(null);
-  // const [selectedStep, setSelectedStep] = useState(null);
-  // const [selectedTags, setSelectedTags] = useState([]);
+  const containerRef = useRef(null);
 
-  // Dropdown sequence name option (To add partition between recent and current sequence)
+  // Scroll the component into view when expanded
+  useEffect(() => {
+    if (isExpanded && containerRef.current) {
+      // Scroll with a slight delay to ensure component has expanded
+      setTimeout(() => {
+        containerRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
+    }
+  }, [isExpanded]);
+
   const processedSequenceOptions = sequenceOptionLabels.map((group) => {
     if (group.options) {
       const updatedGroupOptions = group.options.map((opt, index, arr) => ({
@@ -232,6 +238,7 @@ const AddToSequence = ({
 
   return (
     <div
+      ref={containerRef}
       className={`${isExpanded ? '' : 'add-to-sequence-container'}`}
       style={{
         border: '1px solid #e5e7eb',
@@ -243,7 +250,7 @@ const AddToSequence = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        cursor: isDisabled ? 'not-allowed' : isExpanded ? 'default' : 'pointer',
+        cursor: isDisabled ? 'not-allowed' : 'default',
       }}
     >
       {/* Header */}

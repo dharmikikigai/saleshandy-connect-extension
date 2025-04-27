@@ -506,7 +506,6 @@ const Profile = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
-                  gap: '16px',
                 }}
               >
                 <div
@@ -516,16 +515,18 @@ const Profile = () => {
                     fontFamily: 'Inter',
                     lineHeight: '16px',
                     color: '#1F2937',
+                    padding: '16px 16px 8px 16px',
                   }}
                 >
                   Saleshandy Platform
                 </div>
                 <div
+                  className="popup-platform-item"
                   style={{
-                    width: '300px',
-                    height: '16px',
+                    width: '332px',
                     display: 'flex',
                     justifyContent: 'space-between',
+                    padding: '8px 16px',
                   }}
                 >
                   <div
@@ -567,12 +568,12 @@ const Profile = () => {
                     </div>
                   </div>
                   <div
-                    className="button-hover-effect"
                     onClick={() =>
                       handleClick(`${ENV_CONFIG.WEB_APP_URL}/leads#people`)
                     }
                     style={{
                       cursor: 'pointer',
+                      display: 'flex',
                     }}
                   >
                     <svg
@@ -604,11 +605,12 @@ const Profile = () => {
                   </div>
                 </div>
                 <div
+                  className="popup-platform-item"
                   style={{
-                    width: '100%',
-                    height: '16px',
+                    width: '332px',
                     display: 'flex',
                     justifyContent: 'space-between',
+                    padding: '8px 16px',
                   }}
                 >
                   <div
@@ -662,12 +664,12 @@ const Profile = () => {
                     </div>
                   </div>
                   <div
-                    className="button-hover-effect"
                     onClick={() =>
                       handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospects`)
                     }
                     style={{
                       cursor: 'pointer',
+                      display: 'flex',
                     }}
                   >
                     <svg
@@ -699,11 +701,12 @@ const Profile = () => {
                   </div>
                 </div>
                 <div
+                  className="popup-platform-item"
                   style={{
-                    width: '300px',
-                    height: '16px',
+                    width: '332px',
                     display: 'flex',
                     justifyContent: 'space-between',
+                    padding: '8px 16px',
                   }}
                 >
                   <div
@@ -745,12 +748,12 @@ const Profile = () => {
                     </div>
                   </div>
                   <div
-                    className="button-hover-effect"
                     onClick={() =>
                       handleClick(`${ENV_CONFIG.WEB_APP_URL}/sequence`)
                     }
                     style={{
                       cursor: 'pointer',
+                      display: 'flex',
                     }}
                   >
                     <svg
