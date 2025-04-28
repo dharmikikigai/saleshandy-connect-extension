@@ -1034,9 +1034,6 @@ function BGActionDo(tab, tabId) {
                           method: 'set-personInfo',
                           person,
                         });
-                        chrome.tabs.sendMessage(tab.id, {
-                          method: 'personInfo-data-set',
-                        });
                       }
                     } else {
                       currentCompany(person.current[0], tabId);
@@ -1047,18 +1044,12 @@ function BGActionDo(tab, tabId) {
                           method: 'set-personInfo',
                           person,
                         });
-                        chrome.tabs.sendMessage(tab.id, {
-                          method: 'personInfo-data-set',
-                        });
                       }
                     }
                   } else if (currentUrlTab.includes(person?.sourceId2)) {
                     chrome.tabs.sendMessage(tab.id, {
                       method: 'set-personInfo',
                       person,
-                    });
-                    chrome.tabs.sendMessage(tab.id, {
-                      method: 'personInfo-data-set',
                     });
                   }
                 }
@@ -1134,10 +1125,7 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  chrome.tabs.sendMessage(tab.id, {
-                    method: 'set-bulkInfo',
-                    peopleInfo,
-                  });
+
                   chrome.tabs.sendMessage(tab.id, {
                     method: 'bulkInfo-data-set',
                   });
@@ -1225,16 +1213,10 @@ function BGActionDo(tab, tabId) {
                         method: 'set-bulkInfo',
                         peopleInfo,
                       });
-                      chrome.tabs.sendMessage(tab.id, {
-                        method: 'bulkInfo-data-set',
-                      });
                     } else {
                       chrome.tabs.sendMessage(tab.id, {
                         method: 'set-bulkInfo',
                         peopleInfo,
-                      });
-                      chrome.tabs.sendMessage(tab.id, {
-                        method: 'bulkInfo-data-set',
                       });
                     }
                   });
