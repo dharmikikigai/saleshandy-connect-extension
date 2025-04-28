@@ -1006,7 +1006,6 @@ function mergeUniqueBy(arr1, arr2, key = 'source_id_2') {
 }
 
 function BGActionDo(tab, tabId) {
-  console.log('BGActionDo', tab?.url);
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
       let currentUrlTab;
@@ -1268,7 +1267,6 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
-    console.log('Tab Updated:', tab?.url);
     currentTabUrl = tab?.url;
 
     if (currentTabUrl.includes('linkedin.com')) {
@@ -1377,7 +1375,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
                 (tabs) => {
                   if (tabs.length > 0) {
                     const activeTab = tabs[0];
-                    console.log('On API Call:', activeTab?.url);
 
                     BGActionDo(activeTab, activeTab.id);
                   }
