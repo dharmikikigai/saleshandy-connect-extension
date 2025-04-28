@@ -1008,11 +1008,6 @@ function mergeUniqueBy(arr1, arr2, key = 'source_id_2') {
 function BGActionDo(tab, tabId) {
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
-      let currentUrlTab;
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        currentUrlTab = tabs[0].url;
-      });
-
       if (request.csrfToken) {
         const sourceId2 = findDescrP(tab.url, /in\/(.+?)(\/|$)/i);
         const apiUrl = `https://www.linkedin.com/voyager/api/identity/dash/profiles?q=memberIdentity&memberIdentity=${sourceId2}&decorationId=com.linkedin.voyager.dash.deco.identity.profile.FullProfileWithEntities-91`;
@@ -1029,24 +1024,20 @@ function BGActionDo(tab, tabId) {
                 if (person.name) {
                   if (person.current && person.current.length > 0) {
                     if (person.current[0].source_id === undefined) {
-                      if (currentUrlTab.includes(person?.sourceId2)) {
-                        chrome.tabs.sendMessage(tab.id, {
-                          method: 'set-personInfo',
-                          person,
-                        });
-                      }
+                      chrome.tabs.sendMessage(tab.id, {
+                        method: 'set-personInfo',
+                        person,
+                      });
                     } else {
                       currentCompany(person.current[0], tabId);
                       retriveContactdata(sourceId2, tabId);
 
-                      if (currentUrlTab.includes(person?.sourceId2)) {
-                        chrome.tabs.sendMessage(tab.id, {
-                          method: 'set-personInfo',
-                          person,
-                        });
-                      }
+                      chrome.tabs.sendMessage(tab.id, {
+                        method: 'set-personInfo',
+                        person,
+                      });
                     }
-                  } else if (currentUrlTab.includes(person?.sourceId2)) {
+                  } else {
                     chrome.tabs.sendMessage(tab.id, {
                       method: 'set-personInfo',
                       person,
