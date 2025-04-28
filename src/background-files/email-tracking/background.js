@@ -19,7 +19,6 @@ async function fetchAndSetActiveUrl() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currentTab = tabs[0];
     if (currentTab?.url) {
-      console.log('fetchAndSetActiveUrl', currentTab?.url);
       chrome.storage.local.set({ activeAllUrl: currentTab.url });
       if (currentTab.url.includes('linkedin.com')) {
         chrome.storage.local.set({ activeUrl: currentTab.url });
@@ -69,7 +68,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
     if (!currentUrl) {
       return;
     }
-    console.log('onActivated', currentUrl);
+
     if (tab.status === 'complete') {
       await getAndSetAuthToken();
 
@@ -78,16 +77,13 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
           { url: 'https://www.linkedin.com', name: 'li_at' },
           (cookie) => {
             if (cookie) {
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
               chrome.storage.local.get(['isModalClosed'], (req) => {
                 const isModalClosed = req?.isModalClosed;
                 if (isModalClosed === undefined || isModalClosed === false) {
                   chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
-                } else {
-                  chrome.tabs.sendMessage(tab.id, { method: 'createDivOff' });
                 }
               });
-
-              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
             }
           },
         );
@@ -118,7 +114,6 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
               chrome.storage.local.remove(['personInfo']);
             }
           });
-
           chrome.storage.local.remove(['bulkInfo']);
         }
       }
@@ -134,8 +129,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       return;
     }
 
-    console.log('onUpdated', currentUrl);
-
     await fetchAndSetActiveUrl();
 
     if (changeInfo.status === 'complete') {
@@ -146,16 +139,13 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
           { url: 'https://www.linkedin.com', name: 'li_at' },
           (cookie) => {
             if (cookie) {
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
               chrome.storage.local.get(['isModalClosed'], (req) => {
                 const isModalClosed = req?.isModalClosed;
                 if (isModalClosed === undefined || isModalClosed === false) {
                   chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
-                } else {
-                  chrome.tabs.sendMessage(tab.id, { method: 'createDivOff' });
                 }
               });
-
-              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
             }
           },
         );
