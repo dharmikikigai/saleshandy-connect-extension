@@ -83,7 +83,10 @@ const SingleProfile = ({ userMetaData }) => {
       // Create a new abort controller for this request
       abortControllerRef.current = new AbortController();
 
-      const localData = JSON.parse(sessionStorage.getItem('personInfo'));
+      // Get person info from chrome.storage.session
+      const { personInfo: localData } = await chrome.storage.session.get(
+        'personInfo',
+      );
 
       // Skip processing if we don't have valid data or it doesn't match what we're expecting
       if (
@@ -103,7 +106,9 @@ const SingleProfile = ({ userMetaData }) => {
         `https://www.linkedin.com/in/${localData.sourceId2}`;
 
       // Check if we have cached data for this profile
-      const prospectResultStr = sessionStorage.getItem('prospect_result');
+      const {
+        prospect_result: prospectResultStr,
+      } = await chrome.storage.session.get('prospect_result');
       let prospectResult = {};
       if (prospectResultStr) {
         try {
@@ -168,16 +173,11 @@ const SingleProfile = ({ userMetaData }) => {
       }
 
       // Check once more if the profile ID still matches
-      const currentDataStr = sessionStorage.getItem('personInfo');
-      let currentSourceId2 = null;
-      if (currentDataStr) {
-        try {
-          const parsedData = JSON.parse(currentDataStr);
-          currentSourceId2 = parsedData?.sourceId2;
-        } catch (e) {
-          console.error('Error parsing currentData:', e);
-        }
-      }
+      const { personInfo: currentData } = await chrome.storage.session.get(
+        'personInfo',
+      );
+      const currentSourceId2 = currentData?.sourceId2;
+
       if (!currentSourceId2 || currentSourceId2 !== localData.sourceId2) {
         apiInProgressRef.current = false;
         setIsLoading(false);
@@ -187,16 +187,11 @@ const SingleProfile = ({ userMetaData }) => {
       const response = await prospectsInstance.getProspects(payload);
 
       // Final check to ensure we're still showing the right profile
-      const finalDataStr = sessionStorage.getItem('personInfo');
-      let finalSourceId2 = null;
-      if (finalDataStr) {
-        try {
-          const parsedData = JSON.parse(finalDataStr);
-          finalSourceId2 = parsedData?.sourceId2;
-        } catch (e) {
-          console.error('Error parsing finalCheck:', e);
-        }
-      }
+      const { personInfo: finalData } = await chrome.storage.session.get(
+        'personInfo',
+      );
+      const finalSourceId2 = finalData?.sourceId2;
+
       if (
         !finalSourceId2 ||
         finalSourceId2 !== localData.sourceId2 ||
@@ -211,10 +206,12 @@ const SingleProfile = ({ userMetaData }) => {
         if (response?.payload?.profiles?.length > 0) {
           const profileData = response?.payload?.profiles[0];
 
-          // Store the fetched data in session storage
+          // Store the fetched data in chrome.storage.session
           try {
             // Get existing prospect results
-            const existingResultStr = sessionStorage.getItem('prospect_result');
+            const {
+              prospect_result: existingResultStr,
+            } = await chrome.storage.session.get('prospect_result');
             let updatedProspectResult = {};
             if (existingResultStr) {
               try {
@@ -237,11 +234,10 @@ const SingleProfile = ({ userMetaData }) => {
               timestamp: Date.now(),
             };
 
-            // Save back to session storage
-            sessionStorage.setItem(
-              'prospect_result',
-              JSON.stringify(updatedProspectResult),
-            );
+            // Save back to chrome.storage.session
+            await chrome.storage.session.set({
+              prospect_result: JSON.stringify(updatedProspectResult),
+            });
           } catch (e) {
             console.error('Error caching prospect data:', e);
           }
@@ -263,10 +259,12 @@ const SingleProfile = ({ userMetaData }) => {
             );
           }
         } else {
-          // Store the fetched data in session storage
+          // Store the fetched data in chrome.storage.session
           try {
             // Get existing prospect results
-            const existingResultStr = sessionStorage.getItem('prospect_result');
+            const {
+              prospect_result: existingResultStr,
+            } = await chrome.storage.session.get('prospect_result');
             let updatedProspectResult = {};
             if (existingResultStr) {
               try {
@@ -290,11 +288,10 @@ const SingleProfile = ({ userMetaData }) => {
               timestamp: Date.now(),
             };
 
-            // Save back to session storage
-            sessionStorage.setItem(
-              'prospect_result',
-              JSON.stringify(updatedProspectResult),
-            );
+            // Save back to chrome.storage.session
+            await chrome.storage.session.set({
+              prospect_result: JSON.stringify(updatedProspectResult),
+            });
           } catch (e) {
             console.error('Error caching prospect data:', e);
           }
@@ -316,56 +313,6 @@ const SingleProfile = ({ userMetaData }) => {
       setProspect({});
     }
   };
-
-  // Set up message listener for personInfo-data-set events
-  useEffect(() => {
-    const messageListener = async (request) => {
-      if (request?.method === 'personInfo-data-set') {
-        // Get the latest person info directly from sessionStorage
-        try {
-          const latestPersonInfo = JSON.parse(
-            sessionStorage.getItem('personInfo'),
-          );
-
-          // Only proceed if we have valid person info and it's different from what we've already processed
-          if (
-            latestPersonInfo?.sourceId2 &&
-            latestPersonInfo.sourceId2 !== lastProcessedPersonIdRef.current
-          ) {
-            // Update ref first to prevent race conditions
-            lastProcessedPersonIdRef.current = latestPersonInfo.sourceId2;
-
-            // If API is currently in progress, let's cancel it before starting a new one
-            if (apiInProgressRef.current) {
-              if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-              }
-            }
-
-            // Reset state for new profile
-            setProspect({});
-            sequencesProcessedRef.current = false;
-
-            await fetchProspect();
-          }
-        } catch (err) {
-          console.error('Error processing message:', err);
-        }
-      }
-    };
-
-    // Add message listener
-    chrome.runtime.onMessage.addListener(messageListener);
-
-    // Clean up listener when component unmounts
-    return () => {
-      chrome.runtime.onMessage.removeListener(messageListener);
-      // Abort any pending requests when unmounting
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
 
   // Check for initial data on component mount
   useEffect(() => {
@@ -392,6 +339,76 @@ const SingleProfile = ({ userMetaData }) => {
 
     // Cleanup when unmounting
     return () => {
+      lastProcessedPersonIdRef.current = null;
+      // Also abort any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Replace with new storage listener code:
+  // Set up chrome.storage.session listener
+  useEffect(() => {
+    const handleStorageChange = async (changes) => {
+      try {
+        // Check if personInfo was changed
+        if (changes.personInfo) {
+          const latestPersonInfo = changes.personInfo.newValue;
+
+          // Only proceed if we have valid person info and it's different from what we've already processed
+          if (
+            latestPersonInfo?.sourceId2 &&
+            latestPersonInfo.sourceId2 !== lastProcessedPersonIdRef.current
+          ) {
+            // Update ref first to prevent race conditions
+            lastProcessedPersonIdRef.current = latestPersonInfo.sourceId2;
+
+            // If API is currently in progress, let's cancel it before starting a new one
+            if (apiInProgressRef.current) {
+              if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+              }
+            }
+
+            // Reset state for new profile
+            setProspect({});
+            sequencesProcessedRef.current = false;
+
+            await fetchProspect();
+          }
+        }
+      } catch (err) {
+        console.error('Error processing storage change:', err);
+      }
+    };
+
+    // Add storage change listener
+    chrome.storage.session.onChanged.addListener(handleStorageChange);
+
+    // Check for initial data
+    const initialLoad = async () => {
+      try {
+        const result = await chrome.storage.session.get('personInfo');
+        const storedPersonInfo = result.personInfo;
+
+        if (storedPersonInfo?.sourceId2) {
+          // Set the reference before fetching
+          lastProcessedPersonIdRef.current = storedPersonInfo.sourceId2;
+          await fetchProspect();
+        }
+      } catch (err) {
+        console.error('Error in initial load:', err);
+      }
+    };
+
+    // Reset the processed ID reference when component mounts
+    lastProcessedPersonIdRef.current = null;
+    initialLoad();
+
+    // Cleanup when unmounting
+    return () => {
+      chrome.storage.session.onChanged.removeListener(handleStorageChange);
       lastProcessedPersonIdRef.current = null;
       // Also abort any pending requests
       if (abortControllerRef.current) {

@@ -55,15 +55,6 @@ const Main = () => {
     type: 'danger',
   });
 
-  chrome.runtime.onMessage.addListener((request) => {
-    if (request?.method === 'set-bulkInfo') {
-      sessionStorage.setItem('bulkInfo', JSON.stringify(request?.peopleInfo));
-    }
-    if (request?.method === 'set-personInfo') {
-      sessionStorage.setItem('personInfo', JSON.stringify(request?.person));
-    }
-  });
-
   const getMetaData = async () => {
     if (!chrome?.storage?.local) {
       setIsMetaDataLoaded(true);
