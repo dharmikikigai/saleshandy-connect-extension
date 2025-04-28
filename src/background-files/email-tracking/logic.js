@@ -1030,36 +1030,18 @@ function BGActionDo(tab, tabId) {
                   if (person.current && person.current.length > 0) {
                     if (person.current[0].source_id === undefined) {
                       if (currentUrlTab.includes(person?.sourceId2)) {
-                        chrome.tabs.sendMessage(tab.id, {
-                          method: 'set-personInfo',
-                          person,
-                        });
-                        chrome.tabs.sendMessage(tab.id, {
-                          method: 'personInfo-data-set',
-                        });
+                        chrome.storage.session.set({ personInfo: person });
                       }
                     } else {
                       currentCompany(person.current[0], tabId);
                       retriveContactdata(sourceId2, tabId);
 
                       if (currentUrlTab.includes(person?.sourceId2)) {
-                        chrome.tabs.sendMessage(tab.id, {
-                          method: 'set-personInfo',
-                          person,
-                        });
-                        chrome.tabs.sendMessage(tab.id, {
-                          method: 'personInfo-data-set',
-                        });
+                        chrome.storage.session.set({ personInfo: person });
                       }
                     }
                   } else if (currentUrlTab.includes(person?.sourceId2)) {
-                    chrome.tabs.sendMessage(tab.id, {
-                      method: 'set-personInfo',
-                      person,
-                    });
-                    chrome.tabs.sendMessage(tab.id, {
-                      method: 'personInfo-data-set',
-                    });
+                    chrome.storage.session.set({ personInfo: person });
                   }
                 }
               }
@@ -1134,13 +1116,7 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  chrome.tabs.sendMessage(tab.id, {
-                    method: 'set-bulkInfo',
-                    peopleInfo,
-                  });
-                  chrome.tabs.sendMessage(tab.id, {
-                    method: 'bulkInfo-data-set',
-                  });
+                  chrome.storage.session.set({ bulkInfo: peopleInfo });
                 }
               }
             },
@@ -1221,21 +1197,9 @@ function BGActionDo(tab, tabId) {
                         request1.bulkInfo.people,
                         peopleInfo.people,
                       );
-                      chrome.tabs.sendMessage(tab.id, {
-                        method: 'set-bulkInfo',
-                        peopleInfo,
-                      });
-                      chrome.tabs.sendMessage(tab.id, {
-                        method: 'bulkInfo-data-set',
-                      });
+                      chrome.storage.session.set({ bulkInfo: peopleInfo });
                     } else {
-                      chrome.tabs.sendMessage(tab.id, {
-                        method: 'set-bulkInfo',
-                        peopleInfo,
-                      });
-                      chrome.tabs.sendMessage(tab.id, {
-                        method: 'bulkInfo-data-set',
-                      });
+                      chrome.storage.session.set({ bulkInfo: peopleInfo });
                     }
                   });
                 } else {
