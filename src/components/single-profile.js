@@ -22,6 +22,7 @@ import RateLimitReached from './rate-limit-reached';
 
 const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
+const MAX_PROSPECT_CACHE_SIZE = 5;
 
 const SingleProfile = ({ userMetaData }) => {
   // useState
@@ -93,23 +94,33 @@ const SingleProfile = ({ userMetaData }) => {
         return;
       }
 
+      apiInProgressRef.current = true;
       setLocalPersonInfo(localData);
       setIsLoading(true);
-      apiInProgressRef.current = true;
 
       const linkedinUrl =
         linkedinUrlParam ||
         `https://www.linkedin.com/in/${localData.sourceId2}`;
 
       // Check if we have cached data for this profile
-      const cachedDataKey = `prospect_data_${localData.sourceId2}`;
-      const cachedDataStr = sessionStorage.getItem(cachedDataKey);
-
-      // Only use cache if forceRefresh is false
-      if (!forceRefresh && cachedDataStr) {
+      const prospectResultStr = sessionStorage.getItem('prospect_result');
+      let prospectResult = {};
+      if (prospectResultStr) {
         try {
-          const cachedData = JSON.parse(cachedDataStr);
+          prospectResult = JSON.parse(prospectResultStr);
+        } catch (e) {
+          console.error('Error parsing prospect_result:', e);
+          prospectResult = {};
+        }
+      }
 
+      // Check if cached data exists and has isRevealing flag set to true
+      const cachedData = prospectResult[localData.sourceId2];
+      const isRevealingInProgress = cachedData?.profile?.isRevealing === true;
+
+      // Only use cache if forceRefresh is false and not currently revealing
+      if (!forceRefresh && cachedData && !isRevealingInProgress) {
+        try {
           setProspect({
             ...cachedData.profile,
             headline: localData.headline,
@@ -127,13 +138,13 @@ const SingleProfile = ({ userMetaData }) => {
             );
           }
 
-          setIsLoading(false);
           apiInProgressRef.current = false;
+          setIsLoading(false);
 
           // If cached data exists and is used, return early to avoid API call
           return;
         } catch (e) {
-          console.error('Error parsing cached prospect data:', e);
+          console.error('Error using cached prospect data:', e);
           // Continue with API call if cache parsing fails
         }
       }
@@ -168,8 +179,8 @@ const SingleProfile = ({ userMetaData }) => {
         }
       }
       if (!currentSourceId2 || currentSourceId2 !== localData.sourceId2) {
-        setIsLoading(false);
         apiInProgressRef.current = false;
+        setIsLoading(false);
         return;
       }
 
@@ -191,8 +202,8 @@ const SingleProfile = ({ userMetaData }) => {
         finalSourceId2 !== localData.sourceId2 ||
         signal.aborted
       ) {
-        setIsLoading(false);
         apiInProgressRef.current = false;
+        setIsLoading(false);
         return;
       }
 
@@ -202,12 +213,34 @@ const SingleProfile = ({ userMetaData }) => {
 
           // Store the fetched data in session storage
           try {
+            // Get existing prospect results
+            const existingResultStr = sessionStorage.getItem('prospect_result');
+            let updatedProspectResult = {};
+            if (existingResultStr) {
+              try {
+                updatedProspectResult = JSON.parse(existingResultStr);
+              } catch (e) {
+                console.error('Error parsing existing prospect_result:', e);
+                updatedProspectResult = {};
+              }
+            }
+
+            // Add or update the current prospect
+            if (
+              Object.keys(updatedProspectResult).length >=
+              MAX_PROSPECT_CACHE_SIZE
+            ) {
+              updatedProspectResult = {};
+            }
+            updatedProspectResult[localData.sourceId2] = {
+              profile: profileData,
+              timestamp: Date.now(),
+            };
+
+            // Save back to session storage
             sessionStorage.setItem(
-              cachedDataKey,
-              JSON.stringify({
-                profile: profileData,
-                timestamp: Date.now(),
-              }),
+              'prospect_result',
+              JSON.stringify(updatedProspectResult),
             );
           } catch (e) {
             console.error('Error caching prospect data:', e);
@@ -230,21 +263,56 @@ const SingleProfile = ({ userMetaData }) => {
             );
           }
         } else {
+          // Store the fetched data in session storage
+          try {
+            // Get existing prospect results
+            const existingResultStr = sessionStorage.getItem('prospect_result');
+            let updatedProspectResult = {};
+            if (existingResultStr) {
+              try {
+                updatedProspectResult = JSON.parse(existingResultStr);
+              } catch (e) {
+                console.error('Error parsing existing prospect_result:', e);
+                updatedProspectResult = {};
+              }
+            }
+
+            if (
+              Object.keys(updatedProspectResult).length >=
+              MAX_PROSPECT_CACHE_SIZE
+            ) {
+              updatedProspectResult = {};
+            }
+
+            // Add or update the current prospect with empty data
+            updatedProspectResult[localData.sourceId2] = {
+              profile: {},
+              timestamp: Date.now(),
+            };
+
+            // Save back to session storage
+            sessionStorage.setItem(
+              'prospect_result',
+              JSON.stringify(updatedProspectResult),
+            );
+          } catch (e) {
+            console.error('Error caching prospect data:', e);
+          }
           setProspect({});
         }
         if (response?.type === 'rate-limit') {
           setIsRateLimitReached(true);
         }
       }
-      setIsLoading(false);
       apiInProgressRef.current = false;
+      setIsLoading(false);
     } catch (err) {
       // Don't show errors for aborted requests
       if (err.name !== 'AbortError') {
         console.error('Error fetching prospect:', err);
       }
-      setIsLoading(false);
       apiInProgressRef.current = false;
+      setIsLoading(false);
       setProspect({});
     }
   };
@@ -351,6 +419,45 @@ const SingleProfile = ({ userMetaData }) => {
         } else {
           if (shouldPoll) {
             setIsPollingEnabled(true);
+            // Update the prospect in session storage with isRevealing flag
+            try {
+              const existingResultStr = sessionStorage.getItem(
+                'prospect_result',
+              );
+              let updatedProspectResult = {};
+              if (existingResultStr) {
+                try {
+                  updatedProspectResult = JSON.parse(existingResultStr);
+                } catch (e) {
+                  console.error('Error parsing existing prospect_result:', e);
+                  updatedProspectResult = {};
+                }
+              }
+
+              const localData = JSON.parse(
+                sessionStorage.getItem('personInfo'),
+              );
+              if (
+                localData &&
+                localData.sourceId2 &&
+                updatedProspectResult[localData.sourceId2]
+              ) {
+                // Update the profile with isRevealing flag
+                updatedProspectResult[
+                  localData.sourceId2
+                ].profile.isRevealing = true;
+                // Save back to session storage
+                sessionStorage.setItem(
+                  'prospect_result',
+                  JSON.stringify(updatedProspectResult),
+                );
+              }
+            } catch (e) {
+              console.error(
+                'Error updating prospect data in session storage:',
+                e,
+              );
+            }
           } else {
             fetchProspect(prospect.linkedin_url, true); // Force refresh after reveal
             setIsRevealing(false);
@@ -1633,7 +1740,7 @@ const SingleProfile = ({ userMetaData }) => {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 width: '100%',
-                                height: '20px',
+                                height: phoneIndex === 0 ? '22px' : '20px',
                               }}
                             >
                               <div
