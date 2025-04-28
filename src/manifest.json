@@ -63,6 +63,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://pyxis-edge.lifeisgoodforlearner.com"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://appsocket.saleshandy.com wss://appsocket.saleshandy.com https://pyxis-edge.lifeisgoodforlearner.com"
   }
 }
