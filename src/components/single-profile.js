@@ -22,6 +22,7 @@ import RateLimitReached from './rate-limit-reached';
 
 const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
+const MAX_PROSPECT_CACHE_SIZE = 5;
 
 const SingleProfile = ({ userMetaData }) => {
   // useState
@@ -225,7 +226,10 @@ const SingleProfile = ({ userMetaData }) => {
             }
 
             // Add or update the current prospect
-            if (Object.keys(updatedProspectResult).length >= 5) {
+            if (
+              Object.keys(updatedProspectResult).length >=
+              MAX_PROSPECT_CACHE_SIZE
+            ) {
               updatedProspectResult = {};
             }
             updatedProspectResult[localData.sourceId2] = {
@@ -273,7 +277,10 @@ const SingleProfile = ({ userMetaData }) => {
               }
             }
 
-            if (Object.keys(updatedProspectResult).length >= 5) {
+            if (
+              Object.keys(updatedProspectResult).length >=
+              MAX_PROSPECT_CACHE_SIZE
+            ) {
               updatedProspectResult = {};
             }
 
