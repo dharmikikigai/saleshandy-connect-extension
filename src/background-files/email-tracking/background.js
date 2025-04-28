@@ -77,13 +77,16 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
           { url: 'https://www.linkedin.com', name: 'li_at' },
           (cookie) => {
             if (cookie) {
-              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
               chrome.storage.local.get(['isModalClosed'], (req) => {
                 const isModalClosed = req?.isModalClosed;
                 if (isModalClosed === undefined || isModalClosed === false) {
                   chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+                } else {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDiv-0ff' });
                 }
               });
+
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
             }
           },
         );
@@ -139,13 +142,16 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
           { url: 'https://www.linkedin.com', name: 'li_at' },
           (cookie) => {
             if (cookie) {
-              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
               chrome.storage.local.get(['isModalClosed'], (req) => {
                 const isModalClosed = req?.isModalClosed;
                 if (isModalClosed === undefined || isModalClosed === false) {
                   chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+                } else {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDiv-0ff' });
                 }
               });
+
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
             }
           },
         );
