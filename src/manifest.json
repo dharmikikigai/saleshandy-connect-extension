@@ -41,7 +41,8 @@
   "host_permissions": [
     "https://*.linkedin.com/*",
     "https://mail.google.com/*",
-    "https://*.saleshandy.com/*"
+    "https://*.saleshandy.com/*",
+    "https://pyxis.lifeisgoodforlearner.com/*"
   ],
   "web_accessible_resources": [
     {
