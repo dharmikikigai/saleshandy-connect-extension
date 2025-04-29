@@ -1103,7 +1103,8 @@ function BGActionDo(tab, tabId) {
                   peopleInfo.people = people;
 
                   chrome.tabs.sendMessage(tab.id, {
-                    method: 'bulkInfo-data-set',
+                    method: 'set-bulkInfo',
+                    peopleInfo,
                   });
                 }
               }
