@@ -855,6 +855,11 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
 
       sequencesProcessedRef.current = true;
     }
+    if (prospect?.isRevealing) {
+      const currentRevealType = prospect?.isRevealed ? 'emailphone' : 'email';
+      setRevealType(currentRevealType);
+      setIsRevealing(true);
+    }
   }, [prospect]);
 
   useEffect(() => {
