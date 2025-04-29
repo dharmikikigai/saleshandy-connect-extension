@@ -990,21 +990,6 @@ function getPeopleGraph(source) {
   }
 }
 
-function mergeUniqueBy(arr1, arr2, key = 'source_id_2') {
-  const seen = new Map();
-
-  // Push both arrays in order; the first hit for a key is kept.
-  [...arr1, ...arr2].forEach((obj) => {
-    if (!seen.has(obj[key])) {
-      seen.set(obj[key], obj);
-    }
-    // If you prefer “last one wins”, swap the two lines above for:
-    // seen.set(obj[key], obj);
-  });
-
-  return [...seen.values()];
-}
-
 function BGActionDo(tab, tabId) {
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
@@ -1194,22 +1179,9 @@ function BGActionDo(tab, tabId) {
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
 
-                  chrome.storage.local.get(['bulkInfo'], (request1) => {
-                    if (request1?.bulkInfo?.oldurl === tab.url) {
-                      peopleInfo.people = mergeUniqueBy(
-                        request1.bulkInfo.people,
-                        peopleInfo.people,
-                      );
-                      chrome.tabs.sendMessage(tab.id, {
-                        method: 'set-bulkInfo',
-                        peopleInfo,
-                      });
-                    } else {
-                      chrome.tabs.sendMessage(tab.id, {
-                        method: 'set-bulkInfo',
-                        peopleInfo,
-                      });
-                    }
+                  chrome.tabs.sendMessage(tab.id, {
+                    method: 'set-bulkInfo',
+                    peopleInfo,
                   });
                 } else {
                   chrome.tabs.reload(tabId);
