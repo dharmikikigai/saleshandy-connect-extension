@@ -174,6 +174,8 @@ function injectBeaconOnLinkedInUrl() {
         element.style.display = 'flex';
         chrome.storage.local.set({ isModalClosed: false });
 
+        reloadIframe();
+
         if (existingBeacon) {
           existingBeacon.remove();
         }

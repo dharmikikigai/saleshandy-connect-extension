@@ -224,8 +224,14 @@ const Main = () => {
   };
 
   useEffect(() => {
-    authCheck();
-    pageCheck();
+    chrome.storage.local.get(['isModalClosed'], (result) => {
+      const isModalClosed = result?.isModalClosed;
+
+      if (!isModalClosed || isModalClosed === 'false') {
+        authCheck();
+        pageCheck();
+      }
+    });
   }, []);
 
   useEffect(() => {
