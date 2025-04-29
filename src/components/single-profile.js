@@ -22,7 +22,8 @@ import RateLimitReached from './rate-limit-reached';
 
 const BULK_ACTION_TIMEOUT = 10000;
 const MAX_POLLING_LIMIT = 20;
-const MAX_PROSPECT_CACHE_SIZE = 10;
+const MAX_PROSPECT_CACHE_SIZE = 50;
+const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 5;
 
 const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
   // useState
@@ -120,10 +121,11 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
 
       // Check if cached data exists and has isRevealing flag set to true
       const cachedData = prospectResult[localData.sourceId2];
-      const isRevealingInProgress = cachedData?.profile?.isRevealing === true;
+      const isExpired =
+        cachedData?.timestamp < Date.now() - PROSPECT_CACHE_EXPIRATION;
 
       // Only use cache if forceRefresh is false and not currently revealing
-      if (!forceRefresh && cachedData && !isRevealingInProgress) {
+      if (!forceRefresh && cachedData && !isExpired) {
         try {
           setProspect({
             ...cachedData.profile,

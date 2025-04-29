@@ -57,9 +57,6 @@ const Main = () => {
   const [shouldUpdatePersonInfo, setShouldUpdatePersonInfo] = useState(false);
 
   chrome.runtime.onMessage.addListener((request) => {
-    if (request?.method === 'set-bulkInfo') {
-      sessionStorage.setItem('bulkInfo', JSON.stringify(request?.peopleInfo));
-    }
     if (request?.method === 'set-personInfo') {
       sessionStorage.setItem('personInfo', JSON.stringify(request?.person));
       setShouldUpdatePersonInfo(true);
