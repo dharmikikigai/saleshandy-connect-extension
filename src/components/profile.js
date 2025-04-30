@@ -246,7 +246,6 @@ const Profile = () => {
             style={{
               width: '100%',
               height: '100%',
-              padding: '16px 0px',
             }}
           >
             <div
@@ -256,12 +255,13 @@ const Profile = () => {
                 width: '100%',
                 padding: '0px 16px 12px 16px',
                 borderBottom: '1px solid #E5E7EB',
+                marginTop: '16px',
               }}
             >
               <div
                 className="button-hover-effect"
                 onClick={handledBack}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', padding: '2px 0px' }}
               >
                 <svg
                   width="16"
@@ -298,14 +298,14 @@ const Profile = () => {
             {/* Profile Section */}
             <div
               style={{
-                maxHeight: '732px',
+                maxHeight: '731px',
                 overflowY: 'scroll',
                 overflowX: 'hidden',
               }}
             >
               <div
                 style={{
-                  padding: '0px 16px',
+                  padding: '0px 16px 16px 16px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
