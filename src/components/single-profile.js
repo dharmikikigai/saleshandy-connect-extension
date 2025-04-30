@@ -20,10 +20,10 @@ import phoneSignal from '../assets/icons/phoneSignal.svg';
 import alertCircle from '../assets/icons/alertCircle.svg';
 import RateLimitReached from './rate-limit-reached';
 
-const BULK_ACTION_TIMEOUT = 10000;
+const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
 const MAX_PROSPECT_CACHE_SIZE = 50;
-const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 5;
+const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
 const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
   // useState
@@ -121,11 +121,12 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
 
       // Check if cached data exists and has isRevealing flag set to true
       const cachedData = prospectResult[localData.sourceId2];
+      const isProspectRevealing = cachedData?.profile?.isRevealing;
       const isExpired =
         cachedData?.timestamp < Date.now() - PROSPECT_CACHE_EXPIRATION;
 
       // Only use cache if forceRefresh is false and not currently revealing
-      if (!forceRefresh && cachedData && !isExpired) {
+      if (!forceRefresh && cachedData && !isExpired && !isProspectRevealing) {
         try {
           setProspect({
             ...cachedData.profile,
@@ -861,6 +862,9 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
       const currentRevealType = prospect?.isRevealed ? 'emailphone' : 'email';
       setRevealType(currentRevealType);
       setIsRevealing(true);
+      if (!isPollingEnabled) {
+        setIsPollingEnabled(true);
+      }
     }
   }, [prospect]);
 

@@ -66,10 +66,10 @@ const CustomButton = ({
   );
 };
 
-const BULK_ACTION_TIMEOUT = 10000;
+const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
 const MAX_PROSPECT_CACHE_SIZE = 50;
-const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 5;
+const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
 const ProspectList = ({ pageType, userMetaData }) => {
   const [isProspectsLoading, setIsProspectsLoading] = useState(false);
@@ -220,6 +220,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
           prospectsToFetch.forEach((item) => {
             if (
               cachedProspects[item.source_id_2]?.profile &&
+              !cachedProspects[item.source_id_2]?.profile?.isRevealing &&
               cachedProspects[item.source_id_2]?.timestamp >
                 Date.now() - PROSPECT_CACHE_EXPIRATION
             ) {
@@ -1267,6 +1268,18 @@ const ProspectList = ({ pageType, userMetaData }) => {
       console.error('Error in polling completion useEffect:', error);
     }
   }, [isPollingEnabled]);
+
+  useEffect(() => {
+    if (prospects.length > 0) {
+      const isRevealingProspects = prospects
+        .filter((prospect) => prospect.isRevealing)
+        ?.map((prospect) => [prospect.id, true]);
+      if (isRevealingProspects.length > 0 && !isPollingEnabled) {
+        setRevealingProspects(Object.fromEntries(isRevealingProspects));
+        setIsPollingEnabled(true);
+      }
+    }
+  }, [prospects]);
 
   const toggleProspectSelection = (prospectId) => {
     if (activeTab === 'saved' && savedAllSelected) {
