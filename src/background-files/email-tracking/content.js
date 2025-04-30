@@ -7,7 +7,7 @@ function reloadIframe() {
   if (iframe) {
     setTimeout(() => {
       iframe.src = chrome.runtime.getURL('frame.html');
-    }, 200);
+    }, 100);
   }
 }
 
