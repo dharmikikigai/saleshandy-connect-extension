@@ -1106,6 +1106,8 @@ function BGActionDo(tab, tabId) {
                     method: 'set-bulkInfo',
                     peopleInfo,
                   });
+                } else {
+                  chrome.tabs.reload(tabId);
                 }
               }
             },
@@ -1175,6 +1177,12 @@ function BGActionDo(tab, tabId) {
                 } else {
                   people = undefined;
                 }
+                if (oldestUrl !== tab.url) {
+                  chrome.tabs.reload(tabId);
+                  oldestUrl = tab.url;
+                  return;
+                }
+
                 if (people && people.length > 0) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
@@ -1186,11 +1194,6 @@ function BGActionDo(tab, tabId) {
                   });
                 } else {
                   chrome.tabs.reload(tabId);
-                }
-
-                if (oldestUrl !== tab.url) {
-                  chrome.tabs.reload(tabId);
-                  oldestUrl = tab.url;
                 }
               }
             },
