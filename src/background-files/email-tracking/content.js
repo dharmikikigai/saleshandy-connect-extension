@@ -1,10 +1,13 @@
+/* eslint-disable no-use-before-define */
 const FLOATING_WINDOW_ID = 'saleshandy-iframe';
 const BEACON_ID = 'saleshandy-beacon';
 
 function reloadIframe() {
   const iframe = document.getElementById(FLOATING_WINDOW_ID);
   if (iframe) {
-    iframe.src = chrome.runtime.getURL('frame.html');
+    setTimeout(() => {
+      iframe.src = chrome.runtime.getURL('frame.html');
+    }, 200);
   }
 }
 
@@ -25,7 +28,7 @@ function injectFloatingWindow(display = 'flex') {
 
   if (existingModal) {
     existingModal.style.display = display;
-
+    injectBeaconOnLinkedInUrl();
     return;
   }
 
@@ -49,6 +52,8 @@ function injectFloatingWindow(display = 'flex') {
   modalDiv.allow = 'clipboard-write';
 
   document.body.appendChild(modalDiv);
+
+  injectBeaconOnLinkedInUrl();
 }
 
 function injectBeaconOnLinkedInUrl() {
