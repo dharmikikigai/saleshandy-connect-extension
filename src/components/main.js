@@ -114,9 +114,11 @@ const Main = () => {
 
       let checkFurther = true;
 
+      if (showProfilePageState) {
+        setShouldUpdatePersonInfo(true);
+      }
       setShowProfilePage(showProfilePageState);
       setShowProfilePageState(false);
-      setShouldUpdatePersonInfo(true);
 
       chrome.storage.local.get(['logoutTriggered'], (result) => {
         const logoutTriggered = result?.logoutTriggered;

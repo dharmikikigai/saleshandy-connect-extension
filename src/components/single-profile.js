@@ -25,7 +25,7 @@ const MAX_POLLING_LIMIT = 20;
 const MAX_PROSPECT_CACHE_SIZE = 50;
 const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
-const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
+const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
   // useState
   const [isViewEmailPhoneHover, setIsViewEmailPhoneHover] = useState(false);
 
@@ -76,6 +76,7 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
 
   const fetchProspect = async (linkedinUrlParam, forceRefresh = false) => {
     try {
+      console.log('fetching prospect');
       // Cancel any in-progress requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -804,6 +805,7 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo }) => {
 
   useEffect(() => {
     if (shouldUpdatePersonInfo) {
+      console.log('shouldUpdatePersonInfo', shouldUpdatePersonInfo);
       fetchProspect();
     }
   }, [shouldUpdatePersonInfo]);
