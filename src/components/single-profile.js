@@ -76,7 +76,6 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
 
   const fetchProspect = async (linkedinUrlParam, forceRefresh = false) => {
     try {
-      console.log('fetching prospect');
       // Cancel any in-progress requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -806,7 +805,6 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
 
   useEffect(() => {
     if (shouldUpdatePersonInfo) {
-      console.log('shouldUpdatePersonInfo', shouldUpdatePersonInfo);
       fetchProspect();
     }
   }, [shouldUpdatePersonInfo]);
@@ -919,6 +917,22 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
       }
     };
   }, [isPollingEnabled]);
+
+  // Add effect to listen for modal close
+  useEffect(() => {
+    const handleModalClose = (changes) => {
+      if (changes.isModalClosed?.newValue === true) {
+        pollingAttemptsRef.current = 0;
+        setIsPollingEnabled(false);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleModalClose);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleModalClose);
+    };
+  }, []);
 
   const metaCall = async () => {
     const metaData = (await mailboxInstance.getMetaData())?.payload;

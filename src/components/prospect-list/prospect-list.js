@@ -1125,8 +1125,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
   }, []);
 
   useEffect(() => {
-    const handleUpdateProspectList = (request) => {
-      if (request?.method === 'set-bulkInfo') {
+    const handleUpdateProspectList = async (request) => {
+      const isModalClosed = await chrome.storage.local.get(['isModalClosed']);
+      if (request?.method === 'set-bulkInfo' && !isModalClosed?.isModalClosed) {
         // Check if this request has already been processed
         if (
           processedRequestRef.current &&
@@ -1245,6 +1246,22 @@ const ProspectList = ({ pageType, userMetaData }) => {
       console.error('Error in polling useEffect:', error);
     }
   }, [isPollingEnabled, revealingProspects]);
+
+  // Add effect to listen for modal close
+  useEffect(() => {
+    const handleModalClose = (changes) => {
+      if (changes.isModalClosed?.newValue === true) {
+        pollingAttemptsRef.current = 0;
+        setIsPollingEnabled(false);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleModalClose);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleModalClose);
+    };
+  }, []);
 
   const metaCall = async () => {
     const metaData = (await mailboxInstance.getMetaData())?.payload;
