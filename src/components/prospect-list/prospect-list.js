@@ -467,6 +467,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
               ...Object.fromEntries(payload?.leadIds?.map((id) => [id, true])),
             };
             if (shouldPoll) {
+              pollingAttemptsRef.current = 0;
               setRevealingProspects(newRevealingProspects);
               setIsPollingEnabled(true);
               // update the cached prospects
@@ -1260,7 +1261,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
         // Only refresh prospects when polling is actually stopped
         refreshProspects();
         setIsFirstPollRequest(true);
-        pollingAttemptsRef.current = 0;
         metaCall();
         clearFilters();
       }
@@ -1274,7 +1274,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
       const isRevealingProspects = prospects
         .filter((prospect) => prospect.isRevealing)
         ?.map((prospect) => [prospect.id, true]);
-      if (isRevealingProspects.length > 0 && !isPollingEnabled) {
+      if (
+        isRevealingProspects.length > 0 &&
+        !isPollingEnabled &&
+        pollingAttemptsRef.current === 0
+      ) {
         setRevealingProspects(Object.fromEntries(isRevealingProspects));
         setIsPollingEnabled(true);
       }

@@ -343,6 +343,7 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
           console.log('warning', message);
         } else {
           if (shouldPoll) {
+            pollingAttemptsRef.current = 0;
             setIsPollingEnabled(true);
             // Update the prospect in session storage with isRevealing flag
             try {
@@ -386,7 +387,6 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
           } else {
             fetchProspect(prospect.linkedin_url, true); // Force refresh after reveal
             setIsRevealing(false);
-            pollingAttemptsRef.current = 0;
           }
           setToasterData({
             header: title || 'Lead reveal initiated',
@@ -618,6 +618,7 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
           console.log('warning', message);
         } else {
           if (shouldPoll) {
+            pollingAttemptsRef.current = 0;
             setIsPollingEnabled(true);
           }
           setToasterData({
@@ -864,7 +865,7 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
       const currentRevealType = prospect?.isRevealed ? 'emailphone' : 'email';
       setRevealType(currentRevealType);
       setIsRevealing(true);
-      if (!isPollingEnabled) {
+      if (!isPollingEnabled && pollingAttemptsRef.current === 0) {
         setIsPollingEnabled(true);
       }
     }
@@ -932,7 +933,6 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
       // Only refresh prospects when polling is actually stopped
       fetchProspect(prospect.linkedin_url, true); // Force refresh after polling completes
       setIsRevealing(false);
-      pollingAttemptsRef.current = 0;
       metaCall();
     }
   }, [isPollingEnabled]);
