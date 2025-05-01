@@ -2,10 +2,12 @@
 /* eslint-disable react/no-unescaped-entities */
 import React, { useEffect, useState } from 'react';
 import { Switch } from '@saleshandy/designs';
+import { useRecoilState } from 'recoil';
 import Main from './main';
 import Gmail from '../assets/icons/gmail.svg';
 import mailboxInstance from '../config/server/tracker/mailbox';
 import ENV_CONFIG from '../config/env';
+import { redirectFromProfilePageState } from './state';
 
 const Profile = () => {
   const [logout, setLogout] = useState(false);
@@ -21,33 +23,19 @@ const Profile = () => {
   const [mailboxList, setMailboxList] = useState([]);
   const [emailAccountTooltip, setEmailAccountTooltip] = useState(false);
   const [emailTrackingSentence, setEmailTrackingSentence] = useState('');
+  const [redirectFromProfilePage, setRedirectFromProfilePage] = useRecoilState(
+    redirectFromProfilePageState,
+  );
 
   const handledLogout = () => {
     chrome.storage.local.set({ logoutTriggered: 'true' });
+    setRedirectFromProfilePage(true);
     setLogout(true);
   };
 
   const handledBack = () => {
     setIsClicked(true);
-  };
-
-  const removeUnwantedIds = () => {
-    const ids = [
-      'common-screen-id',
-      'common-search-id',
-      'prospect-list-container',
-      'single-profile-container',
-      'no-result-container',
-      'no-prospect-container',
-      'rate-limit-container',
-    ];
-
-    for (const id of ids) {
-      const element = document.getElementById(id);
-      if (element) {
-        element.style.display = 'none';
-      }
-    }
+    setRedirectFromProfilePage(true);
   };
 
   const fetchSetting = () => {
@@ -229,7 +217,6 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    removeUnwantedIds();
     handleMetaData();
     fetchSetting();
     fetchNotificationSetting();
@@ -237,9 +224,7 @@ const Profile = () => {
 
   return (
     <>
-      {logout || isBackClicked ? (
-        <Main />
-      ) : (
+      {logout || isBackClicked ? null : (
         <>
           {/* Header Section (Back Button) */}
           <div

@@ -71,7 +71,7 @@ const MAX_POLLING_LIMIT = 20;
 const MAX_PROSPECT_CACHE_SIZE = 100;
 const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
-const ProspectList = ({ pageType, userMetaData }) => {
+const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
   const [isProspectsLoading, setIsProspectsLoading] = useState(false);
   const [localProspects, setLocalProspects] = useState(new Set());
   const [prospects, setProspects] = useState([]);
@@ -842,12 +842,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
         const remainingProspects = Object.keys(
           updatedRevealingProspects,
         ).filter((id) => updatedRevealingProspects[id]);
-        if (remainingProspects.length > 0) {
-          setRevealingProspects(updatedRevealingProspects);
-          setProspects(updatedProspects);
-        } else {
+        if (remainingProspects.length === 0) {
           setIsPollingEnabled(false);
         }
+        setRevealingProspects(updatedRevealingProspects);
+        setProspects(updatedProspects);
         setToasterData({
           header: response?.payload?.title || 'Leads Revealed Successfully',
           body: response?.payload?.message,
@@ -882,32 +881,47 @@ const ProspectList = ({ pageType, userMetaData }) => {
           link: linkedinUrls,
         };
         const response = await prospectsInstance.getProspects(payload);
-        setRevealingProspects({});
-        const updatedProspects = [...prospects];
-        response.payload.profiles.forEach((profile) => {
-          const prospectIndex = updatedProspects.findIndex(
-            (p) => p.id === profile.id,
+        if (response && response.payload && response.payload.profiles) {
+          setRevealingProspects({});
+          const updatedProspects = [...prospects];
+          response?.payload?.profiles?.forEach((profile) => {
+            const prospectIndex = updatedProspects.findIndex(
+              (p) => p.id === profile.id,
+            );
+            if (prospectIndex !== -1) {
+              updatedProspects[prospectIndex] = {
+                ...profile,
+                description: updatedProspects[prospectIndex]?.description,
+                logo: updatedProspects[prospectIndex]?.logo,
+              };
+            }
+            const sourceId = profile?.linkedin_url?.split('/in/')[1];
+            if (sourceId) {
+              cachedProspects[sourceId] = {
+                profile,
+                timestamp: Date.now(),
+              };
+            }
+          });
+          sessionStorage.setItem(
+            'prospect_result',
+            JSON.stringify(cachedProspects),
           );
-          if (prospectIndex !== -1) {
-            updatedProspects[prospectIndex] = {
-              ...profile,
-              description: updatedProspects[prospectIndex]?.description,
-              logo: updatedProspects[prospectIndex]?.logo,
-            };
-          }
-          const sourceId = profile?.linkedin_url?.split('/in/')[1];
-          if (sourceId) {
-            cachedProspects[sourceId] = {
-              profile,
-              timestamp: Date.now(),
-            };
-          }
-        });
-        sessionStorage.setItem(
-          'prospect_result',
-          JSON.stringify(cachedProspects),
-        );
-        setProspects(updatedProspects);
+          setProspects(updatedProspects);
+        }
+
+        if (response?.error) {
+          setToasterData({
+            header: 'Error',
+            body:
+              response?.message ||
+              (response?.messages &&
+                response?.messages?.length > 0 &&
+                response?.messages[0]),
+            type: 'danger',
+          });
+          setShowToaster(true);
+        }
       }
     } catch (error) {
       console.error('Error in refreshProspects:', error);
@@ -1180,6 +1194,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
     return () =>
       chrome.runtime.onMessage.removeListener(handleUpdateProspectList);
   }, []);
+
+  // Add effect to handle force update
+  useEffect(() => {
+    if (prospectListForceUpdate) {
+      console.log('prospectListForceUpdate', prospectListForceUpdate);
+      fetchProspects();
+    }
+  }, [prospectListForceUpdate]);
 
   // Add effect to handle body scroll lock
   useEffect(() => {
