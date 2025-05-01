@@ -69,9 +69,7 @@ const Header = () => {
 
   return (
     <>
-      {showProfilePage ? (
-        <Main />
-      ) : (
+      {showProfilePage ? null : (
         <>
           <div
             className="d-flex"
