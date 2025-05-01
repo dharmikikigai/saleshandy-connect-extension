@@ -4,7 +4,7 @@ import { Button, Card, Container } from 'react-bootstrap';
 import { useRecoilState } from 'recoil';
 import { loginState } from './state';
 import Main from './main';
-import saleshandyConnect from '../assets/icons/shConnectLogo.svg';
+import saleshandyLogo from '../assets/icons/saleshandyLogo.svg';
 import minus from '../assets/icons/minus.svg';
 import ENV_CONFIG from '../config/env';
 
@@ -63,7 +63,7 @@ const Login = () => {
                 alignItems: 'center',
               }}
             >
-              <img src={saleshandyConnect} alt="saleshandyConnect" />
+              <img src={saleshandyLogo} alt="saleshandyLogo" />
               <div
                 style={{
                   display: 'flex',

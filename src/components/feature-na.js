@@ -1,5 +1,5 @@
 import React from 'react';
-import shConnect from '../assets/icons/shConnectLogo.svg';
+import saleshandyLogo from '../assets/icons/saleshandyLogo.svg';
 
 const handleClose = () => {
   chrome.runtime.sendMessage({
@@ -27,7 +27,7 @@ const NotAvailableFeature = () => (
           width: '100%',
         }}
       >
-        <img src={shConnect} alt="shConnect" />
+        <img src={saleshandyLogo} alt="saleshandyLogo" />
         <button
           type="button"
           style={{
