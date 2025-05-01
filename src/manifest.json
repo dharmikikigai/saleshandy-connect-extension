@@ -1,6 +1,6 @@
 {
   "description": " Find verified emails and phone numbers, and track Gmail replies directly from your Chrome browser with Saleshandy Connect!",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "name": "Saleshandy Connect: B2B Phone Number and Email Finder",
   "manifest_version": 3,
   "homepage_url": "https://saleshandy.com",
@@ -58,6 +58,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://appsocket.saleshandy.com wss://appsocket.saleshandy.com https://pyxis-edge.lifeisgoodforlearner.com; frame-src 'self';"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://appsocket.saleshandy.com wss://appsocket.saleshandy.com https://leo-edge.saleshandy.com; frame-src 'self';"
   }
 }
