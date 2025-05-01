@@ -20,11 +20,12 @@ import phoneSignal from '../assets/icons/phoneSignal.svg';
 import alertCircle from '../assets/icons/alertCircle.svg';
 import RateLimitReached from './rate-limit-reached';
 
-const BULK_ACTION_TIMEOUT = 10000;
+const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
-const MAX_PROSPECT_CACHE_SIZE = 5;
+const MAX_PROSPECT_CACHE_SIZE = 50;
+const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
-const SingleProfile = ({ userMetaData }) => {
+const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
   // useState
   const [isViewEmailPhoneHover, setIsViewEmailPhoneHover] = useState(false);
 
@@ -89,7 +90,8 @@ const SingleProfile = ({ userMetaData }) => {
       if (
         !localData ||
         !localData.sourceId2 ||
-        lastProcessedPersonIdRef.current !== localData.sourceId2
+        (lastProcessedPersonIdRef.current !== null &&
+          lastProcessedPersonIdRef.current !== localData.sourceId2)
       ) {
         return;
       }
@@ -97,6 +99,9 @@ const SingleProfile = ({ userMetaData }) => {
       apiInProgressRef.current = true;
       setLocalPersonInfo(localData);
       setIsLoading(true);
+
+      // Update the last processed person ID
+      lastProcessedPersonIdRef.current = localData.sourceId2;
 
       const linkedinUrl =
         linkedinUrlParam ||
@@ -116,10 +121,12 @@ const SingleProfile = ({ userMetaData }) => {
 
       // Check if cached data exists and has isRevealing flag set to true
       const cachedData = prospectResult[localData.sourceId2];
-      const isRevealingInProgress = cachedData?.profile?.isRevealing === true;
+      const isProspectRevealing = cachedData?.profile?.isRevealing;
+      const isExpired =
+        cachedData?.timestamp < Date.now() - PROSPECT_CACHE_EXPIRATION;
 
       // Only use cache if forceRefresh is false and not currently revealing
-      if (!forceRefresh && cachedData && !isRevealingInProgress) {
+      if (!forceRefresh && cachedData && !isExpired && !isProspectRevealing) {
         try {
           setProspect({
             ...cachedData.profile,
@@ -317,89 +324,6 @@ const SingleProfile = ({ userMetaData }) => {
     }
   };
 
-  // Set up message listener for personInfo-data-set events
-  useEffect(() => {
-    const messageListener = async (request) => {
-      if (request?.method === 'personInfo-data-set') {
-        // Get the latest person info directly from sessionStorage
-        try {
-          const latestPersonInfo = JSON.parse(
-            sessionStorage.getItem('personInfo'),
-          );
-
-          // Only proceed if we have valid person info and it's different from what we've already processed
-          if (
-            latestPersonInfo?.sourceId2 &&
-            latestPersonInfo.sourceId2 !== lastProcessedPersonIdRef.current
-          ) {
-            // Update ref first to prevent race conditions
-            lastProcessedPersonIdRef.current = latestPersonInfo.sourceId2;
-
-            // If API is currently in progress, let's cancel it before starting a new one
-            if (apiInProgressRef.current) {
-              if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-              }
-            }
-
-            // Reset state for new profile
-            setProspect({});
-            sequencesProcessedRef.current = false;
-
-            await fetchProspect();
-          }
-        } catch (err) {
-          console.error('Error processing message:', err);
-        }
-      }
-    };
-
-    // Add message listener
-    chrome.runtime.onMessage.addListener(messageListener);
-
-    // Clean up listener when component unmounts
-    return () => {
-      chrome.runtime.onMessage.removeListener(messageListener);
-      // Abort any pending requests when unmounting
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  // Check for initial data on component mount
-  useEffect(() => {
-    // Check for existing personInfo in sessionStorage and fetch initial data
-    const initialLoad = async () => {
-      try {
-        const storedPersonInfo = sessionStorage.getItem('personInfo');
-        if (storedPersonInfo) {
-          const parsedInfo = JSON.parse(storedPersonInfo);
-          if (parsedInfo?.sourceId2) {
-            // Set the reference before fetching
-            lastProcessedPersonIdRef.current = parsedInfo.sourceId2;
-            await fetchProspect();
-          }
-        }
-      } catch (err) {
-        console.error('Error in initial load:', err);
-      }
-    };
-
-    // Reset the processed ID reference when component mounts
-    lastProcessedPersonIdRef.current = null;
-    initialLoad();
-
-    // Cleanup when unmounting
-    return () => {
-      lastProcessedPersonIdRef.current = null;
-      // Also abort any pending requests
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
   const revealProspect = async (leadRevealType) => {
     try {
       setIsRevealing(true);
@@ -418,6 +342,7 @@ const SingleProfile = ({ userMetaData }) => {
           console.log('warning', message);
         } else {
           if (shouldPoll) {
+            pollingAttemptsRef.current = 0;
             setIsPollingEnabled(true);
             // Update the prospect in session storage with isRevealing flag
             try {
@@ -461,7 +386,6 @@ const SingleProfile = ({ userMetaData }) => {
           } else {
             fetchProspect(prospect.linkedin_url, true); // Force refresh after reveal
             setIsRevealing(false);
-            pollingAttemptsRef.current = 0;
           }
           setToasterData({
             header: title || 'Lead reveal initiated',
@@ -693,6 +617,7 @@ const SingleProfile = ({ userMetaData }) => {
           console.log('warning', message);
         } else {
           if (shouldPoll) {
+            pollingAttemptsRef.current = 0;
             setIsPollingEnabled(true);
           }
           setToasterData({
@@ -879,6 +804,12 @@ const SingleProfile = ({ userMetaData }) => {
   };
 
   useEffect(() => {
+    if (shouldUpdatePersonInfo) {
+      fetchProspect();
+    }
+  }, [shouldUpdatePersonInfo]);
+
+  useEffect(() => {
     if (userMetaData?.user?.isAgencyficationActive) {
       fetchAgencyClients();
     }
@@ -927,6 +858,14 @@ const SingleProfile = ({ userMetaData }) => {
       }
 
       sequencesProcessedRef.current = true;
+    }
+    if (prospect?.isRevealing) {
+      const currentRevealType = prospect?.isRevealed ? 'emailphone' : 'email';
+      setRevealType(currentRevealType);
+      setIsRevealing(true);
+      if (!isPollingEnabled && pollingAttemptsRef.current === 0) {
+        setIsPollingEnabled(true);
+      }
     }
   }, [prospect]);
 
@@ -979,6 +918,22 @@ const SingleProfile = ({ userMetaData }) => {
     };
   }, [isPollingEnabled]);
 
+  // Add effect to listen for modal close
+  useEffect(() => {
+    const handleModalClose = (changes) => {
+      if (changes.isModalClosed?.newValue === true) {
+        pollingAttemptsRef.current = 0;
+        setIsPollingEnabled(false);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleModalClose);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleModalClose);
+    };
+  }, []);
+
   const metaCall = async () => {
     const metaData = (await mailboxInstance.getMetaData())?.payload;
 
@@ -992,7 +947,6 @@ const SingleProfile = ({ userMetaData }) => {
       // Only refresh prospects when polling is actually stopped
       fetchProspect(prospect.linkedin_url, true); // Force refresh after polling completes
       setIsRevealing(false);
-      pollingAttemptsRef.current = 0;
       metaCall();
     }
   }, [isPollingEnabled]);

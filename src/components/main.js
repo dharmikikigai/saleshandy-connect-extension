@@ -54,13 +54,12 @@ const Main = () => {
     body: '',
     type: 'danger',
   });
+  const [shouldUpdatePersonInfo, setShouldUpdatePersonInfo] = useState(false);
 
   chrome.runtime.onMessage.addListener((request) => {
-    if (request?.method === 'set-bulkInfo') {
-      sessionStorage.setItem('bulkInfo', JSON.stringify(request?.peopleInfo));
-    }
     if (request?.method === 'set-personInfo') {
       sessionStorage.setItem('personInfo', JSON.stringify(request?.person));
+      setShouldUpdatePersonInfo(true);
     }
   });
 
@@ -115,6 +114,9 @@ const Main = () => {
 
       let checkFurther = true;
 
+      if (showProfilePageState) {
+        setShouldUpdatePersonInfo(true);
+      }
       setShowProfilePage(showProfilePageState);
       setShowProfilePageState(false);
 
@@ -221,8 +223,14 @@ const Main = () => {
   };
 
   useEffect(() => {
-    authCheck();
-    pageCheck();
+    chrome.storage.local.get(['isModalClosed'], (result) => {
+      const isModalClosed = result?.isModalClosed;
+
+      if (!isModalClosed || isModalClosed === 'false') {
+        authCheck();
+        pageCheck();
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -269,7 +277,12 @@ const Main = () => {
       case VIEW_TYPES.FEATURE_NA:
         return <NotAvailableFeature />;
       case VIEW_TYPES.SINGLE_PROFILE:
-        return <SingleProfile userMetaData={userMetaData} />;
+        return (
+          <SingleProfile
+            userMetaData={userMetaData}
+            shouldUpdatePersonInfo={shouldUpdatePersonInfo}
+          />
+        );
       case VIEW_TYPES.PROSPECT_LIST:
         return (
           <ProspectList
