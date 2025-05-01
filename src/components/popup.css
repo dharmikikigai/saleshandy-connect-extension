@@ -1,3 +1,7 @@
+body {
+  font-family: 'Inter', sans-serif;
+}
+
 .popup-platform-item:hover {
   background-color: #f9fafb;
 }
