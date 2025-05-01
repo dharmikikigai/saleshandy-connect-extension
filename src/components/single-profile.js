@@ -22,7 +22,7 @@ import RateLimitReached from './rate-limit-reached';
 
 const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
-const MAX_PROSPECT_CACHE_SIZE = 50;
+const MAX_PROSPECT_CACHE_SIZE = 100;
 const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
 const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
