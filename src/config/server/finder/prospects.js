@@ -21,29 +21,6 @@ class Prospects extends Server {
     }
   }
 
-  async getProspectSequence() {
-    try {
-      return (await this.req.get(URLs.getProspectSequences.path())).data;
-    } catch (e) {
-      console.log(URLs.getProspectSequences.error, e);
-      return {
-        payload: {
-          code: e?.response?.data?.code,
-          message: e?.response?.data?.message,
-        },
-      };
-    }
-  }
-
-  // todo-dharmik : move this function to auth class (new class)
-  async authenticateUser(payload) {
-    try {
-      return (await this.req.post(URLs.authenticateUser.path(), payload)).data;
-    } catch (e) {
-      console.log(URLs.authenticateUser.error, e);
-    }
-  }
-
   // to get the leads data based on linkedin urls
   async getProspects(payload) {
     try {

@@ -1,11 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
 import React, { useEffect, useState } from 'react';
-import { Switch } from '@saleshandy/designs';
 import { useRecoilState } from 'recoil';
-import Main from './main';
-import Gmail from '../assets/icons/gmail.svg';
-import mailboxInstance from '../config/server/tracker/mailbox';
 import ENV_CONFIG from '../config/env';
 import { redirectFromProfilePageState } from './state';
 
@@ -15,14 +11,6 @@ const Profile = () => {
   const [nameInitials, setNameInitials] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [mailboxSetting, setMailboxSetting] = useState(false);
-  const [desktopNotification, setDesktopNotification] = useState(false);
-  const [newMailboxId, setMailboxId] = useState();
-  const [mailboxEmail, setMailboxEmail] = useState('');
-  const [newUserId, setUserId] = useState();
-  const [mailboxList, setMailboxList] = useState([]);
-  const [emailAccountTooltip, setEmailAccountTooltip] = useState(false);
-  const [emailTrackingSentence, setEmailTrackingSentence] = useState('');
   const [redirectFromProfilePage, setRedirectFromProfilePage] = useRecoilState(
     redirectFromProfilePageState,
   );
@@ -36,164 +24,6 @@ const Profile = () => {
   const handledBack = () => {
     setIsClicked(true);
     setRedirectFromProfilePage(true);
-  };
-
-  const fetchSetting = () => {
-    chrome.storage.local.get(['activeUrl'], async (result) => {
-      const activeUrl = result?.activeUrl;
-      if (activeUrl?.includes('mail.google.com')) {
-        chrome.storage.local.get(['mailboxEmail'], async (request) => {
-          if (request.mailboxEmail) {
-            const { mailboxId, isTrackingEnabled, userId } = (
-              await mailboxInstance.fetchingMailboxSetting({
-                email: request.mailboxEmail,
-              })
-            ).payload;
-
-            chrome.storage.local.set({
-              [request.mailboxEmail]: { mailboxId, isTrackingEnabled, userId },
-            });
-
-            setMailboxSetting(isTrackingEnabled);
-            setMailboxId(mailboxId);
-            setMailboxEmail(request.mailboxEmail);
-            setUserId(userId);
-          }
-        });
-        setEmailTrackingSentence(
-          `Email tracking for ${request.mailboxEmail} is turned on`,
-        );
-      } else {
-        const mailBoxes = (await mailboxInstance.getMailboxesSetting())
-          ?.payload;
-
-        if (mailBoxes?.length) {
-          const anyTrackingEnabled = mailBoxes.filter(
-            (x) => x.isTrackingEnabled,
-          );
-
-          if (anyTrackingEnabled?.length) {
-            const trackingEmails = anyTrackingEnabled.map((item) => item.email);
-
-            setMailboxSetting(true);
-            setUserId(anyTrackingEnabled[0].userId);
-            setMailboxList(trackingEmails);
-            console.debug('tracking', trackingEmails);
-
-            let sentence;
-
-            if (trackingEmails.length === 1) {
-              sentence = `Email tracking is turned on for ${trackingEmails[0]}`;
-            } else if (trackingEmails.length === 2) {
-              sentence = `Email tracking is turned on for ${trackingEmails[0]} and ${trackingEmails[1]}`;
-            } else {
-              sentence = (
-                <>
-                  Email tracking is turned on for {trackingEmails[0]},<br />
-                  {trackingEmails[1]}{' '}
-                  <div
-                    style={{
-                      color: '#0137FC',
-                      cursor: 'pointer',
-                      display: 'block',
-                    }}
-                    onClick={() => {
-                      setEmailAccountTooltip(!emailAccountTooltip);
-                      console.debug('click ');
-                    }}
-                  >
-                    <span
-                      onMouseEnter={() => setEmailAccountTooltip(true)}
-                      onMouseLeave={() => setEmailAccountTooltip(false)}
-                    >
-                      [+{trackingEmails.length - 2} more]
-                    </span>
-                  </div>
-                </>
-              );
-            }
-
-            setEmailTrackingSentence(sentence);
-          } else {
-            setMailboxSetting(false);
-          }
-        }
-      }
-    });
-  };
-
-  const handleTrackingSetting = async () => {
-    chrome.storage.local.get(['activeUrl'], async (result) => {
-      const activeUrl = result?.activeUrl;
-
-      if (activeUrl?.includes('mail.google.com')) {
-        const trackingSetting = (
-          await mailboxInstance.updateMailboxSetting(
-            {
-              isTrackingEnabled: !mailboxSetting,
-            },
-            newMailboxId,
-          )
-        )?.payload;
-
-        chrome.storage.local.get(['mailboxEmail'], (request) => {
-          setMailboxEmail(request.mailboxEmail);
-        });
-
-        const trackingData = trackingSetting.isTrackingEnabled;
-
-        chrome.storage.local.set({
-          [mailboxEmail]: {
-            mailboxId: newMailboxId,
-            isTrackingEnabled: trackingData,
-            userId: newUserId,
-          },
-        });
-
-        if (trackingSetting) {
-          setMailboxSetting(trackingData);
-        }
-      } else {
-        await mailboxInstance.updateMailboxesSetting({
-          isTrackingEnabled: !mailboxSetting,
-        });
-
-        if (!mailboxSetting === true) {
-          fetchSetting();
-        } else {
-          setMailboxSetting(!mailboxSetting);
-        }
-      }
-    });
-  };
-
-  const fetchNotificationSetting = async () => {
-    const notificationSetting = (
-      await mailboxInstance.fetchNotificationSetting()
-    )?.payload;
-    if (notificationSetting) {
-      if (notificationSetting.settings[0].value === '1') {
-        setDesktopNotification(true);
-      } else {
-        setDesktopNotification(false);
-      }
-    }
-  };
-
-  const handleNotificationSetting = async () => {
-    let code;
-    if (desktopNotification) {
-      code = '0';
-    } else {
-      code = '1';
-    }
-
-    const data = await mailboxInstance.updateNotificationSetting({
-      settings: [{ code: 'desktop_notification', value: code }],
-    });
-    if (data) {
-      setDesktopNotification(!desktopNotification);
-    }
   };
 
   const handleClick = (link) => {
@@ -218,8 +48,6 @@ const Profile = () => {
 
   useEffect(() => {
     handleMetaData();
-    fetchSetting();
-    fetchNotificationSetting();
   }, []);
 
   return (
