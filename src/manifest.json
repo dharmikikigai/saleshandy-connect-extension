@@ -1,7 +1,7 @@
 {
-  "description": "Find verified emails and phone numbers, and track Gmail replies directly from your Chrome browser with Saleshandy Connect!",
+  "description": "Find verified emails and phone numbers of LinkedIn profiles from your browser with Saleshandy Connect 2.0!",
   "version": "1.0.0",
-  "name": "Saleshandy Connect: B2B Phone Number and Email Finder",
+  "name": "Saleshandy Connect 2.0: B2B Email Finder and Phone Lookup",
   "manifest_version": 3,
   "homepage_url": "https://saleshandy.com",
   "action": {

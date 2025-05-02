@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './popup.css';
 import ENV_CONFIG from '../config/env';
 
@@ -12,39 +12,6 @@ const handleClick = (link) => {
 
 const Popup = () => {
   const [refreshTooltip, setRefreshTooltip] = useState(false);
-
-  const authCheck = () => {
-    chrome.storage.local.get(['authToken'], (result) => {
-      const authenticationToken = result?.authToken;
-
-      let checkFurther = true;
-
-      chrome.storage.local.get(['logoutTriggered'], (result1) => {
-        const logoutTriggered = result1?.logoutTriggered;
-
-        if (logoutTriggered && logoutTriggered === 'true') {
-          setAuthenticated(false);
-          checkFurther = false;
-        }
-
-        if (checkFurther) {
-          if (
-            authenticationToken !== undefined &&
-            authenticationToken !== null &&
-            authenticationToken !== ''
-          ) {
-            setAuthenticated(true);
-          } else {
-            setAuthenticated(false);
-          }
-        }
-      });
-    });
-  };
-
-  useEffect(() => {
-    authCheck();
-  }, []);
 
   return (
     <div
@@ -492,7 +459,7 @@ const Popup = () => {
               {/* View Prospects link svg */}
               <div
                 onClick={() =>
-                  handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospect`)
+                  handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospects`)
                 }
                 style={{
                   cursor: 'pointer',

@@ -195,7 +195,7 @@ function injectBeaconOnLinkedInUrl() {
 function openIframe() {
   if (!document.getElementById('saleshandy-welcome-video')) {
     const iframe = document.createElement('iframe');
-    iframe.src = 'https://www.youtube.com/embed/m55aDMo6nTA';
+    iframe.src = 'https://www.youtube.com/embed/_bpZWMKkTIg';
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
