@@ -186,8 +186,4 @@ options.optimization = {
   ],
 };
 
-// options.externals = {
-//   react: 'React',
-// };
-
 module.exports = options;
