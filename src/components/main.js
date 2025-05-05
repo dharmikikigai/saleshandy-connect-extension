@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import Login from './login';
@@ -5,7 +6,11 @@ import Profile from './profile';
 import CommonSearch from './common-search';
 import CommonSearchPeople from './common-search-people';
 import NotAvailableFeature from './feature-na';
-import { profilePageState } from './state';
+import {
+  loginState,
+  profilePageState,
+  redirectFromProfilePageState,
+} from './state';
 import mailboxInstance from '../config/server/tracker/mailbox';
 import SingleProfile from './single-profile';
 import ProspectList from './prospect-list/prospect-list';
@@ -13,6 +18,17 @@ import SingleProfileSkeleton from './single-profile-skeleton';
 import Toaster from './toaster';
 
 import './prospect-list/prospect-list.css';
+
+const VIEW_TYPES = {
+  LOADING: 'LOADING',
+  LOGIN: 'LOGIN',
+  PROFILE: 'PROFILE',
+  FEATURE_NA: 'FEATURE_NA',
+  SINGLE_PROFILE: 'SINGLE_PROFILE',
+  PROSPECT_LIST: 'PROSPECT_LIST',
+  COMMON_SEARCH_PEOPLE: 'COMMON_SEARCH_PEOPLE',
+  COMMON_SEARCH: 'COMMON_SEARCH',
+};
 
 const Main = () => {
   const [authCheckLoading, setAuthCheckLoading] = useState(true);
@@ -32,7 +48,13 @@ const Main = () => {
   const [showProfilePageState, setShowProfilePageState] = useRecoilState(
     profilePageState,
   );
+  const [redirectFromProfilePage, setRedirectFromProfilePage] = useRecoilState(
+    redirectFromProfilePageState,
+  );
+  const [redirectFromLogin, setRedirectFromLogin] = useRecoilState(loginState);
   const [userMetaData, setUserMetaData] = useState(null);
+  const [currentView, setCurrentView] = useState(VIEW_TYPES.LOADING);
+  const [isMetaDataLoaded, setIsMetaDataLoaded] = useState(false);
 
   // Toaster state
   const [showToaster, setShowToaster] = useState(false);
@@ -41,9 +63,19 @@ const Main = () => {
     body: '',
     type: 'danger',
   });
+  const [shouldUpdatePersonInfo, setShouldUpdatePersonInfo] = useState(false);
+  const [prospectListForceUpdate, setProspectListForceUpdate] = useState(false);
+
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request?.method === 'set-personInfo') {
+      sessionStorage.setItem('personInfo', JSON.stringify(request?.person));
+      setShouldUpdatePersonInfo(true);
+    }
+  });
 
   const getMetaData = async () => {
     if (!chrome?.storage?.local) {
+      setIsMetaDataLoaded(true);
       return;
     }
 
@@ -51,7 +83,6 @@ const Main = () => {
       const response = await mailboxInstance.getMetaData();
 
       if (response?.error) {
-        // Show error toast
         setToasterData({
           header: 'Error',
           body:
@@ -60,6 +91,7 @@ const Main = () => {
           type: 'danger',
         });
         setShowToaster(true);
+        setIsMetaDataLoaded(true);
         return;
       }
 
@@ -73,8 +105,8 @@ const Main = () => {
           setIsFeatureAvailable(true);
         }
       }
+      setIsMetaDataLoaded(true);
     } catch (error) {
-      // Show error toast for any exception
       setToasterData({
         header: 'Error',
         body: 'An unexpected error occurred while fetching metadata.',
@@ -82,6 +114,7 @@ const Main = () => {
       });
       setShowToaster(true);
       console.error('Error fetching metadata:', error);
+      setIsMetaDataLoaded(true);
     }
   };
 
@@ -89,16 +122,12 @@ const Main = () => {
     chrome.storage.local.get(['authToken'], (result1) => {
       const authenticationToken = result1?.authToken;
 
-      console.log('authToken', authenticationToken);
-
       let checkFurther = true;
-
-      setShowProfilePage(showProfilePageState);
-      setShowProfilePageState(false);
+      // setShowProfilePage(showProfilePageState);
+      // setShowProfilePageState(false);
 
       chrome.storage.local.get(['logoutTriggered'], (result) => {
         const logoutTriggered = result?.logoutTriggered;
-
         if (logoutTriggered && logoutTriggered === 'true') {
           setIsSaleshandyLoggedIn(false);
           checkFurther = false;
@@ -114,7 +143,10 @@ const Main = () => {
             getMetaData();
           } else {
             setIsSaleshandyLoggedIn(false);
+            setIsMetaDataLoaded(true);
           }
+        } else {
+          setIsMetaDataLoaded(true);
         }
       });
 
@@ -125,8 +157,6 @@ const Main = () => {
   const pageCheck = () => {
     chrome.storage.local.get(['activeUrl'], (result) => {
       const activeUrl = result?.activeUrl;
-
-      console.log('activeUrl', activeUrl);
 
       if (!activeUrl || activeUrl === '') {
         setIsCommonSearchScreenActive(true);
@@ -183,45 +213,101 @@ const Main = () => {
   };
 
   useEffect(() => {
-    authCheck();
-    pageCheck();
+    if (redirectFromLogin) {
+      authCheck();
+      setRedirectFromLogin(false);
+    }
+  }, [redirectFromLogin]);
+
+  useEffect(() => {
+    setShowProfilePage(showProfilePageState);
+  }, [showProfilePageState]);
+
+  useEffect(() => {
+    if (redirectFromProfilePage) {
+      setShowProfilePageState(false);
+      setRedirectFromProfilePage(false);
+      setProspectListForceUpdate(true);
+      authCheck();
+    }
+  }, [redirectFromProfilePage]);
+
+  useEffect(() => {
+    chrome.storage.local.get(['isModalClosed'], (result) => {
+      const isModalClosed = result?.isModalClosed;
+
+      if (!isModalClosed || isModalClosed === 'false') {
+        authCheck();
+        pageCheck();
+      }
+    });
   }, []);
 
-  if (authCheckLoading || pageCheckLoading) {
-    return <SingleProfileSkeleton />;
-  }
+  useEffect(() => {
+    if (!authCheckLoading && !pageCheckLoading && isMetaDataLoaded) {
+      if (!isSaleshandyLoggedIn) {
+        setCurrentView(VIEW_TYPES.LOGIN);
+      } else if (showProfilePage) {
+        setCurrentView(VIEW_TYPES.PROFILE);
+      } else if (isFeatureAvailable) {
+        setCurrentView(VIEW_TYPES.FEATURE_NA);
+      } else if (isSingleViewActive && !showProfilePage) {
+        setCurrentView(VIEW_TYPES.SINGLE_PROFILE);
+      } else if (isBulkPagViewActive || isBulkViewActive) {
+        setCurrentView(VIEW_TYPES.PROSPECT_LIST);
+      } else if (isCommonPeopleScreenActive) {
+        setCurrentView(VIEW_TYPES.COMMON_SEARCH_PEOPLE);
+      } else if (isCommonSearchScreenActive) {
+        setCurrentView(VIEW_TYPES.COMMON_SEARCH);
+      }
+    }
+  }, [
+    authCheckLoading,
+    pageCheckLoading,
+    isMetaDataLoaded,
+    isSaleshandyLoggedIn,
+    showProfilePage,
+    isFeatureAvailable,
+    isSingleViewActive,
+    isBulkPagViewActive,
+    isBulkViewActive,
+    isCommonPeopleScreenActive,
+    isCommonSearchScreenActive,
+  ]);
+  const renderContent = () => {
+    switch (currentView) {
+      case VIEW_TYPES.LOADING:
+        return <SingleProfileSkeleton />;
+      case VIEW_TYPES.LOGIN:
+        return <Login />;
+      case VIEW_TYPES.PROFILE:
+        return <Profile />;
+      case VIEW_TYPES.FEATURE_NA:
+        return <NotAvailableFeature />;
+      case VIEW_TYPES.SINGLE_PROFILE:
+        return (
+          <SingleProfile
+            userMetaData={userMetaData}
+            shouldUpdatePersonInfo={shouldUpdatePersonInfo}
+          />
+        );
+      case VIEW_TYPES.PROSPECT_LIST:
+        return (
+          <ProspectList
+            pageType={isBulkPagViewActive ? 'pagination' : 'continuous'}
+            userMetaData={userMetaData}
+            prospectListForceUpdate={prospectListForceUpdate}
+          />
+        );
+      case VIEW_TYPES.COMMON_SEARCH_PEOPLE:
+        return <CommonSearchPeople />;
+      case VIEW_TYPES.COMMON_SEARCH:
+        return <CommonSearch />;
+      default:
+        return <SingleProfileSkeleton />;
+    }
+  };
 
-  if (!isSaleshandyLoggedIn) {
-    return <Login />;
-  }
-
-  if (showProfilePage) {
-    return <Profile />;
-  }
-
-  if (isFeatureAvailable) {
-    return <NotAvailableFeature />;
-  }
-
-  // Render the appropriate component based on the current state
-  let componentToRender;
-
-  if (isSingleViewActive) {
-    componentToRender = <SingleProfile userMetaData={userMetaData} />;
-  } else if (isBulkPagViewActive || isBulkViewActive) {
-    componentToRender = (
-      <ProspectList
-        pageType={isBulkPagViewActive ? 'pagination' : 'continuous'}
-        userMetaData={userMetaData}
-      />
-    );
-  } else if (isCommonPeopleScreenActive) {
-    componentToRender = <CommonSearchPeople />;
-  } else if (isCommonSearchScreenActive) {
-    componentToRender = <CommonSearch />;
-  }
-
-  // Return the component with the toaster
   return (
     <>
       {showToaster && (
@@ -232,7 +318,7 @@ const Main = () => {
           onClose={() => setShowToaster(false)}
         />
       )}
-      {componentToRender}
+      {renderContent()}
     </>
   );
 };

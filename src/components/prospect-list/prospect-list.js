@@ -66,12 +66,14 @@ const CustomButton = ({
   );
 };
 
-const BULK_ACTION_TIMEOUT = 10000;
+const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
+const MAX_PROSPECT_CACHE_SIZE = 100;
+const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
-const ProspectList = ({ pageType, userMetaData }) => {
+const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
   const [isProspectsLoading, setIsProspectsLoading] = useState(false);
-  const [localProspects, setLocalProspects] = useState([]);
+  const [localProspects, setLocalProspects] = useState(new Set());
   const [prospects, setProspects] = useState([]);
   const [savedProspects, setSavedProspects] = useState([]);
   const [savedCount, setSavedCount] = useState(0);
@@ -148,69 +150,241 @@ const ProspectList = ({ pageType, userMetaData }) => {
     isTagsModalForRevealedProspects,
     setIsTagsModalForRevealedProspects,
   ] = useState(false);
-  const [isCopyIconHover, setIsCopyIconHover] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
-  const setProspectsData = (data, rawData) => {
-    try {
-      if (
-        data.payload &&
-        data.payload.profiles &&
-        data.payload.profiles.length > 0
-      ) {
-        const prospectsData = rawData.map((item) => {
-          const prospect = data.payload.profiles.find(
-            (profile) =>
-              profile.linkedin_url ===
-              `https://www.linkedin.com/in/${item.source_id_2}`,
-          );
-          if (prospect) {
-            return {
-              ...prospect,
-              description: item.description,
-              logo: item.logo,
-            };
-          }
-          return item;
-        });
-        setProspects(prospectsData);
-      }
-    } catch (error) {
-      console.error('Error in setProspectsData:', error);
-    }
+  // Add a ref to track the latest localProspects state
+  const localProspectsRef = useRef(new Set());
+  const prospectsRef = useRef([]);
+  const selectedProspectsRef = useRef([]);
+
+  // Add ref to track processed request
+  const processedRequestRef = useRef(null);
+
+  // Update the ref whenever localProspects changes
+  useEffect(() => {
+    localProspectsRef.current = localProspects;
+    prospectsRef.current = prospects;
+    selectedProspectsRef.current = selectedProspects;
+  }, [localProspects, prospects, selectedProspects]);
+
+  // Helper function to check if two people arrays are the same
+  const arePeopleArraysSame = (arr1, arr2) => {
+    if (!arr1 || !arr2) return false;
+    if (arr1.length !== arr2.length) return false;
+
+    // Create a map of source_id_2 to person for the first array
+    const map1 = new Map(arr1.map((person) => [person.source_id_2, person]));
+
+    // Check if all items in second array match the first
+    return arr2.every((person) => {
+      const match = map1.get(person.source_id_2);
+      return match && JSON.stringify(match) === JSON.stringify(person);
+    });
   };
 
   const fetchProspects = async () => {
     try {
-      chrome.storage.local.get(['bulkInfo'], async (result) => {
-        try {
-          const bulkInfo = result?.bulkInfo?.people;
-          setLocalProspects(bulkInfo);
-          if (bulkInfo && bulkInfo.length > 0) {
-            const linkedinUrls = bulkInfo.map(
+      const sessionData = JSON.parse(sessionStorage.getItem('bulkInfo'));
+      if (!sessionData) return;
+
+      const bulkInfo = sessionData?.people;
+      if (!bulkInfo) return;
+
+      try {
+        // Use the ref to get the latest state of localProspects
+        const currentLocalProspects = localProspectsRef.current;
+        const currentProspects = prospectsRef.current;
+        const currentSelectedProspects = selectedProspectsRef.current;
+
+        // Get cached prospects from session storage
+        const cachedProspects =
+          JSON.parse(sessionStorage.getItem('prospect_result')) || {};
+
+        // Filter out prospects that we've already fetched
+        const prospectsToFetch =
+          pageType === 'continuous'
+            ? bulkInfo.filter(
+                (item) => !currentLocalProspects.has(item.source_id_2),
+              )
+            : bulkInfo;
+
+        if (prospectsToFetch.length > 0) {
+          setIsProspectsLoading(true);
+
+          // Separate prospects into cached and uncached
+          const uncachedProspects = [];
+          const cachedResults = [];
+
+          prospectsToFetch.forEach((item) => {
+            if (
+              cachedProspects[item.source_id_2]?.profile &&
+              !cachedProspects[item.source_id_2]?.profile?.isRevealing &&
+              cachedProspects[item.source_id_2]?.timestamp >
+                Date.now() - PROSPECT_CACHE_EXPIRATION
+            ) {
+              cachedResults.push(cachedProspects[item.source_id_2]?.profile);
+            } else {
+              uncachedProspects.push(item);
+            }
+          });
+
+          let apiResponse = null;
+
+          // Only make API call if there are uncached prospects
+          if (uncachedProspects.length > 0) {
+            const newLinkedinUrls = uncachedProspects.map(
               (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
             );
-            setIsProspectsLoading(true);
+
             const payload = {
               start: 1,
-              take: linkedinUrls.length,
-              link: linkedinUrls,
+              take: newLinkedinUrls.length,
+              link: newLinkedinUrls,
             };
-            const response = await prospectsInstance.getProspects(payload);
-            if (response?.payload?.profiles) {
-              setProspectsData(response, bulkInfo);
-            }
-            if (response?.type === 'rate-limit') {
-              setIsRateLimitReached(true);
-            }
-            setIsProspectsLoading(false);
+
+            apiResponse = await prospectsInstance.getProspects(payload);
           }
-        } catch (error) {
-          console.error('Error in fetchProspects callback:', error);
+
+          // Combine cached and new results
+          const allProfiles = [
+            ...cachedResults,
+            ...(apiResponse?.payload?.profiles || []),
+          ];
+          if (allProfiles.length > 0) {
+            // Create a new Set with all existing prospects plus the new ones
+            const updatedLocalProspects = new Set(currentLocalProspects);
+
+            // Add the newly fetched prospect IDs to the Set
+            prospectsToFetch.forEach((item) => {
+              updatedLocalProspects.add(item.source_id_2);
+            });
+            let newProspects = [];
+            let newSelectableProspects = [];
+            // Get the current prospects from state
+            if (pageType === 'continuous') {
+              newProspects = [...currentProspects];
+              newSelectableProspects = [...currentSelectedProspects];
+            }
+
+            // Create a map of existing prospects by linkedin_url for quick lookup
+            const existingProspectsMap = new Map();
+            newProspects.forEach((prospect) => {
+              if (prospect.linkedin_url) {
+                existingProspectsMap.set(prospect.linkedin_url, prospect);
+              }
+            });
+
+            // Process new prospects and merge with existing ones
+            allProfiles.forEach((profile) => {
+              // Find matching local storage data
+              const localData = bulkInfo.find(
+                (item) =>
+                  `https://www.linkedin.com/in/${item.source_id_2}` ===
+                  profile.linkedin_url,
+              );
+
+              // Merge API response with local storage data
+              const mergedProspect = {
+                ...profile,
+                description: localData?.description || profile.description,
+                logo: localData?.logo || profile.logo,
+                linkedin_url: localData?.linkedin_url || profile.linkedin_url,
+              };
+
+              // Update the map with the merged prospect
+              existingProspectsMap.set(profile.linkedin_url, mergedProspect);
+
+              // add the prospect to the new selectable prospects
+              if (
+                profile.id &&
+                !profile.isRevealing &&
+                (!profile.isRevealed ||
+                  (profile.isRevealed && !profile.isCreditRefunded))
+              ) {
+                newSelectableProspects.push(profile.id);
+              }
+            });
+
+            // add the prospect that are not present in the response
+            const notFoundProspects = {};
+            prospectsToFetch.forEach((item) => {
+              if (
+                !existingProspectsMap.has(
+                  `https://www.linkedin.com/in/${item.source_id_2}`,
+                )
+              ) {
+                const notPresentProspect = {
+                  ...item,
+                  linkedin_url: `https://www.linkedin.com/in/${item.source_id_2}`,
+                };
+                existingProspectsMap.set(
+                  `https://www.linkedin.com/in/${item.source_id_2}`,
+                  notPresentProspect,
+                );
+                notFoundProspects[item.source_id_2] = {
+                  profile: notPresentProspect,
+                  timestamp: Date.now(),
+                };
+              }
+            });
+
+            // Cache the new results
+            let updatedCache = {};
+            if (
+              Object.keys(cachedProspects).length >= MAX_PROSPECT_CACHE_SIZE
+            ) {
+              updatedCache = { ...notFoundProspects };
+            } else {
+              updatedCache = { ...cachedProspects, ...notFoundProspects };
+            }
+            if (apiResponse?.payload?.profiles) {
+              apiResponse.payload.profiles.forEach((profile) => {
+                const sourceId = profile.linkedin_url?.split('/in/')[1];
+                if (sourceId) {
+                  updatedCache[sourceId] = {
+                    profile,
+                    timestamp: Date.now(),
+                  };
+                }
+              });
+            }
+            sessionStorage.setItem(
+              'prospect_result',
+              JSON.stringify(updatedCache),
+            );
+
+            // Convert the map back to an array
+            const updatedProspects = Array.from(existingProspectsMap.values());
+
+            // Update prospects state and storage
+            setProspects(updatedProspects);
+            setLocalProspects(updatedLocalProspects);
+            setSelectedProspects(newSelectableProspects);
+          }
+
+          if (apiResponse?.type === 'rate-limit') {
+            setIsRateLimitReached(true);
+          }
+          if (apiResponse?.error) {
+            setToasterData({
+              header: 'Error',
+              body:
+                apiResponse?.message ||
+                (apiResponse?.messages &&
+                  apiResponse?.messages?.length > 0 &&
+                  apiResponse?.messages[0]),
+              type: 'danger',
+            });
+            setShowToaster(true);
+          }
           setIsProspectsLoading(false);
         }
-      });
+      } catch (error) {
+        console.error('Error in fetchProspects callback:', error);
+        setIsProspectsLoading(false);
+      }
     } catch (error) {
       console.error('Error in fetchProspects:', error);
     }
@@ -269,6 +443,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   const bulkRevealProspects = async (payload) => {
     try {
+      setSelectedRevealType(payload?.revealType);
       const bulkRevealRes = await prospectsInstance.bulkRevealProspects(
         payload,
       );
@@ -289,10 +464,36 @@ const ProspectList = ({ pageType, userMetaData }) => {
           } else {
             const newRevealingProspects = {
               ...revealingProspects,
-              ...Object.fromEntries(selectedProspects.map((id) => [id, true])),
+              ...Object.fromEntries(payload?.leadIds?.map((id) => [id, true])),
             };
-            setRevealingProspects(newRevealingProspects);
-            setIsPollingEnabled(shouldPoll);
+            if (shouldPoll) {
+              pollingAttemptsRef.current = 0;
+              setRevealingProspects(newRevealingProspects);
+              setIsPollingEnabled(true);
+              // update the cached prospects
+              const cachedProspects = JSON.parse(
+                sessionStorage.getItem('prospect_result'),
+              );
+              payload?.leadIds?.forEach((id) => {
+                const revealingProspect = prospects.find((p) => p.id === id);
+                const sourceId = revealingProspect?.linkedin_url?.split(
+                  '/in/',
+                )[1];
+                if (sourceId) {
+                  revealingProspect.isRevealing = true;
+                  cachedProspects[sourceId] = {
+                    profile: revealingProspect,
+                    timestamp: Date.now(),
+                  };
+                }
+              });
+              sessionStorage.setItem(
+                'prospect_result',
+                JSON.stringify(cachedProspects),
+              );
+            } else {
+              setIsPollingEnabled(false);
+            }
             setToasterData({
               header: title || 'Lead reveal initiated',
               body: message,
@@ -318,6 +519,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
         });
         setShowToaster(true);
       }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
+      }
     } catch (error) {
       console.error('Error in addToSequence:', error);
     }
@@ -337,6 +546,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
         setSelectedProspects([]);
         setDeSelectedProspects([]);
       }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
+      }
     } catch (error) {
       console.error('Error in bulkAddToSequence:', error);
     }
@@ -351,6 +568,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
           header: 'Tags applied successfully',
           body: response.message,
           type: 'success',
+        });
+        setShowToaster(true);
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
         });
         setShowToaster(true);
       }
@@ -373,6 +598,14 @@ const ProspectList = ({ pageType, userMetaData }) => {
         setSavedAllSelected(false);
         setSelectedProspects([]);
         setDeSelectedProspects([]);
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
       }
     } catch (error) {
       console.error('Error in bulkAddTagsToRevealedProspects:', error);
@@ -475,6 +708,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
   };
 
+  // eslint-disable-next-line no-shadow
   const handleAddToSequence = async (data) => {
     try {
       setRevealProspectLoading({
@@ -516,15 +750,33 @@ const ProspectList = ({ pageType, userMetaData }) => {
           await addToSequence(payload);
         }
       } else {
-        payload = {
-          leadIds: selectedProspects,
-          revealType: 'email',
-          tagIds: data.tagIds,
-          newTags: data.newTags,
-          sequenceId: data.sequenceId,
-          stepId: data.stepId,
-        };
-        await bulkRevealProspects(payload);
+        const revealedLeadIds = selectedProspects.filter(
+          (prospect) => prospects.find((p) => p.id === prospect)?.isRevealed,
+        );
+        const nonRevealedLeadIds = selectedProspects.filter(
+          (prospect) => !prospects.find((p) => p.id === prospect)?.isRevealed,
+        );
+        if (revealedLeadIds?.length > 0) {
+          payload = {
+            leadIds: revealedLeadIds,
+            tagIds: data.tagIds,
+            newTags: data.newTags,
+            sequenceId: data.sequenceId,
+            stepId: data.stepId,
+          };
+          await addToSequence(payload);
+        }
+        if (nonRevealedLeadIds?.length > 0) {
+          payload = {
+            leadIds: nonRevealedLeadIds,
+            revealType: 'email',
+            tagIds: data.tagIds,
+            newTags: data.newTags,
+            sequenceId: data.sequenceId,
+            stepId: data.stepId,
+          };
+          await bulkRevealProspects(payload);
+        }
       }
     } catch (error) {
       console.error('Error in handleAddToSequence:', error);
@@ -547,7 +799,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
           selectedProspects.includes(prospect.id) &&
           ((type === 'email' && !prospect.isRevealed) ||
             (type === 'emailphone' &&
-              ((prospect.isRevealed && prospect.reReveal) ||
+              ((prospect.isRevealed &&
+                prospect.reReveal &&
+                prospect?.teaser?.phones?.length > 0) ||
                 !prospect.isRevealed))),
       )
       .map((prospect) => prospect.id);
@@ -588,12 +842,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
         const remainingProspects = Object.keys(
           updatedRevealingProspects,
         ).filter((id) => updatedRevealingProspects[id]);
-        if (remainingProspects.length > 0) {
-          setRevealingProspects(updatedRevealingProspects);
-          setProspects(updatedProspects);
-        } else {
+        if (remainingProspects.length === 0) {
           setIsPollingEnabled(false);
         }
+        setRevealingProspects(updatedRevealingProspects);
+        setProspects(updatedProspects);
         setToasterData({
           header: response?.payload?.title || 'Leads Revealed Successfully',
           body: response?.payload?.message,
@@ -609,6 +862,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
   const refreshProspects = async () => {
     try {
       const linkedinUrls = [];
+      const cachedProspects = JSON.parse(
+        sessionStorage.getItem('prospect_result'),
+      );
       Object.keys(revealingProspects).forEach((id) => {
         // Convert id to number for comparison if prospects have numeric IDs
         const prospect = prospects.find(
@@ -625,17 +881,47 @@ const ProspectList = ({ pageType, userMetaData }) => {
           link: linkedinUrls,
         };
         const response = await prospectsInstance.getProspects(payload);
-        setRevealingProspects({});
-        const updatedProspects = [...prospects];
-        response.payload.profiles.forEach((profile) => {
-          const prospectIndex = updatedProspects.findIndex(
-            (p) => p.id === profile.id,
+        if (response && response.payload && response.payload.profiles) {
+          setRevealingProspects({});
+          const updatedProspects = [...prospects];
+          response?.payload?.profiles?.forEach((profile) => {
+            const prospectIndex = updatedProspects.findIndex(
+              (p) => p.id === profile.id,
+            );
+            if (prospectIndex !== -1) {
+              updatedProspects[prospectIndex] = {
+                ...profile,
+                description: updatedProspects[prospectIndex]?.description,
+                logo: updatedProspects[prospectIndex]?.logo,
+              };
+            }
+            const sourceId = profile?.linkedin_url?.split('/in/')[1];
+            if (sourceId) {
+              cachedProspects[sourceId] = {
+                profile,
+                timestamp: Date.now(),
+              };
+            }
+          });
+          sessionStorage.setItem(
+            'prospect_result',
+            JSON.stringify(cachedProspects),
           );
-          if (prospectIndex !== -1) {
-            updatedProspects[prospectIndex] = profile;
-          }
-        });
-        setProspects(updatedProspects);
+          setProspects(updatedProspects);
+        }
+
+        if (response?.error) {
+          setToasterData({
+            header: 'Error',
+            body:
+              response?.message ||
+              (response?.messages &&
+                response?.messages?.length > 0 &&
+                response?.messages[0]),
+            type: 'danger',
+          });
+          setShowToaster(true);
+        }
       }
     } catch (error) {
       console.error('Error in refreshProspects:', error);
@@ -679,7 +965,8 @@ const ProspectList = ({ pageType, userMetaData }) => {
       navigator.clipboard
         .writeText(text)
         .then(() => {
-          console.log('text copied');
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 1000);
         })
         .catch((err) => {
           console.error('Failed to copy text: ', err);
@@ -690,7 +977,8 @@ const ProspectList = ({ pageType, userMetaData }) => {
           textArea.select();
           try {
             document.execCommand('copy');
-            console.log('text copied');
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 1000);
           } catch (fallbackErr) {
             console.error('Fallback: Oops, unable to copy', fallbackErr);
           }
@@ -844,33 +1132,76 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   useEffect(() => {
     try {
-      fetchProspects();
       getSavedLeads();
     } catch (error) {
       console.error('Error in initial useEffect:', error);
     }
   }, []);
 
-  // Add effect to listen for local storage changes
   useEffect(() => {
-    try {
-      const handleStorageChange = (changes) => {
-        if (changes.bulkInfo) {
-          fetchProspects();
+    const handleUpdateProspectList = async (request) => {
+      const isModalClosed = await chrome.storage.local.get(['isModalClosed']);
+      if (request?.method === 'set-bulkInfo' && !isModalClosed?.isModalClosed) {
+        // Check if this request has already been processed
+        if (
+          processedRequestRef.current &&
+          arePeopleArraysSame(
+            processedRequestRef.current?.peopleInfo?.people,
+            request?.peopleInfo?.people,
+          )
+        ) {
+          return;
         }
-      };
 
-      // Add listener for storage changes
-      chrome.storage.onChanged.addListener(handleStorageChange);
+        const requestUrl = request?.peopleInfo?.oldurl;
+        const localUrl = JSON.parse(sessionStorage.getItem('bulkInfo'))?.oldurl;
+        if (
+          requestUrl &&
+          requestUrl.includes('linkedin.com/company/') &&
+          requestUrl.includes('/people') &&
+          requestUrl === localUrl
+        ) {
+          const existingPeople = JSON.parse(sessionStorage.getItem('bulkInfo'))
+            ?.people;
+          const newPeople = request?.peopleInfo?.people;
+          const combinedPeople = [...existingPeople, ...newPeople];
+          const uniquePeople = combinedPeople.filter(
+            (person, index, self) =>
+              index ===
+              self.findIndex((t) => t.source_id_2 === person.source_id_2),
+          );
+          sessionStorage.setItem(
+            'bulkInfo',
+            JSON.stringify({
+              oldurl: requestUrl,
+              people: uniquePeople,
+            }),
+          );
+        } else {
+          sessionStorage.setItem(
+            'bulkInfo',
+            JSON.stringify(request?.peopleInfo),
+          );
+        }
+        fetchProspects();
+        // Store the processed request
+        processedRequestRef.current = request;
+      }
+    };
 
-      // Clean up listener on component unmount
-      return () => {
-        chrome.storage.onChanged.removeListener(handleStorageChange);
-      };
-    } catch (error) {
-      console.error('Error in storage change useEffect:', error);
-    }
+    chrome.runtime.onMessage.addListener(handleUpdateProspectList);
+
+    return () =>
+      chrome.runtime.onMessage.removeListener(handleUpdateProspectList);
   }, []);
+
+  // Add effect to handle force update
+  useEffect(() => {
+    if (prospectListForceUpdate) {
+      console.log('prospectListForceUpdate', prospectListForceUpdate);
+      fetchProspects();
+    }
+  }, [prospectListForceUpdate]);
 
   // Add effect to handle body scroll lock
   useEffect(() => {
@@ -938,6 +1269,22 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
   }, [isPollingEnabled, revealingProspects]);
 
+  // Add effect to listen for modal close
+  useEffect(() => {
+    const handleModalClose = (changes) => {
+      if (changes.isModalClosed?.newValue === true) {
+        pollingAttemptsRef.current = 0;
+        setIsPollingEnabled(false);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleModalClose);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleModalClose);
+    };
+  }, []);
+
   const metaCall = async () => {
     const metaData = (await mailboxInstance.getMetaData())?.payload;
 
@@ -953,7 +1300,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
         // Only refresh prospects when polling is actually stopped
         refreshProspects();
         setIsFirstPollRequest(true);
-        pollingAttemptsRef.current = 0;
         metaCall();
         clearFilters();
       }
@@ -961,6 +1307,22 @@ const ProspectList = ({ pageType, userMetaData }) => {
       console.error('Error in polling completion useEffect:', error);
     }
   }, [isPollingEnabled]);
+
+  useEffect(() => {
+    if (prospects.length > 0) {
+      const isRevealingProspects = prospects
+        .filter((prospect) => prospect.isRevealing)
+        ?.map((prospect) => [prospect.id, true]);
+      if (
+        isRevealingProspects.length > 0 &&
+        !isPollingEnabled &&
+        pollingAttemptsRef.current === 0
+      ) {
+        setRevealingProspects(Object.fromEntries(isRevealingProspects));
+        setIsPollingEnabled(true);
+      }
+    }
+  }, [prospects]);
 
   const toggleProspectSelection = (prospectId) => {
     if (activeTab === 'saved' && savedAllSelected) {
@@ -1019,7 +1381,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   const getProspectListItemsSkeleton = () => (
     <div className="prospect-list-items-container prospect-list-items-container-skeleton">
-      {Array.from({ length: 8 }).map((_, index) => (
+      {Array.from({ length: 10 }).map((_, index) => (
         <div className="prospect-item" key={index}>
           <SkeletonLoading width={16} height={16} borderRadius={2} />
           <div className="prospect-item-info">
@@ -1047,26 +1409,10 @@ const ProspectList = ({ pageType, userMetaData }) => {
           prospect.sequences.length > 0 ||
           prospect.tags.length > 0))
     ) {
-      return (
-        <div
-          className={`prospect-item-expand-icon ${
-            !prospect.id ? 'disabled' : 'cursor-pointer'
-          }`}
-          onClick={() =>
-            setExpendedProspect(
-              expendedProspect === prospect?.id ? null : prospect?.id,
-            )
-          }
-        >
-          <img
-            src={expendedProspect === prospect?.id ? chevronUp : chevronDown}
-            alt="chevron-down"
-          />
-        </div>
-      );
+      return true;
     }
 
-    return null;
+    return false;
   };
 
   const getProspectDescription = (prospect) => {
@@ -1081,26 +1427,22 @@ const ProspectList = ({ pageType, userMetaData }) => {
           <span className="prospect-email-unavailable-text">
             Email unavailable
           </span>
-          <div className="tooltip-container">
-            <img src={alertCircle} alt="alert" />
-            {!prospect.id ? (
-              <div className="custom-tooltip tooltip-bottom">
-                Email is not available
-              </div>
-            ) : (
-              <div className="custom-tooltip tooltip-bottom">
-                Email is not available your
-                <br />
-                credit is refunded
-              </div>
-            )}
-          </div>
+          <img
+            src={alertCircle}
+            alt="alert"
+            data-tooltip-id="email-unavailable-tooltip"
+            data-tooltip-content={
+              !prospect.id
+                ? 'Email is not available'
+                : 'Email is not available your credit is refunded'
+            }
+          />
         </div>
       );
     }
     if (prospect?.isRevealed && prospect?.emails?.length > 0) {
       return (
-        <div className="prospect-description-revealed">
+        <div className="prospect-description-revealed cursor-pointer">
           <img src={mail} alt="email" />
           <span
             className="prospect-description-revealed-email"
@@ -1120,8 +1462,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
             className="copy-icon"
             onClick={() => copyToClipboard(prospect?.emails[0]?.email)}
             data-tooltip-id="my-tooltip-copy"
-            onMouseEnter={() => setIsCopyIconHover(true)}
-            onMouseLeave={() => setIsCopyIconHover(false)}
           >
             <img src={copy} alt="copy" />
           </div>
@@ -1141,7 +1481,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
       .every(
         (prospect) =>
           (type === 'email' && prospect.isRevealed) ||
-          (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
+          (type === 'emailphone' &&
+            prospect.isRevealed &&
+            !(prospect.reReveal && prospect?.teaser?.phones?.length > 0)),
       );
     const shouldDisable =
       selectedProspects.length === 0 ||
@@ -1154,7 +1496,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
       <div className="tooltip-container">
         <CustomButton
           variant={type === 'email' ? 'primary' : 'outline'}
-          className={type === 'email' ? 'action-button' : 'action-icon-button'}
+          className={
+            type === 'email'
+              ? 'action-button email'
+              : 'action-icon-button email-phone'
+          }
           onClick={() => handleViewContact(type)}
           disabled={shouldDisable}
         >
@@ -1181,7 +1527,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
   const getAddToSequenceButton = (isExpanded = false) => (
     <CustomButton
       variant="outline"
-      className={isExpanded ? 'action-button' : 'action-icon-button'}
+      className={isExpanded ? 'action-button sequence' : 'action-icon-button'}
       disabled={
         (selectedProspects.length === 0 && activeTab === 'leads') ||
         userMetaData?.isFreePlanUser ||
@@ -1339,7 +1685,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
       </div>
     );
   }
-  console.log('localProspects', localProspects);
+
   // actual ui
   return (
     <>
@@ -1481,7 +1827,20 @@ const ProspectList = ({ pageType, userMetaData }) => {
                               !prospect.id || prospect.isRevealed
                                 ? 'prospect-item-details-unavailable'
                                 : ''
+                            } ${
+                              prospect.id &&
+                              getExpandIcon(prospect) &&
+                              'cursor-pointer'
                             }`}
+                            {...(prospect.id &&
+                              getExpandIcon(prospect) && {
+                                onClick: () =>
+                                  setExpendedProspect(
+                                    expendedProspect === prospect?.id
+                                      ? null
+                                      : prospect?.id,
+                                  ),
+                              })}
                           >
                             <div className="prospect-name">
                               <span
@@ -1499,116 +1858,143 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     />
                                   )}
                               </span>
-                              {getExpandIcon(prospect)}
+                              {getExpandIcon(prospect) && (
+                                <div
+                                  className={`prospect-item-expand-icon ${
+                                    !prospect.id ? 'disabled' : 'cursor-pointer'
+                                  }`}
+                                  {...(prospect.id && {
+                                    onClick: () =>
+                                      setExpendedProspect(
+                                        expendedProspect === prospect?.id
+                                          ? null
+                                          : prospect?.id,
+                                      ),
+                                  })}
+                                >
+                                  <img
+                                    src={
+                                      expendedProspect === prospect?.id
+                                        ? chevronUp
+                                        : chevronDown
+                                    }
+                                    alt="chevron-down"
+                                  />
+                                </div>
+                              )}
                             </div>
                             {getProspectDescription(prospect)}
                           </div>
                         </div>
                       </div>
+                      {/* emails */}
                       {expendedProspect === prospect.id && (
                         <div className="prospect-item-expanded">
-                          {prospect?.emails?.length > 0 &&
-                            (prospect.isRevealed
-                              ? prospect?.emails?.slice(1).map((e, i) => (
-                                  <div
-                                    className="prospect-item-expanded-email"
-                                    key={i}
+                          {prospect?.isRevealed
+                            ? prospect?.emails?.length > 0 &&
+                              prospect?.emails?.slice(1).map((e, i) => (
+                                <div
+                                  className="prospect-item-expanded-email cursor-pointer"
+                                  key={i}
+                                >
+                                  <img src={mail} alt="email" />
+                                  <span
+                                    className="prospect-description-revealed-email"
+                                    data-tooltip-id={
+                                      e?.email?.length > 18
+                                        ? 'prospect-data-tooltip'
+                                        : null
+                                    }
+                                    data-tooltip-content={e?.email}
                                   >
-                                    <img src={mail} alt="email" />
-                                    <span
-                                      className="prospect-description-revealed-email"
-                                      data-tooltip-id={
-                                        e?.email?.length > 18
-                                          ? 'prospect-data-tooltip'
-                                          : null
-                                      }
-                                      data-tooltip-content={e?.email}
-                                    >
-                                      {e?.email?.length > 18
-                                        ? `${e?.email?.slice(0, 18)}..`
-                                        : e?.email}
-                                    </span>
-                                    <img src={circleCheck} alt="circle-check" />
-                                    <div
-                                      className="copy-icon"
-                                      onClick={() => copyToClipboard(e.email)}
-                                      data-tooltip-id="my-tooltip-copy"
-                                      onMouseEnter={() =>
-                                        setIsCopyIconHover(true)
-                                      }
-                                      onMouseLeave={() =>
-                                        setIsCopyIconHover(false)
-                                      }
-                                    >
-                                      <img src={copy} alt="copy" />
-                                    </div>
+                                    {e?.email?.length > 18
+                                      ? `${e?.email?.slice(0, 18)}..`
+                                      : e?.email}
+                                  </span>
+                                  <img src={circleCheck} alt="circle-check" />
+                                  <div
+                                    className="copy-icon"
+                                    onClick={() => copyToClipboard(e.email)}
+                                    data-tooltip-id="my-tooltip-copy"
+                                  >
+                                    <img src={copy} alt="copy" />
                                   </div>
-                                ))
-                              : prospect?.emails?.map((e, i) => (
-                                  <div
-                                    className="prospect-item-expanded-email"
-                                    key={i}
-                                  >
-                                    <img src={mail} alt="email" />
-                                    <span
-                                      data-tooltip-id={
-                                        e?.email?.length > 18
-                                          ? 'prospect-data-tooltip'
-                                          : null
-                                      }
-                                      data-tooltip-content={e?.email || e}
-                                    >
-                                      {e?.email ? (
-                                        e?.email?.length > 18 ? (
-                                          `${e?.email?.slice(0, 18)}..`
-                                        ) : (
-                                          e?.email
-                                        )
+                                </div>
+                              ))
+                            : prospect?.teaser?.emails?.map((e, i) => (
+                                <div
+                                  className="prospect-item-expanded-email"
+                                  key={i}
+                                >
+                                  <img src={mail} alt="email" />
+                                  <span>
+                                    <span className="list-dots">
+                                      {e?.length > 13 ? (
+                                        <>
+                                          &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;@
+                                          {`${e.slice(0, 13)}..`}
+                                        </>
                                       ) : (
-                                        <span className="list-dots">
+                                        <>
                                           &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;@
                                           {e}
-                                        </span>
+                                        </>
                                       )}
                                     </span>
-                                  </div>
-                                )))}
-                          {prospect?.phones?.length > 0 &&
-                            prospect?.phones?.map((phone) => (
-                              <div
-                                className="prospect-item-expanded-phone"
-                                key={phone.number}
-                              >
-                                <img src={phoneSignal} alt="phone-signal" />
-                                {phone?.number?.includes('X') ? (
-                                  <span>
-                                    {phone?.number?.slice(0, 3)}
-                                    <span className="list-dots">
-                                      &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                    </span>
                                   </span>
-                                ) : (
-                                  <>
-                                    <span>{phone?.number}</span>
-                                    <div
-                                      className="copy-icon"
-                                      onClick={() =>
-                                        copyToClipboard(phone?.number)
-                                      }
-                                      data-tooltip-id="my-tooltip-copy"
-                                      onMouseEnter={() =>
-                                        setIsCopyIconHover(true)
-                                      }
-                                      onMouseLeave={() =>
-                                        setIsCopyIconHover(false)
-                                      }
-                                    >
-                                      <img src={copy} alt="copy" />
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))}
+                                </div>
+                              ))}
+                          {/* phones */}
+                          {prospect?.isRevealed && !prospect?.reReveal
+                            ? prospect?.phones?.length > 0 &&
+                              prospect?.phones?.map((phone) => (
+                                <div
+                                  className="prospect-item-expanded-phone cursor-pointer"
+                                  key={phone.number}
+                                >
+                                  <img src={phoneSignal} alt="phone-signal" />
+                                  <span>{phone?.number}</span>
+                                  <div
+                                    className="copy-icon"
+                                    onClick={() =>
+                                      copyToClipboard(phone?.number)
+                                    }
+                                    data-tooltip-id="my-tooltip-copy"
+                                  >
+                                    <img src={copy} alt="copy" />
+                                  </div>
+                                </div>
+                              ))
+                            : prospect?.teaser?.phones?.length > 0 &&
+                              prospect?.teaser?.phones?.map((phone) => (
+                                <div
+                                  className="prospect-item-expanded-phone"
+                                  key={phone.number}
+                                >
+                                  <img src={phoneSignal} alt="phone-signal" />
+                                  {phone?.number?.includes('X') ? (
+                                    <span>
+                                      {phone?.number?.slice(0, 3)}
+                                      <span className="list-dots">
+                                        &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <span>{phone?.number}</span>
+                                      <div
+                                        className="copy-icon"
+                                        onClick={() =>
+                                          copyToClipboard(phone?.number)
+                                        }
+                                        data-tooltip-id="my-tooltip-copy"
+                                      >
+                                        <img src={copy} alt="copy" />
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              ))}
                           {prospect?.sequences?.length > 0 && (
                             <div className="prospect-item-expanded-sequences">
                               <div className="prospect-item-expanded-sequences-title">
@@ -1628,7 +2014,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     className="prospect-item-expanded-sequences-item"
                                     key={sequence?.sequenceId}
                                     data-tooltip-id={
-                                      sequence?.sequenceName?.length > 26
+                                      sequence?.sequenceName?.length > 23
                                         ? 'prospect-data-tooltip'
                                         : null
                                     }
@@ -1637,10 +2023,10 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     }
                                   >
                                     <span>
-                                      {sequence?.sequenceName?.length > 26
+                                      {sequence?.sequenceName?.length > 23
                                         ? `${sequence?.sequenceName?.slice(
                                             0,
-                                            26,
+                                            23,
                                           )}..`
                                         : sequence?.sequenceName}
                                     </span>
@@ -1739,7 +2125,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
       <ReactTooltip
         id="my-tooltip-copy"
         place="bottom"
-        content={isCopyIconHover && 'Copy'}
+        content={isCopied ? 'Copied' : 'Copy'}
         opacity="1"
         style={{
           fontSize: '12px',
@@ -1755,7 +2141,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
         id="prospect-data-tooltip"
         place="bottom"
         opacity="1"
-        content={email}
         style={{
           fontSize: '12px',
           fontWeight: '500',
@@ -1766,6 +2151,25 @@ const ProspectList = ({ pageType, userMetaData }) => {
           padding: '8px',
           display: 'flex',
           maxWidth: '184px',
+          textWrap: 'wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
+      />
+      <ReactTooltip
+        id="email-unavailable-tooltip"
+        place="bottom"
+        opacity="1"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          display: 'flex',
+          maxWidth: '167px',
           textWrap: 'wrap',
           wordBreak: 'break-word',
           overflowWrap: 'break-word',

@@ -6,6 +6,7 @@ import { Tooltip as ReactTooltip } from 'react-tooltip';
 import cross from '../../assets/icons/cross.svg';
 import { CustomButton } from './add-tags';
 import prospectsInstance from '../../config/server/finder/prospects';
+import downChevron from '../../assets/icons/chevronDown.svg';
 
 const getStatusDotColor = (status) => {
   switch (status) {
@@ -137,6 +138,39 @@ const CustomOptionTags = (props) => {
     </div>
   );
 };
+
+const DropdownIndicator = (props) => (
+  <components.DropdownIndicator {...props}>
+    <img src={downChevron} alt="down-chevron" />
+  </components.DropdownIndicator>
+);
+
+const CustomMultiValueRemove = (props) => (
+  <components.MultiValueRemove {...props}>
+    <div className="custom-multi-value-remove">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 14 14"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M10.9118 3.58687C11.1396 3.81468 11.1396 4.18402 10.9118 4.41183L3.91183 11.4118C3.68402 11.6396 3.31468 11.6396 3.08687 11.4118C2.85906 11.184 2.85906 10.8147 3.08687 10.5869L10.0869 3.58687C10.3147 3.35906 10.684 3.35906 10.9118 3.58687Z"
+          fill="#1F2937"
+        />
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M3.08687 3.58687C3.31468 3.35906 3.68402 3.35906 3.91183 3.58687L10.9118 10.5869C11.1396 10.8147 11.1396 11.184 10.9118 11.4118C10.684 11.6396 10.3147 11.6396 10.0869 11.4118L3.08687 4.41183C2.85906 4.18402 2.85906 3.81468 3.08687 3.58687Z"
+          fill="#1F2937"
+        />
+      </svg>
+    </div>
+  </components.MultiValueRemove>
+);
 
 const AddToSequenceModal = ({
   showModal,
@@ -301,6 +335,9 @@ const AddToSequenceModal = ({
           setSelectedSequence(null);
         }
         setClientSequences(customSequenceOptions);
+      } else {
+        setClientSequences([]);
+        setSelectedSequence(null);
       }
     } catch (error) {
       console.error('Error fetching sequences:', error);
@@ -426,7 +463,7 @@ const AddToSequenceModal = ({
                 <div
                   style={{
                     display: 'flex',
-                    gap: '8px',
+                    gap: '4px',
                     flexDirection: 'column',
                   }}
                 >
@@ -448,7 +485,10 @@ const AddToSequenceModal = ({
                     onChange={setSelectedClient}
                     isClearable
                     placeholder="Select"
-                    components={{ Option: CustomOption }}
+                    components={{
+                      Option: CustomOption,
+                      DropdownIndicator,
+                    }}
                     styles={{
                       control: (base, state) => ({
                         ...base,
@@ -526,13 +566,13 @@ const AddToSequenceModal = ({
                       fontSize: '12px',
                       fontWeight: '500',
                       lineHeight: '16px',
-                      textAlign: 'center',
+                      textAlign: 'left',
                       borderRadius: '4px',
                       backgroundColor: '#1F2937',
                       padding: '8px',
                       zIndex: '99',
                       display: 'flex',
-                      width: '184px',
+                      maxWidth: '184px',
                       textWrap: 'wrap',
                       wordBreak: 'break-word',
                       overflowWrap: 'break-word',
@@ -542,7 +582,7 @@ const AddToSequenceModal = ({
               )}
 
               <div
-                style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}
+                style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}
               >
                 <span
                   style={{
@@ -564,7 +604,10 @@ const AddToSequenceModal = ({
                   }
                   value={selectedSequence}
                   onChange={(value) => setSelectedSequence(value)}
-                  components={{ Option: customOptionSequenceName }}
+                  components={{
+                    Option: customOptionSequenceName,
+                    DropdownIndicator,
+                  }}
                   placeholder="Select"
                   formatGroupLabel={formatGroupLabel}
                   isLoading={isLoadingSequences}
@@ -656,13 +699,13 @@ const AddToSequenceModal = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
                     display: 'flex',
-                    width: '184px',
+                    maxWidth: '184px',
                     textWrap: 'wrap',
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',
@@ -671,7 +714,7 @@ const AddToSequenceModal = ({
               </div>
 
               <div
-                style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}
+                style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}
               >
                 <span
                   style={{
@@ -690,7 +733,10 @@ const AddToSequenceModal = ({
                   value={selectedStep}
                   onChange={setSelectedStep}
                   placeholder="Select"
-                  components={{ Option: CustomOption }}
+                  components={{
+                    Option: CustomOption,
+                    DropdownIndicator,
+                  }}
                   styles={{
                     control: (base, state) => ({
                       ...base,
@@ -767,13 +813,13 @@ const AddToSequenceModal = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
                     display: 'flex',
-                    width: '184px',
+                    maxWidth: '184px',
                     textWrap: 'wrap',
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',
@@ -782,7 +828,7 @@ const AddToSequenceModal = ({
               </div>
 
               <div
-                style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}
+                style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}
               >
                 <span
                   style={{
@@ -824,6 +870,7 @@ const AddToSequenceModal = ({
                         </div>
                       );
                     },
+                    MultiValueRemove: CustomMultiValueRemove,
                   }}
                   placeholder="Select"
                   styles={{
@@ -884,7 +931,7 @@ const AddToSequenceModal = ({
                       alignItems: 'center',
                       borderRadius: '4px',
                       background: '#DBEAFE',
-                      margin: '4px',
+                      margin: '2px 4px',
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
@@ -899,7 +946,7 @@ const AddToSequenceModal = ({
                     multiValueRemove: (base) => ({
                       ...base,
                       padding: '0px',
-                      borderRadius: '50%',
+                      borderRadius: '2px',
                       ':hover': {
                         backgroundColor: '#BFDBFE',
                       },
@@ -918,13 +965,13 @@ const AddToSequenceModal = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
                     display: 'flex',
-                    width: '184px',
+                    maxWidth: '184px',
                     textWrap: 'wrap',
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',
@@ -938,13 +985,13 @@ const AddToSequenceModal = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
                     display: 'flex',
-                    width: '184px',
+                    maxWidth: '184px',
                     textWrap: 'wrap',
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',

@@ -2,11 +2,11 @@ import React from 'react';
 
 const NoProspectFound = () => (
   <div
-    className="no-result-container"
+    className="no-prospect-container"
     style={{
       width: '100%',
-      height: '100%',
-      padding: '0px 0px 16px 0px',
+      height: '689px',
+      padding: '0px 0px 91px 0px',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -19,7 +19,6 @@ const NoProspectFound = () => (
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: '106px',
       }}
     >
       <div

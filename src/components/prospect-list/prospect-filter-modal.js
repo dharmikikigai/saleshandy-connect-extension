@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import Select from 'react-select';
+/* eslint-disable react/destructuring-assignment */
+import React, { useEffect, useState, useRef } from 'react';
+import Select, { components } from 'react-select';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { DateTime } from 'luxon';
 import DatePicker from 'react-datepicker';
 import moment from 'moment-timezone';
@@ -7,10 +9,74 @@ import { CustomButton } from './add-tags';
 import cross from '../../assets/icons/cross.svg';
 import ChevronLeft from '../../assets/icons/chevronLeft.svg';
 import ChevronRight from '../../assets/icons/chevronRight.svg';
+import ChevronDown from '../../assets/icons/chevronDown.svg';
 import prospectsInstance from '../../config/server/finder/prospects';
 import 'react-datepicker/dist/react-datepicker.css';
 
 export const getCurrentTimeInUTC = () => DateTime.local();
+
+const CustomOption = (props) => {
+  const fullLabel = props.label;
+  const shouldShowTooltip = fullLabel.length > 25;
+  const truncatedLabel = shouldShowTooltip
+    ? `${fullLabel.slice(0, 25)}..`
+    : fullLabel;
+
+  const handleClick = () => {
+    // When any option EXCEPT Custom is clicked, close the date picker
+    if (props.selectProps.setShowCustomDateInput && props.label !== 'Custom') {
+      props.selectProps.setShowCustomDateInput(false);
+    }
+  };
+
+  return (
+    <div
+      {...(shouldShowTooltip && {
+        'data-tooltip-id': 'step-option-tooltip',
+        'data-tooltip-content': fullLabel,
+      })}
+      onClick={handleClick}
+    >
+      {props?.label === 'Custom' && (
+        <div
+          style={{
+            width: '100%',
+            height: '1px',
+            backgroundColor: '#E5E7EB',
+            margin: '4px 0',
+          }}
+        />
+      )}
+      <components.Option {...props} innerProps={{ ...props.innerProps }}>
+        {truncatedLabel}
+      </components.Option>
+    </div>
+  );
+};
+
+const DropdownIndicator = (props) => {
+  const handleClick = (e) => {
+    e.stopPropagation(); // Prevent event bubbling
+
+    // Close the date picker when dropdown indicator is clicked
+    if (props.selectProps && props.selectProps.setShowCustomDateInput) {
+      props.selectProps.setShowCustomDateInput(false);
+    }
+
+    // Call the original onClick handler if it exists
+    if (props.innerProps && props.innerProps.onClick) {
+      props.innerProps.onClick(e);
+    }
+  };
+
+  return (
+    <div onClick={handleClick}>
+      <components.DropdownIndicator {...props}>
+        <img src={ChevronDown} alt="down-chevron" />
+      </components.DropdownIndicator>
+    </div>
+  );
+};
 
 export const DateFilter = {
   TODAY: 'Today',
@@ -66,6 +132,16 @@ export const dateFilterOptions = [
   },
 ];
 
+// Add a custom Control component
+const Control = (props) => (
+  <div
+    data-tooltip-id="date-filter-tooltip"
+    data-tooltip-content={props.selectProps.tooltipContent}
+  >
+    <components.Control {...props} />
+  </div>
+);
+
 const ProspectFilterModal = ({
   showModal,
   onClose,
@@ -81,6 +157,9 @@ const ProspectFilterModal = ({
 }) => {
   const [tagOptions, setTagOptions] = useState([]);
   const [showCustomDateInput, setShowCustomDateInput] = useState(false);
+  const dateSelectRef = useRef(null);
+  const datePickerRef = useRef(null);
+  const modalRef = useRef(null);
 
   const getFormattedDate = (date) => moment(date).format('MMM DD, YYYY');
 
@@ -131,8 +210,108 @@ const ProspectFilterModal = ({
     }
   }, [showModal]);
 
+  const getTooltipContent = () => {
+    if (!dateFilterValue) return '';
+
+    try {
+      const timeZone = getCurrentTimeInUTC().zoneName;
+      const option = dateFilterOptions.find(
+        (opt) => opt.value === dateFilterValue.value,
+      );
+
+      // Handle custom date case
+      if (dateFilterValue.value === 'Custom' && dateFilterCustomValue) {
+        try {
+          // Make sure both dates are set before trying to format
+          if (dateFilterCustomValue[0] && dateFilterCustomValue[1]) {
+            // Convert date objects to DateTime objects if needed
+            const startDate = dateFilterCustomValue[0].isLuxonDateTime
+              ? dateFilterCustomValue[0]
+              : DateTime.fromJSDate(dateFilterCustomValue[0]);
+
+            const endDate = dateFilterCustomValue[1].isLuxonDateTime
+              ? dateFilterCustomValue[1]
+              : DateTime.fromJSDate(dateFilterCustomValue[1]);
+
+            const formattedStartDate = startDate
+              ?.setZone(timeZone)
+              ?.toFormat('d LLL, yy');
+            const formattedEndDate = endDate
+              ?.setZone(timeZone)
+              ?.toFormat('d LLL, yy');
+            const offset = startDate.setZone(timeZone).toFormat('ZZ');
+            const gmtOffset = `GMT${offset}`;
+
+            return `${formattedStartDate} - ${formattedEndDate}\n(${gmtOffset}) ${timeZone}`;
+          }
+        } catch (error) {
+          console.error('Error formatting custom dates:', error);
+          // Return a simpler format as fallback for custom dates
+          return dateFilterCustomValue[0] && dateFilterCustomValue[1]
+            ? `${getFormattedDate(
+                dateFilterCustomValue[0],
+              )} - ${getFormattedDate(dateFilterCustomValue[1])}`
+            : '';
+        }
+      }
+
+      // Handle predefined date options
+      if (option && option.startDate && option.endDate) {
+        const formattedStartDate = option.startDate
+          ?.setZone(timeZone)
+          ?.toFormat('d LLL, yy');
+        const formattedEndDate = option.endDate
+          ?.setZone(timeZone)
+          ?.toFormat('d LLL, yy');
+        const offset = option.startDate.setZone(timeZone).toFormat('ZZ');
+        const gmtOffset = `GMT${offset}`;
+
+        return `${formattedStartDate} - ${formattedEndDate}\n(${gmtOffset}) ${timeZone}`;
+      }
+    } catch (error) {
+      console.error('Error formatting date:', error);
+    }
+
+    return '';
+  };
+
+  // Add click handler to close date picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Only process if date picker is open
+      if (!showCustomDateInput) return;
+
+      // Get the actual DOM elements
+      const datePicker = datePickerRef.current;
+      const selectControl = dateSelectRef.current?.controlRef;
+
+      // Check if click is outside both date picker and select control
+      const isOutsideDatePicker =
+        datePicker && !datePicker.contains(event.target);
+      const isOutsideSelect =
+        selectControl && !selectControl.contains(event.target);
+
+      // If click is outside both elements, close the date picker
+      if (isOutsideDatePicker && isOutsideSelect) {
+        setShowCustomDateInput(false);
+      }
+    };
+
+    // Add event listener to modal to contain the scope
+    if (modalRef.current) {
+      modalRef.current.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Clean up
+    return () => {
+      if (modalRef.current) {
+        modalRef.current.removeEventListener('mousedown', handleClickOutside);
+      }
+    };
+  }, [showCustomDateInput]);
+
   return (
-    <div className={`filter-modal ${showModal ? 'show' : ''}`}>
+    <div className={`filter-modal ${showModal ? 'show' : ''}`} ref={modalRef}>
       <div className="custom-modal-header">
         <h3 className="custom-modal-title">Add Tags</h3>
         <button type="button" className="custom-modal-close" onClick={onClose}>
@@ -149,6 +328,10 @@ const ProspectFilterModal = ({
               value={selectedTags}
               onChange={setSelectedTags}
               placeholder="Select Tags"
+              components={{
+                Option: CustomOption,
+                DropdownIndicator,
+              }}
               styles={{
                 control: (base, state) => ({
                   ...base,
@@ -163,9 +346,9 @@ const ProspectFilterModal = ({
                     borderColor: 'none',
                   },
                   cursor: 'pointer',
-                  height: '32px',
                   minHeight: '32px',
                   flexWrap: 'no-wrap',
+                  backgroundColor: '#F9FAFB',
                 }),
                 indicatorSeparator: (base) => ({
                   ...base,
@@ -233,10 +416,31 @@ const ProspectFilterModal = ({
                 }),
               }}
             />
+            <ReactTooltip
+              id="step-option-tooltip"
+              place="bottom"
+              opacity="1"
+              style={{
+                fontSize: '12px',
+                fontWeight: '500',
+                lineHeight: '16px',
+                textAlign: 'left',
+                borderRadius: '4px',
+                backgroundColor: '#1F2937',
+                padding: '8px',
+                zIndex: '99',
+                display: 'flex',
+                maxWidth: '184px',
+                textWrap: 'wrap',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            />
           </div>
           <div className="prospect-filter date-filter">
             <span>Date</span>
             <Select
+              ref={dateSelectRef}
               options={dateFilterOptions}
               value={
                 dateFilterValue?.value === 'Custom'
@@ -245,12 +449,21 @@ const ProspectFilterModal = ({
               }
               onChange={(value) => {
                 setDateFilterValue(value);
-                if (value?.value === 'Custom') {
+                // Only open date picker if Custom is selected and it's not already open
+                if (value?.value === 'Custom' && !showCustomDateInput) {
                   setShowCustomDateInput(true);
                 } else {
                   setShowCustomDateInput(false);
                 }
               }}
+              components={{
+                Option: CustomOption,
+                DropdownIndicator,
+                Control,
+              }}
+              tooltipContent={getTooltipContent()}
+              showCustomDateInput={showCustomDateInput}
+              setShowCustomDateInput={setShowCustomDateInput}
               placeholder="Select"
               styles={{
                 control: (base, state) => ({
@@ -268,6 +481,7 @@ const ProspectFilterModal = ({
                   cursor: 'pointer',
                   minHeight: '32px',
                   flexWrap: 'no-wrap',
+                  backgroundColor: '#F9FAFB',
                 }),
                 indicatorSeparator: (base) => ({
                   ...base,
@@ -302,7 +516,7 @@ const ProspectFilterModal = ({
                 }),
                 option: (base, state) => ({
                   ...base,
-                  padding: '6px 16px',
+                  padding: '10px 16px',
                   backgroundColor: state.isFocused ? '#eff6ff' : 'transparent',
                   color: '#1F2937',
                   fontFamily: 'Inter',
@@ -312,69 +526,96 @@ const ProspectFilterModal = ({
                   lineHeight: '20px',
                   cursor: 'pointer',
                 }),
+                container: (base) => ({
+                  ...base,
+                  width: '100%',
+                }),
               }}
             />
-            {dateFilterValue?.value === 'Custom' && showCustomDateInput && (
-              <DatePicker
-                dateFormat="MMM d, yyyy"
-                selected={
-                  dateFilterCustomValue?.[0]
-                    ? new Date(dateFilterCustomValue[0])
-                    : null
-                }
-                startDate={
-                  dateFilterCustomValue?.[0]
-                    ? new Date(dateFilterCustomValue[0])
-                    : null
-                }
-                endDate={
-                  dateFilterCustomValue?.[1]
-                    ? new Date(dateFilterCustomValue[1])
-                    : null
-                }
-                onChange={(dates) => {
-                  const [start, end] = dates;
-                  setDateFilterCustomValue([start, end]);
-
-                  if (end) {
-                    setTimeout(() => {
-                      setShowCustomDateInput(false);
-                    }, 100);
+            <div ref={datePickerRef}>
+              {dateFilterValue?.value === 'Custom' && showCustomDateInput && (
+                <DatePicker
+                  dateFormat="MMM d, yyyy"
+                  selected={
+                    dateFilterCustomValue?.[0]
+                      ? new Date(dateFilterCustomValue[0])
+                      : null
                   }
-                }}
-                inline
-                showDisabledMonthNavigation
-                selectsRange
-                calendarStartDay={1}
-                renderCustomHeader={({
-                  date,
-                  decreaseMonth,
-                  increaseMonth,
-                  prevMonthButtonDisabled,
-                  nextMonthButtonDisabled,
-                }) => (
-                  <div className="pick-date-and-time-header">
-                    <p>{getMonth(date)}</p>
-                    <div className="pick-date-and-time-action-btns">
-                      <button
-                        type="button"
-                        onClick={decreaseMonth}
-                        disabled={prevMonthButtonDisabled}
-                      >
-                        <img src={ChevronLeft} alt="chevronLeft" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={increaseMonth}
-                        disabled={nextMonthButtonDisabled}
-                      >
-                        <img src={ChevronRight} alt="chevronRight" />
-                      </button>
+                  startDate={
+                    dateFilterCustomValue?.[0]
+                      ? new Date(dateFilterCustomValue[0])
+                      : null
+                  }
+                  endDate={
+                    dateFilterCustomValue?.[1]
+                      ? new Date(dateFilterCustomValue[1])
+                      : null
+                  }
+                  onChange={(dates) => {
+                    const [start, end] = dates;
+                    setDateFilterCustomValue([start, end]);
+
+                    if (end) {
+                      setTimeout(() => {
+                        setShowCustomDateInput(false);
+                      }, 100);
+                    }
+                  }}
+                  inline
+                  showDisabledMonthNavigation
+                  selectsRange
+                  calendarStartDay={1}
+                  renderCustomHeader={({
+                    date,
+                    decreaseMonth,
+                    increaseMonth,
+                    prevMonthButtonDisabled,
+                    nextMonthButtonDisabled,
+                  }) => (
+                    <div className="pick-date-and-time-header">
+                      <p>{getMonth(date)}</p>
+                      <div className="pick-date-and-time-action-btns">
+                        <button
+                          type="button"
+                          onClick={decreaseMonth}
+                          disabled={prevMonthButtonDisabled}
+                        >
+                          <img src={ChevronLeft} alt="chevronLeft" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={increaseMonth}
+                          disabled={nextMonthButtonDisabled}
+                        >
+                          <img src={ChevronRight} alt="chevronRight" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              />
-            )}
+                  )}
+                />
+              )}
+            </div>
+            <ReactTooltip
+              id="date-filter-tooltip"
+              place="bottom"
+              opacity="1"
+              style={{
+                fontSize: '12px',
+                fontWeight: '500',
+                lineHeight: '16px',
+                textAlign: 'left',
+                borderRadius: '4px',
+                backgroundColor: '#1F2937',
+                padding: '8px',
+                zIndex: '9999',
+                display: 'flex',
+                maxWidth: '184px',
+                textWrap: 'wrap',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-line',
+              }}
+            />
           </div>
         </div>
 

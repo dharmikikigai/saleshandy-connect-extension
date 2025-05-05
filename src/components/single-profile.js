@@ -20,10 +20,12 @@ import phoneSignal from '../assets/icons/phoneSignal.svg';
 import alertCircle from '../assets/icons/alertCircle.svg';
 import RateLimitReached from './rate-limit-reached';
 
-const BULK_ACTION_TIMEOUT = 10000;
+const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
+const MAX_PROSPECT_CACHE_SIZE = 100;
+const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
-const SingleProfile = ({ userMetaData }) => {
+const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
   // useState
   const [isViewEmailPhoneHover, setIsViewEmailPhoneHover] = useState(false);
 
@@ -47,6 +49,7 @@ const SingleProfile = ({ userMetaData }) => {
   const [isPollingEnabled, setIsPollingEnabled] = useState(false);
   const pollingAttemptsRef = useRef(0);
   const [isLoading, setIsLoading] = useState(false);
+  const lastProcessedPersonIdRef = useRef(null);
 
   const [tagOptions, setTagOptions] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -65,58 +68,257 @@ const SingleProfile = ({ userMetaData }) => {
   });
   const [isRateLimitReached, setIsRateLimitReached] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const sequencesProcessedRef = useRef(false);
+  const abortControllerRef = useRef(null);
+  const apiInProgressRef = useRef(false);
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
-  console.log('isCopied', isCopied);
-
-  const fetchProspect = async () => {
+  const fetchProspect = async (linkedinUrlParam, forceRefresh = false) => {
     try {
-      chrome.storage.local.get(['personInfo'], async (result) => {
-        const localData = result.personInfo;
-        setLocalPersonInfo(localData);
-        if (localData && localData.sourceId2) {
-          const linkedinUrl = `https://www.linkedin.com/in/${localData.sourceId2}`;
-          setIsLoading(true);
+      // Cancel any in-progress requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
 
-          const payload = {
-            start: 1,
-            take: 1,
-            link: [linkedinUrl],
-          };
+      // Create a new abort controller for this request
+      abortControllerRef.current = new AbortController();
 
-          const response = await prospectsInstance.getProspects(payload);
+      const localData = JSON.parse(sessionStorage.getItem('personInfo'));
 
-          if (response) {
-            if (response?.payload?.profiles?.length > 0) {
-              setProspect({
-                ...response?.payload?.profiles[0],
-                headline: localData.headline,
-                locality: localData.locality,
-                logo: localData.logo,
-              });
+      // Skip processing if we don't have valid data or it doesn't match what we're expecting
+      if (
+        !localData ||
+        !localData.sourceId2 ||
+        (lastProcessedPersonIdRef.current !== null &&
+          lastProcessedPersonIdRef.current !== localData.sourceId2)
+      ) {
+        return;
+      }
 
-              if (response?.payload?.profiles[0]?.tags?.length > 0) {
-                setSelectedTags(
-                  response?.payload?.profiles[0]?.tags?.map((tag) => ({
-                    value: tag.id,
-                    label: tag.name,
-                    data: tag,
-                  })),
-                );
-              }
-            } else {
-              setProspect({});
-            }
-            if (response?.type === 'rate-limit') {
-              setIsRateLimitReached(true);
-            }
-          }
-          setIsLoading(false);
+      apiInProgressRef.current = true;
+      setLocalPersonInfo(localData);
+      setIsLoading(true);
+
+      // Update the last processed person ID
+      lastProcessedPersonIdRef.current = localData.sourceId2;
+
+      const linkedinUrl =
+        linkedinUrlParam ||
+        `https://www.linkedin.com/in/${localData.sourceId2}`;
+
+      // Check if we have cached data for this profile
+      const prospectResultStr = sessionStorage.getItem('prospect_result');
+      let prospectResult = {};
+      if (prospectResultStr) {
+        try {
+          prospectResult = JSON.parse(prospectResultStr);
+        } catch (e) {
+          console.error('Error parsing prospect_result:', e);
+          prospectResult = {};
         }
+      }
+
+      // Check if cached data exists and has isRevealing flag set to true
+      const cachedData = prospectResult[localData.sourceId2];
+      const isProspectRevealing = cachedData?.profile?.isRevealing;
+      const isExpired =
+        cachedData?.timestamp < Date.now() - PROSPECT_CACHE_EXPIRATION;
+
+      // Only use cache if forceRefresh is false and not currently revealing
+      if (!forceRefresh && cachedData && !isExpired && !isProspectRevealing) {
+        try {
+          setProspect({
+            ...cachedData.profile,
+            headline: localData.headline,
+            locality: localData.locality,
+            logo: localData.logo,
+          });
+
+          if (cachedData.profile?.tags?.length > 0) {
+            setSelectedTags(
+              cachedData.profile?.tags?.map((tag) => ({
+                value: tag.id,
+                label: tag.name,
+                data: tag,
+              })),
+            );
+          }
+
+          apiInProgressRef.current = false;
+          setIsLoading(false);
+
+          // If cached data exists and is used, return early to avoid API call
+          return;
+        } catch (e) {
+          console.error('Error using cached prospect data:', e);
+          // Continue with API call if cache parsing fails
+        }
+      }
+
+      const payload = {
+        start: 1,
+        take: 1,
+        link: [linkedinUrl],
+      };
+
+      const { signal } = abortControllerRef.current;
+
+      // Add a small delay to allow for rapid navigation without firing API calls
+      await new Promise((resolve) => {
+        setTimeout(resolve, 300);
       });
+
+      // Check if we've been aborted during the delay
+      if (signal.aborted) {
+        return;
+      }
+
+      // Check once more if the profile ID still matches
+      const currentDataStr = sessionStorage.getItem('personInfo');
+      let currentSourceId2 = null;
+      if (currentDataStr) {
+        try {
+          const parsedData = JSON.parse(currentDataStr);
+          currentSourceId2 = parsedData?.sourceId2;
+        } catch (e) {
+          console.error('Error parsing currentData:', e);
+        }
+      }
+      if (!currentSourceId2 || currentSourceId2 !== localData.sourceId2) {
+        apiInProgressRef.current = false;
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await prospectsInstance.getProspects(payload);
+
+      // Final check to ensure we're still showing the right profile
+      const finalDataStr = sessionStorage.getItem('personInfo');
+      let finalSourceId2 = null;
+      if (finalDataStr) {
+        try {
+          const parsedData = JSON.parse(finalDataStr);
+          finalSourceId2 = parsedData?.sourceId2;
+        } catch (e) {
+          console.error('Error parsing finalCheck:', e);
+        }
+      }
+      if (
+        !finalSourceId2 ||
+        finalSourceId2 !== localData.sourceId2 ||
+        signal.aborted
+      ) {
+        apiInProgressRef.current = false;
+        setIsLoading(false);
+        return;
+      }
+
+      if (response) {
+        if (response?.payload?.profiles?.length > 0) {
+          const profileData = response?.payload?.profiles[0];
+
+          // Store the fetched data in session storage
+          try {
+            // Get existing prospect results
+            const existingResultStr = sessionStorage.getItem('prospect_result');
+            let updatedProspectResult = {};
+            if (existingResultStr) {
+              try {
+                updatedProspectResult = JSON.parse(existingResultStr);
+              } catch (e) {
+                console.error('Error parsing existing prospect_result:', e);
+                updatedProspectResult = {};
+              }
+            }
+
+            // Add or update the current prospect
+            if (
+              Object.keys(updatedProspectResult).length >=
+              MAX_PROSPECT_CACHE_SIZE
+            ) {
+              updatedProspectResult = {};
+            }
+            updatedProspectResult[localData.sourceId2] = {
+              profile: profileData,
+              timestamp: Date.now(),
+            };
+
+            // Save back to session storage
+            sessionStorage.setItem(
+              'prospect_result',
+              JSON.stringify(updatedProspectResult),
+            );
+          } catch (e) {
+            console.error('Error caching prospect data:', e);
+          }
+
+          setProspect({
+            ...profileData,
+            headline: localData.headline,
+            locality: localData.locality,
+            logo: localData.logo,
+          });
+
+          if (profileData?.tags?.length > 0) {
+            setSelectedTags(
+              profileData?.tags?.map((tag) => ({
+                value: tag.id,
+                label: tag.name,
+                data: tag,
+              })),
+            );
+          }
+        } else {
+          // Store the fetched data in session storage
+          try {
+            // Get existing prospect results
+            const existingResultStr = sessionStorage.getItem('prospect_result');
+            let updatedProspectResult = {};
+            if (existingResultStr) {
+              try {
+                updatedProspectResult = JSON.parse(existingResultStr);
+              } catch (e) {
+                console.error('Error parsing existing prospect_result:', e);
+                updatedProspectResult = {};
+              }
+            }
+
+            if (
+              Object.keys(updatedProspectResult).length >=
+              MAX_PROSPECT_CACHE_SIZE
+            ) {
+              updatedProspectResult = {};
+            }
+
+            // Add or update the current prospect with empty data
+            updatedProspectResult[localData.sourceId2] = {
+              profile: {},
+              timestamp: Date.now(),
+            };
+
+            // Save back to session storage
+            sessionStorage.setItem(
+              'prospect_result',
+              JSON.stringify(updatedProspectResult),
+            );
+          } catch (e) {
+            console.error('Error caching prospect data:', e);
+          }
+          setProspect({});
+        }
+        if (response?.type === 'rate-limit') {
+          setIsRateLimitReached(true);
+        }
+      }
+      apiInProgressRef.current = false;
+      setIsLoading(false);
     } catch (err) {
-      console.error('Error fetching prospect:', err);
+      // Don't show errors for aborted requests
+      if (err.name !== 'AbortError') {
+        console.error('Error fetching prospect:', err);
+      }
+      apiInProgressRef.current = false;
       setIsLoading(false);
       setProspect({});
     }
@@ -132,7 +334,7 @@ const SingleProfile = ({ userMetaData }) => {
 
       const response = await prospectsInstance.revealProspect(payload);
 
-      if (response) {
+      if (response?.payload) {
         const { message, status, shouldPoll, title } = response.payload;
         if (status === 0) {
           console.log('error', message);
@@ -140,7 +342,50 @@ const SingleProfile = ({ userMetaData }) => {
           console.log('warning', message);
         } else {
           if (shouldPoll) {
+            pollingAttemptsRef.current = 0;
             setIsPollingEnabled(true);
+            // Update the prospect in session storage with isRevealing flag
+            try {
+              const existingResultStr = sessionStorage.getItem(
+                'prospect_result',
+              );
+              let updatedProspectResult = {};
+              if (existingResultStr) {
+                try {
+                  updatedProspectResult = JSON.parse(existingResultStr);
+                } catch (e) {
+                  console.error('Error parsing existing prospect_result:', e);
+                  updatedProspectResult = {};
+                }
+              }
+
+              const localData = JSON.parse(
+                sessionStorage.getItem('personInfo'),
+              );
+              if (
+                localData &&
+                localData.sourceId2 &&
+                updatedProspectResult[localData.sourceId2]
+              ) {
+                // Update the profile with isRevealing flag
+                updatedProspectResult[
+                  localData.sourceId2
+                ].profile.isRevealing = true;
+                // Save back to session storage
+                sessionStorage.setItem(
+                  'prospect_result',
+                  JSON.stringify(updatedProspectResult),
+                );
+              }
+            } catch (e) {
+              console.error(
+                'Error updating prospect data in session storage:',
+                e,
+              );
+            }
+          } else {
+            fetchProspect(prospect.linkedin_url, true); // Force refresh after reveal
+            setIsRevealing(false);
           }
           setToasterData({
             header: title || 'Lead reveal initiated',
@@ -148,12 +393,15 @@ const SingleProfile = ({ userMetaData }) => {
             type: 'success',
           });
           setShowToaster(true);
-          console.log(
-            'success',
-            message ||
-              'Bulk reveal for leads are started. This can take few moments, You will be notified once the process is completed. ',
-          );
         }
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
       }
     } catch (err) {
       console.error('Error revealing prospect:', err);
@@ -323,15 +571,15 @@ const SingleProfile = ({ userMetaData }) => {
         }
         setClientSequences(customSequenceOptions);
       } else {
-        console.log(
-          'No sequences found or empty response, using fallback sequences',
-        );
+        setClientSequences([]);
+        setSelectedSequence(null);
       }
     } catch (err) {
       console.error('Error fetching sequences:', err);
     }
   };
 
+  // eslint-disable-next-line no-shadow
   const handleAddToSequence = async (data) => {
     try {
       let payload = {};
@@ -339,14 +587,17 @@ const SingleProfile = ({ userMetaData }) => {
 
       if (prospect.isRevealed) {
         payload = {
-          leadIds: [prospect.id],
           sequenceId: data.sequenceId,
           stepId: data.stepId,
           tagIds: data.tagIds,
           newTags: data.newTags,
         };
-        response = await prospectsInstance.addToSequence(payload);
+        response = await prospectsInstance.singleAddToSequence(
+          prospect.id,
+          payload,
+        );
       } else {
+        setIsRevealing(true);
         payload = {
           leadId: prospect.id,
           revealType: 'email',
@@ -358,7 +609,7 @@ const SingleProfile = ({ userMetaData }) => {
         response = await prospectsInstance.revealProspect(payload);
       }
 
-      if (response) {
+      if (response?.payload) {
         const { message, status, shouldPoll, title } = response.payload;
         if (status === 0) {
           console.log('error', message);
@@ -366,15 +617,24 @@ const SingleProfile = ({ userMetaData }) => {
           console.log('warning', message);
         } else {
           if (shouldPoll) {
+            pollingAttemptsRef.current = 0;
             setIsPollingEnabled(true);
           }
           setToasterData({
             header: title || 'Add to Sequence Initiated',
-            body: message,
+            body: message || 'Lead will be added to Sequence.',
             type: 'success',
           });
           setShowToaster(true);
         }
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
       }
     } catch (err) {
       console.error('Error revealing prospect:', err);
@@ -424,7 +684,7 @@ const SingleProfile = ({ userMetaData }) => {
         .writeText(text)
         .then(() => {
           setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
+          setTimeout(() => setIsCopied(false), 1000);
         })
         .catch((err) => {
           console.error('Failed to copy text: ', err);
@@ -436,7 +696,7 @@ const SingleProfile = ({ userMetaData }) => {
           try {
             document.execCommand('copy');
             setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
+            setTimeout(() => setIsCopied(false), 1000);
           } catch (fallbackErr) {
             console.error('Fallback: Oops, unable to copy', fallbackErr);
           }
@@ -451,7 +711,7 @@ const SingleProfile = ({ userMetaData }) => {
         .writeText(text)
         .then(() => {
           setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000);
+          setTimeout(() => setIsCopied(false), 1000);
         })
         .catch((err) => {
           console.error('Failed to copy phone number: ', err);
@@ -463,7 +723,7 @@ const SingleProfile = ({ userMetaData }) => {
           try {
             document.execCommand('copy');
             setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
+            setTimeout(() => setIsCopied(false), 1000);
           } catch (fallbackErr) {
             console.error(
               'Fallback: Oops, unable to copy phone number',
@@ -516,7 +776,22 @@ const SingleProfile = ({ userMetaData }) => {
         newTags,
       };
       const response = await prospectsInstance.saveTags(payload);
-      console.log('success', response);
+      if (response?.message) {
+        setToasterData({
+          header: 'Tags applied successfully',
+          body: response?.message,
+          type: 'success',
+        });
+        setShowToaster(true);
+      }
+      if (response?.error) {
+        setToasterData({
+          header: 'Error',
+          body: response?.error?.message,
+          type: 'danger',
+        });
+        setShowToaster(true);
+      }
     } catch (err) {
       console.error('Error saving tags:', err);
     } finally {
@@ -529,10 +804,10 @@ const SingleProfile = ({ userMetaData }) => {
   };
 
   useEffect(() => {
-    fetchProspect();
-    fetchTags();
-    fetchSequences();
-  }, []);
+    if (shouldUpdatePersonInfo) {
+      fetchProspect();
+    }
+  }, [shouldUpdatePersonInfo]);
 
   useEffect(() => {
     if (userMetaData?.user?.isAgencyficationActive) {
@@ -541,24 +816,58 @@ const SingleProfile = ({ userMetaData }) => {
   }, [userMetaData]);
 
   useEffect(() => {
-    try {
-      const handleStorageChange = (changes) => {
-        if (changes.personInfo) {
-          fetchProspect();
-        }
-      };
+    if (prospect?.sequences?.length > 0 && !sequencesProcessedRef.current) {
+      if (sequenceOptions?.length > 0) {
+        const newSequenceOptions = sequenceOptions.map((sequence) => {
+          if (sequence?.options?.length > 0) {
+            const newRecentOptions = sequence?.options?.map((option) => {
+              const isAlreadyIn = prospect?.sequences?.find(
+                (s) => s.sequenceId === option.value,
+              );
+              return { ...option, isAlreadyIn: !!isAlreadyIn };
+            });
+            return { ...sequence, options: newRecentOptions };
+          }
 
-      // Add listener for storage changes
-      chrome.storage.onChanged.addListener(handleStorageChange);
+          const isAlreadyIn = prospect?.sequences?.find(
+            (s) => s.sequenceId === sequence.value,
+          );
+          return { ...sequence, isAlreadyIn: !!isAlreadyIn };
+        });
+        setSequenceOptions(newSequenceOptions);
+      }
 
-      // Clean up listener on component unmount
-      return () => {
-        chrome.storage.onChanged.removeListener(handleStorageChange);
-      };
-    } catch (error) {
-      console.error('Error in storage change useEffect:', error);
+      if (clientSequences?.length > 0) {
+        const newClientSequences = clientSequences.map((sequence) => {
+          if (sequence?.options?.length > 0) {
+            const newRecentOptions = sequence?.options?.map((option) => {
+              const isAlreadyIn = prospect?.sequences?.find(
+                (s) => s.sequenceId === option.value,
+              );
+              return { ...option, isAlreadyIn: !!isAlreadyIn };
+            });
+            return { ...sequence, options: newRecentOptions };
+          }
+
+          const isAlreadyIn = prospect?.sequences?.find(
+            (s) => s.sequenceId === sequence.value,
+          );
+          return { ...sequence, isAlreadyIn: !!isAlreadyIn };
+        });
+        setClientSequences(newClientSequences);
+      }
+
+      sequencesProcessedRef.current = true;
     }
-  }, []);
+    if (prospect?.isRevealing) {
+      const currentRevealType = prospect?.isRevealed ? 'emailphone' : 'email';
+      setRevealType(currentRevealType);
+      setIsRevealing(true);
+      if (!isPollingEnabled && pollingAttemptsRef.current === 0) {
+        setIsPollingEnabled(true);
+      }
+    }
+  }, [prospect]);
 
   useEffect(() => {
     if (selectedSequence) {
@@ -609,6 +918,22 @@ const SingleProfile = ({ userMetaData }) => {
     };
   }, [isPollingEnabled]);
 
+  // Add effect to listen for modal close
+  useEffect(() => {
+    const handleModalClose = (changes) => {
+      if (changes.isModalClosed?.newValue === true) {
+        pollingAttemptsRef.current = 0;
+        setIsPollingEnabled(false);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleModalClose);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleModalClose);
+    };
+  }, []);
+
   const metaCall = async () => {
     const metaData = (await mailboxInstance.getMetaData())?.payload;
 
@@ -620,23 +945,39 @@ const SingleProfile = ({ userMetaData }) => {
   useEffect(() => {
     if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
       // Only refresh prospects when polling is actually stopped
-      fetchProspect(prospect.linkedin_url);
+      fetchProspect(prospect.linkedin_url, true); // Force refresh after polling completes
       setIsRevealing(false);
-      pollingAttemptsRef.current = 0;
       metaCall();
     }
   }, [isPollingEnabled]);
+
+  useEffect(() => {
+    fetchTags();
+    fetchSequences();
+  }, []);
 
   if (isRateLimitReached) {
     return <RateLimitReached />;
   }
 
-  if (isLoading || !localPersonInfo?.sourceId2) {
+  // Show skeleton loader during initial load or transitions
+  if (isLoading) {
     return <SingleProfileSkeleton />;
   }
 
-  if (localPersonInfo?.sourceId2 && !prospect?.id) {
+  // Only show NoResult when we're sure there's no data
+  if (
+    localPersonInfo?.sourceId2 &&
+    !prospect?.id &&
+    !isLoading &&
+    !apiInProgressRef.current
+  ) {
     return <NoResult />;
+  }
+
+  // Only render the profile when we have valid data
+  if (!localPersonInfo?.sourceId2 || !prospect?.id) {
+    return <SingleProfileSkeleton />;
   }
 
   return (
@@ -663,6 +1004,7 @@ const SingleProfile = ({ userMetaData }) => {
                 display: 'flex',
                 flexDirection: 'column',
                 marginTop: '16px',
+                marginRight: '-5px',
               }}
             >
               <div
@@ -734,13 +1076,19 @@ const SingleProfile = ({ userMetaData }) => {
                     gap: '8px',
                   }}
                 >
-                  {/* User Designation */}
+                  {/* User Description */}
                   <div
                     style={{
                       color: '#6b7280',
                       fontSize: '14px',
                       fontWeight: '400',
-                      lineHeight: '16px',
+                      lineHeight: '20px',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxHeight: '60px',
                     }}
                   >
                     {singleProfile?.headline && (
@@ -1112,7 +1460,9 @@ const SingleProfile = ({ userMetaData }) => {
                               isRevealing ||
                               isPollingEnabled ||
                               btnLoadingStatus.addToSequence ||
-                              leadFinderCredits < 2
+                              leadFinderCredits < 2 ||
+                              (singleProfile.isRevealed &&
+                                singleProfile?.teaser?.phones?.length === 0)
                             }
                             onClick={handleViewEmailPhoneAndFindPhoneBtn}
                           >
@@ -1155,63 +1505,93 @@ const SingleProfile = ({ userMetaData }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '16px',
-                    padding: '0px 16px',
+                    margin: '0px 16px',
+                    maxHeight: '328px',
+                    overflowY: 'scroll',
+                    overflowX: 'hidden',
                   }}
                 >
                   {/* Emails */}
-                  {singleProfile?.emails?.length > 0 &&
-                    singleProfile?.emails?.map((email) => (
-                      <div
-                        key={email?.email}
-                        className="email prospect-item-expanded-email"
-                        style={{
-                          display: 'flex',
-                          gap: '8px',
-                          height: '16px',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <img src={mail} alt="email" />
-                        <span
+
+                  {singleProfile?.isRevealed
+                    ? singleProfile?.emails?.length > 0 &&
+                      singleProfile?.emails?.map((email) => (
+                        <div
+                          key={email?.email}
+                          className="email prospect-item-expanded-email"
                           style={{
-                            color: '#1f2937',
-                            fontSize: '14px',
-                            fontWeight: '400',
-                            lineHeight: '16px',
+                            display: 'flex',
+                            gap: '8px',
+                            height: '16px',
+                            alignItems: 'center',
                           }}
                         >
-                          {email?.email ? (
-                            <span>
-                              <span>{email?.email || null}</span>
-                            </span>
-                          ) : (
-                            <>
-                              <span>
-                                &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                              </span>
-                              @{email}
-                            </>
-                          )}
-                        </span>
-                        {singleProfile.isRevealed === true && (
-                          <>
-                            <img src={circleCheck} alt="check-circle" />
-                            <div
-                              className="copy-icon"
-                              style={{
-                                cursor: 'pointer',
-                              }}
-                              onClick={() => handleEmailCopy(email?.email)}
-                              data-tooltip-id="my-tooltip-copy"
-                              onMouseEnter={() => setIsCopied(true)}
-                              onMouseLeave={() => setIsCopied(false)}
+                          <img src={mail} alt="email" />
+                          <span
+                            style={{
+                              color: '#1f2937',
+                              fontSize: '14px',
+                              fontWeight: '400',
+                              lineHeight: '16px',
+                            }}
+                          >
+                            <span
+                              data-tooltip-id={
+                                email?.email?.length > 23
+                                  ? 'prospect-data-tooltip'
+                                  : null
+                              }
+                              data-tooltip-content={email?.email}
                             >
-                              <img src={copy} alt="copy" />
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
+                              <span>
+                                {(email?.email?.length > 23
+                                  ? `${email?.email?.slice(0, 23)}..`
+                                  : email?.email) || null}
+                              </span>
+                            </span>
+                          </span>
+                          <img src={circleCheck} alt="check-circle" />
+                          <div
+                            className="copy-icon"
+                            style={{
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => handleEmailCopy(email?.email)}
+                            data-tooltip-id="my-tooltip-copy"
+                          >
+                            <img src={copy} alt="copy" />
+                          </div>
+                        </div>
+                      ))
+                    : singleProfile?.teaser?.emails?.length > 0 &&
+                      singleProfile?.teaser?.emails?.map((email) => (
+                        <div
+                          key={email}
+                          className="email prospect-item-expanded-email"
+                          style={{
+                            display: 'flex',
+                            gap: '8px',
+                            height: '16px',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <img src={mail} alt="email" />
+                          <span
+                            style={{
+                              color: '#1f2937',
+                              fontSize: '14px',
+                              fontWeight: '400',
+                              lineHeight: '16px',
+                            }}
+                          >
+                            <span>
+                              &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                            </span>
+                            @{email}
+                          </span>
+                        </div>
+                      ))}
+                  {/* email unavailable */}
                   {singleProfile?.isRevealed &&
                     singleProfile?.emails?.length === 0 && (
                       <div className="prospect-email-unavailable">
@@ -1223,75 +1603,62 @@ const SingleProfile = ({ userMetaData }) => {
                         <span className="prospect-email-unavailable-text">
                           Email unavailable
                         </span>
-                        <div className="tooltip-container">
-                          <img src={alertCircle} alt="alert" />
-                          {!singleProfile.id ? (
-                            <div className="custom-tooltip tooltip-bottom">
-                              Email is not available
-                            </div>
-                          ) : (
-                            <div className="custom-tooltip tooltip-bottom">
-                              Email is not available your
-                              <br />
-                              credit is refunded
-                            </div>
-                          )}
-                        </div>
+                        <img
+                          src={alertCircle}
+                          alt="alert"
+                          data-tooltip-id="email-unavailable-tooltip"
+                          data-tooltip-content={
+                            !prospect.id
+                              ? 'Email is not available'
+                              : 'Email is not available your credit is refunded'
+                          }
+                        />
                       </div>
                     )}
 
                   {/* PhoneNumber */}
-                  {singleProfile?.phones?.length > 0 &&
-                    singleProfile?.phones?.map((phone, phoneIndex) => (
-                      <div
-                        key={phone?.number}
-                        className="phone1"
-                        style={{
-                          display: 'flex',
-                          gap: '8px',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <img src={phoneSignal} alt="phone-signal" />
+                  {singleProfile?.isRevealed && !singleProfile?.reReveal
+                    ? singleProfile?.phones?.length > 0 &&
+                      singleProfile?.phones?.map((phone) => (
                         <div
+                          key={phone?.number}
+                          className="phone1"
                           style={{
                             display: 'flex',
-                            justifyContent: 'space-between',
+                            gap: '8px',
                             alignItems: 'center',
-                            width: '100%',
-                            height: '20px',
                           }}
                         >
+                          <img src={phoneSignal} alt="phone-signal" />
                           <div
-                            className="prospect-item-expanded-phone"
                             style={{
                               display: 'flex',
+                              justifyContent: 'space-between',
                               alignItems: 'center',
-                              gap: '8px',
+                              width: '100%',
+                              height: '20px',
                             }}
                           >
-                            <span
+                            <div
+                              className="prospect-item-expanded-phone"
                               style={{
-                                color: '#1f2937',
-                                fontSize: '14px',
-                                fontWeight: '400',
-                                lineHeight: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
                               }}
                             >
-                              {phone?.number?.includes('X') ? (
-                                <>
-                                  {phone?.number?.slice(0, 3)}
-                                  <span className="list-dots">
-                                    &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
-                                  </span>
-                                </>
-                              ) : (
-                                phone?.number
-                              )}
-                            </span>
+                              <span
+                                style={{
+                                  color: '#1f2937',
+                                  fontSize: '14px',
+                                  fontWeight: '400',
+                                  lineHeight: '16px',
+                                }}
+                              >
+                                {phone?.number}
+                              </span>
 
-                            {/* Phone Number Copy Icon */}
-                            {!phone?.number?.includes('X') && (
+                              {/* Phone Number Copy Icon */}
                               <span
                                 className="copy-icon"
                                 style={{
@@ -1301,84 +1668,129 @@ const SingleProfile = ({ userMetaData }) => {
                                   handlePhoneNumberCopy(phone?.number)
                                 }
                                 data-tooltip-id="my-tooltip-copy"
-                                onMouseEnter={() => setIsCopied(true)}
-                                onMouseLeave={() => setIsCopied(false)}
                               >
                                 <img src={copy} alt="copy" />
                               </span>
-                            )}
+                            </div>
                           </div>
-
-                          {/* Find Phone  */}
-                          {phoneIndex === 0 &&
-                            singleProfile?.isRevealed &&
-                            singleProfile?.reReveal && (
+                        </div>
+                      ))
+                    : singleProfile?.teaser?.phones?.length > 0 &&
+                      singleProfile?.teaser?.phones?.map(
+                        (phone, phoneIndex) => (
+                          <div
+                            key={phone?.number}
+                            className="phone1"
+                            style={{
+                              display: 'flex',
+                              gap: '8px',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <img src={phoneSignal} alt="phone-signal" />
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                width: '100%',
+                                height: phoneIndex === 0 ? '22px' : '20px',
+                              }}
+                            >
                               <div
-                                style={
-                                  isRevealing
-                                    ? {
-                                        opacity: '0.35',
-                                        cursor: 'not-allowed',
-                                        padding: '2px 4px',
-                                        alignItems: 'center',
-                                        display: 'flex',
-                                        gap: '2px',
-                                        border: '1px solid #BFDBFE',
-                                        backgroundColor: '#EFF6FF',
-                                      }
-                                    : {
-                                        backgroundColor: '#EFF6FF',
-                                        borderRadius: '4px',
-                                        border: '1px solid #BFDBFE',
-                                        cursor: 'pointer',
-                                        padding: '2px 4px',
-                                        alignItems: 'center',
-                                        display: 'flex',
-                                        gap: '2px',
-                                      }
-                                }
-                                onClick={() => {
-                                  if (!isRevealing) {
-                                    handleViewEmailPhoneAndFindPhoneBtn();
-                                  }
+                                className="prospect-item-expanded-phone"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
                                 }}
                               >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="12"
-                                  height="12"
-                                  viewBox="0 0 12 12"
-                                  fill="none"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    clipRule="evenodd"
-                                    d="M5 2.5C3.34315 2.5 2 3.84315 2 5.5C2 7.15685 3.34315 8.5 5 8.5C6.65685 8.5 8 7.15685 8 5.5C8 3.84315 6.65685 2.5 5 2.5ZM1 5.5C1 3.29086 2.79086 1.5 5 1.5C7.20914 1.5 9 3.29086 9 5.5C9 7.70914 7.20914 9.5 5 9.5C2.79086 9.5 1 7.70914 1 5.5Z"
-                                    fill="#1D4ED8"
-                                  />
-                                  <path
-                                    fillRule="evenodd"
-                                    clipRule="evenodd"
-                                    d="M7.14645 7.64645C7.34171 7.45118 7.65829 7.45118 7.85355 7.64645L10.8536 10.6464C11.0488 10.8417 11.0488 11.1583 10.8536 11.3536C10.6583 11.5488 10.3417 11.5488 10.1464 11.3536L7.14645 8.35355C6.95118 8.15829 6.95118 7.84171 7.14645 7.64645Z"
-                                    fill="#1D4ED8"
-                                  />
-                                </svg>
                                 <span
-                                  className="find-phone-txt"
                                   style={{
-                                    color: '#1D4ED8',
-                                    fontSize: '12px',
-                                    fontWeight: '500',
+                                    color: '#1f2937',
+                                    fontSize: '14px',
+                                    fontWeight: '400',
                                     lineHeight: '16px',
                                   }}
                                 >
-                                  Find Phone
+                                  {phone?.number?.slice(0, 3)}
+                                  <span className="list-dots">
+                                    &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                                  </span>
                                 </span>
                               </div>
-                            )}
-                        </div>
-                      </div>
-                    ))}
+
+                              {/* Find Phone  */}
+                              {phoneIndex === 0 &&
+                                singleProfile?.isRevealed &&
+                                singleProfile?.reReveal && (
+                                  <div
+                                    style={
+                                      isRevealing
+                                        ? {
+                                            opacity: '0.35',
+                                            cursor: 'not-allowed',
+                                            padding: '2px 4px',
+                                            alignItems: 'center',
+                                            display: 'flex',
+                                            gap: '2px',
+                                            border: '1px solid #BFDBFE',
+                                            backgroundColor: '#EFF6FF',
+                                          }
+                                        : {
+                                            backgroundColor: '#EFF6FF',
+                                            borderRadius: '4px',
+                                            border: '1px solid #BFDBFE',
+                                            cursor: 'pointer',
+                                            padding: '2px 4px',
+                                            alignItems: 'center',
+                                            display: 'flex',
+                                            gap: '2px',
+                                          }
+                                    }
+                                    onClick={() => {
+                                      if (!isRevealing) {
+                                        handleViewEmailPhoneAndFindPhoneBtn();
+                                      }
+                                    }}
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="12"
+                                      height="12"
+                                      viewBox="0 0 12 12"
+                                      fill="none"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        clipRule="evenodd"
+                                        d="M5 2.5C3.34315 2.5 2 3.84315 2 5.5C2 7.15685 3.34315 8.5 5 8.5C6.65685 8.5 8 7.15685 8 5.5C8 3.84315 6.65685 2.5 5 2.5ZM1 5.5C1 3.29086 2.79086 1.5 5 1.5C7.20914 1.5 9 3.29086 9 5.5C9 7.70914 7.20914 9.5 5 9.5C2.79086 9.5 1 7.70914 1 5.5Z"
+                                        fill="#1D4ED8"
+                                      />
+                                      <path
+                                        fillRule="evenodd"
+                                        clipRule="evenodd"
+                                        d="M7.14645 7.64645C7.34171 7.45118 7.65829 7.45118 7.85355 7.64645L10.8536 10.6464C11.0488 10.8417 11.0488 11.1583 10.8536 11.3536C10.6583 11.5488 10.3417 11.5488 10.1464 11.3536L7.14645 8.35355C6.95118 8.15829 6.95118 7.84171 7.14645 7.64645Z"
+                                        fill="#1D4ED8"
+                                      />
+                                    </svg>
+                                    <span
+                                      className="find-phone-txt"
+                                      style={{
+                                        color: '#1D4ED8',
+                                        fontSize: '12px',
+                                        fontWeight: '500',
+                                        lineHeight: '16px',
+                                      }}
+                                    >
+                                      Find Phone
+                                    </span>
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        ),
+                      )}
                 </div>
                 <div
                   style={{
@@ -1519,7 +1931,7 @@ const SingleProfile = ({ userMetaData }) => {
       <ReactTooltip
         id="my-tooltip-copy"
         place="bottom"
-        content="Copy"
+        content={isCopied ? 'Copied' : 'Copy'}
         opacity="1"
         style={{
           fontSize: '12px',
@@ -1541,6 +1953,12 @@ const SingleProfile = ({ userMetaData }) => {
               You can&apos;t take this action as
               <br />
               lead reveal is in progress
+            </>
+          ) : prospect?.isRevealed && prospect?.teaser?.phones?.length === 0 ? (
+            <>
+              Lead does not have any
+              <br />
+              phone number
             </>
           ) : (
             '2 Credits Required'
@@ -1577,6 +1995,25 @@ const SingleProfile = ({ userMetaData }) => {
           padding: '8px',
         }}
       />
+      <ReactTooltip
+        id="prospect-data-tooltip"
+        place="bottom"
+        opacity="1"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'left',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          display: 'flex',
+          maxWidth: '220px',
+          textWrap: 'wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
+      />
       {!prospect?.isRevealed && expandedSection !== 'sequence' && (
         <ReactTooltip
           id="is-not-revealed"
@@ -1594,6 +2031,25 @@ const SingleProfile = ({ userMetaData }) => {
           }}
         />
       )}
+      <ReactTooltip
+        id="email-unavailable-tooltip"
+        place="bottom"
+        opacity="1"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          display: 'flex',
+          maxWidth: '167px',
+          textWrap: 'wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
+      />
     </>
   );
 };

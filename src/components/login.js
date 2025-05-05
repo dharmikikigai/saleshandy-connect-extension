@@ -1,9 +1,12 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import { Button, Card, Container } from 'react-bootstrap';
+import { useRecoilState } from 'recoil';
+import { loginState } from './state';
 import Main from './main';
-
-import saleshandyConnect from '../assets/icons/shConnectLogo.svg';
+import saleshandyLogo from '../assets/icons/saleshandyLogo.svg';
 import minus from '../assets/icons/minus.svg';
+import ENV_CONFIG from '../config/env';
 
 const handleClose = () => {
   chrome.runtime.sendMessage({
@@ -13,6 +16,7 @@ const handleClose = () => {
 
 const Login = () => {
   const [showMainPage, setShowMainPage] = useState(false);
+  const [isLogin, setIsLogin] = useRecoilState(loginState);
 
   const handleClick = () => {
     chrome.storage.local.set({ logoutTriggered: 'false' });
@@ -26,10 +30,11 @@ const Login = () => {
         authenticationToken !== ''
       ) {
         setShowMainPage(true);
+        setIsLogin(true);
       } else {
         chrome.runtime.sendMessage({
           method: 'openNewPage',
-          link: 'https://pyxis.lifeisgoodforlearner.com/login',
+          link: `${ENV_CONFIG.WEB_APP_URL}/login`,
         });
       }
     });
@@ -37,32 +42,28 @@ const Login = () => {
 
   return (
     <>
-      {showMainPage ? (
-        <Main />
-      ) : (
+      {showMainPage ? null : (
         <>
           <div
             id="login-id"
             style={{
               background:
                 'var(--blue-gra, linear-gradient(246deg, #DCE1FE 3.34%, #EFF2FE 87.55%))',
-              height: '686px',
+              height: '780px',
               width: '332px',
-              padding: '16px 0px 163.21px 0px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '131.211px',
             }}
           >
             <div
               style={{
-                padding: '0px 16px',
+                padding: '16px 16px 0px 16px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}
             >
-              <img src={saleshandyConnect} alt="saleshandyConnect" />
+              <img src={saleshandyLogo} alt="saleshandyLogo" />
               <div
                 style={{
                   display: 'flex',
@@ -80,6 +81,7 @@ const Login = () => {
                 justifyContent: 'center',
                 alignItems: 'center',
                 width: '100%',
+                flex: 1,
               }}
             >
               <Container
@@ -257,7 +259,7 @@ const Login = () => {
                             display: 'flex',
                             alignItems: 'start',
                           }}
-                          href="https://pyxis.lifeisgoodforlearner.com/signup"
+                          href={`${ENV_CONFIG.WEB_APP_URL}/signup`}
                           className="text-decoration-none fw-medium"
                           target="_blank"
                           rel="noopener noreferrer"

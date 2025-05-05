@@ -9,8 +9,8 @@ const CommonSearch = () => (
       id="common-search-id"
       style={{
         width: '100%',
-        height: '100%',
-        padding: '0px 0px 16px 0px',
+        height: '732px',
+        padding: '0px 0px 48px 0px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -32,9 +32,7 @@ const CommonSearch = () => (
             justifyContent: 'center',
             alignItems: 'center',
             width: '252px',
-            padding: '32px 0px',
             gap: '32px',
-            marginTop: '90px',
           }}
         >
           <div>

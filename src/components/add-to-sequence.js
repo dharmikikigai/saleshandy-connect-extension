@@ -1,9 +1,10 @@
 /* eslint-disable react/destructuring-assignment */
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import CreatableSelect from 'react-select/creatable';
 import Select, { components } from 'react-select';
 import { Button, Spinner } from 'react-bootstrap';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import downChevron from '../assets/icons/chevronDown.svg';
 
 const getStatusDotColor = (status) => {
   switch (status) {
@@ -24,9 +25,8 @@ const customOptionSequenceName = (props) => {
 
   const fullLabel = data.label;
   const shouldShowTooltip = fullLabel.length > 25 || data.isAlreadyIn;
-  const truncatedLabel = shouldShowTooltip
-    ? `${fullLabel.slice(0, 25)}..`
-    : fullLabel;
+  const truncatedLabel =
+    fullLabel.length > 25 ? `${fullLabel.slice(0, 25)}..` : fullLabel;
 
   return (
     <>
@@ -116,6 +116,39 @@ const CustomOption = (props) => {
   );
 };
 
+const DropdownIndicator = (props) => (
+  <components.DropdownIndicator {...props}>
+    <img src={downChevron} alt="down-chevron" />
+  </components.DropdownIndicator>
+);
+
+const CustomMultiValueRemove = (props) => (
+  <components.MultiValueRemove {...props}>
+    <div className="custom-multi-value-remove">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 14 14"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M10.9118 3.58687C11.1396 3.81468 11.1396 4.18402 10.9118 4.41183L3.91183 11.4118C3.68402 11.6396 3.31468 11.6396 3.08687 11.4118C2.85906 11.184 2.85906 10.8147 3.08687 10.5869L10.0869 3.58687C10.3147 3.35906 10.684 3.35906 10.9118 3.58687Z"
+          fill="#1F2937"
+        />
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M3.08687 3.58687C3.31468 3.35906 3.68402 3.35906 3.91183 3.58687L10.9118 10.5869C11.1396 10.8147 11.1396 11.184 10.9118 11.4118C10.684 11.6396 10.3147 11.6396 10.0869 11.4118L3.08687 4.41183C2.85906 4.18402 2.85906 3.81468 3.08687 3.58687Z"
+          fill="#1F2937"
+        />
+      </svg>
+    </div>
+  </components.MultiValueRemove>
+);
+
 const CustomOptionTags = (props) => {
   // eslint-disable-next-line react/destructuring-assignment
   const fullLabel = props.label;
@@ -160,15 +193,21 @@ const AddToSequence = ({
   isAgency,
   isDisabled,
 }) => {
-  // const [isExpanded, setIsExpanded] = useState(false);
-  // const [clientAssociatedSequence, setClientAssociatedSequence] = useState(
-  //   null,
-  // );
-  // const [selectedSequence, setSelectedSequence] = useState(null);
-  // const [selectedStep, setSelectedStep] = useState(null);
-  // const [selectedTags, setSelectedTags] = useState([]);
+  const containerRef = useRef(null);
 
-  // Dropdown sequence name option (To add partition between recent and current sequence)
+  // Scroll the component into view when expanded
+  useEffect(() => {
+    if (isExpanded && containerRef.current) {
+      // Scroll with a slight delay to ensure component has expanded
+      setTimeout(() => {
+        containerRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
+    }
+  }, [isExpanded]);
+
   const processedSequenceOptions = sequenceOptionLabels.map((group) => {
     if (group.options) {
       const updatedGroupOptions = group.options.map((opt, index, arr) => ({
@@ -199,6 +238,7 @@ const AddToSequence = ({
 
   return (
     <div
+      ref={containerRef}
       className={`${isExpanded ? '' : 'add-to-sequence-container'}`}
       style={{
         border: '1px solid #e5e7eb',
@@ -210,7 +250,7 @@ const AddToSequence = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        cursor: isDisabled ? 'not-allowed' : isExpanded ? 'default' : 'pointer',
+        cursor: isDisabled ? 'not-allowed' : 'default',
       }}
     >
       {/* Header */}
@@ -364,7 +404,7 @@ const AddToSequence = ({
                 <div
                   style={{
                     display: 'flex',
-                    gap: '8px',
+                    gap: '4px',
                     flexDirection: 'column',
                   }}
                 >
@@ -386,7 +426,10 @@ const AddToSequence = ({
                     onChange={ClientAssociatedSequenceOnChange}
                     isClearable
                     placeholder="Select"
-                    components={{ Option: CustomOption }}
+                    components={{
+                      Option: CustomOption,
+                      DropdownIndicator,
+                    }}
                     styles={{
                       control: (base, state) => ({
                         ...base,
@@ -465,13 +508,13 @@ const AddToSequence = ({
                       fontSize: '12px',
                       fontWeight: '500',
                       lineHeight: '16px',
-                      textAlign: 'center',
+                      textAlign: 'left',
                       borderRadius: '4px',
                       backgroundColor: '#1F2937',
                       padding: '8px',
                       zIndex: '99',
                       display: 'flex',
-                      width: '184px',
+                      maxWidth: '192px',
                       textWrap: 'wrap',
                       wordBreak: 'break-word',
                       overflowWrap: 'break-word',
@@ -481,7 +524,7 @@ const AddToSequence = ({
               )}
 
               <div
-                style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}
+                style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}
               >
                 <span
                   style={{
@@ -503,7 +546,10 @@ const AddToSequence = ({
                   }
                   value={selectedSequenceValue}
                   onChange={(value) => SelectedSequenceOnChange(value)}
-                  components={{ Option: customOptionSequenceName }}
+                  components={{
+                    Option: customOptionSequenceName,
+                    DropdownIndicator,
+                  }}
                   placeholder="Select"
                   formatGroupLabel={formatGroupLabel}
                   styles={{
@@ -593,13 +639,13 @@ const AddToSequence = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
                     display: 'flex',
-                    width: '184px',
+                    maxWidth: '192px',
                     textWrap: 'wrap',
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',
@@ -608,7 +654,7 @@ const AddToSequence = ({
               </div>
 
               <div
-                style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}
+                style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}
               >
                 <span
                   style={{
@@ -627,7 +673,10 @@ const AddToSequence = ({
                   value={selectedStepValue}
                   onChange={SelectedStepOnChange}
                   placeholder="Select"
-                  components={{ Option: CustomOption }}
+                  components={{
+                    Option: CustomOption,
+                    DropdownIndicator,
+                  }}
                   styles={{
                     control: (base, state) => ({
                       ...base,
@@ -704,13 +753,13 @@ const AddToSequence = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
                     zIndex: '99',
                     display: 'flex',
-                    width: '184px',
+                    maxWidth: '192px',
                     textWrap: 'wrap',
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',
@@ -719,7 +768,7 @@ const AddToSequence = ({
               </div>
 
               <div
-                style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}
+                style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}
               >
                 <span
                   style={{
@@ -760,6 +809,7 @@ const AddToSequence = ({
                         </div>
                       );
                     },
+                    MultiValueRemove: CustomMultiValueRemove,
                   }}
                   placeholder="Select"
                   styles={{
@@ -825,11 +875,12 @@ const AddToSequence = ({
                     multiValue: (base) => ({
                       ...base,
                       display: 'flex',
-                      height: '22px',
-                      padding: '0px 6px',
+                      height: '25px',
+                      padding: '4px 8px',
                       alignItems: 'center',
                       borderRadius: '4px',
                       background: '#eff6ff',
+                      margin: '2px 4px',
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
@@ -838,13 +889,12 @@ const AddToSequence = ({
                       fontSize: '14px',
                       fontStyle: 'normal',
                       fontWeight: 400,
-                      lineHeight: '20px',
                       paddingLeft: 0, // remove default padding
                     }),
                     multiValueRemove: (base) => ({
                       ...base,
                       padding: '0px',
-                      borderRadius: '50%',
+                      borderRadius: '2px',
                       ':hover': {
                         backgroundColor: '#BFDBFE',
                       },
@@ -859,7 +909,7 @@ const AddToSequence = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',
@@ -879,7 +929,7 @@ const AddToSequence = ({
                     fontSize: '12px',
                     fontWeight: '500',
                     lineHeight: '16px',
-                    textAlign: 'center',
+                    textAlign: 'left',
                     borderRadius: '4px',
                     backgroundColor: '#1F2937',
                     padding: '8px',

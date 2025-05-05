@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { components } from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import cross from '../../assets/icons/cross.svg';
 import prospectsInstance from '../../config/server/finder/prospects';
@@ -32,6 +33,33 @@ export const CustomButton = ({
     </button>
   );
 };
+
+const CustomMultiValueRemove = (props) => (
+  <components.MultiValueRemove {...props}>
+    <div className="custom-multi-value-remove">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 14 14"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M10.9118 3.58687C11.1396 3.81468 11.1396 4.18402 10.9118 4.41183L3.91183 11.4118C3.68402 11.6396 3.31468 11.6396 3.08687 11.4118C2.85906 11.184 2.85906 10.8147 3.08687 10.5869L10.0869 3.58687C10.3147 3.35906 10.684 3.35906 10.9118 3.58687Z"
+          fill="#1F2937"
+        />
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M3.08687 3.58687C3.31468 3.35906 3.68402 3.35906 3.91183 3.58687L10.9118 10.5869C11.1396 10.8147 11.1396 11.184 10.9118 11.4118C10.684 11.6396 10.3147 11.6396 10.0869 11.4118L3.08687 4.41183C2.85906 4.18402 2.85906 3.81468 3.08687 3.58687Z"
+          fill="#1F2937"
+        />
+      </svg>
+    </div>
+  </components.MultiValueRemove>
+);
 
 const AddTagsModal = ({
   showModal,
@@ -113,6 +141,9 @@ const AddTagsModal = ({
               onChange={setSelectedTags}
               placeholder="Enter a tag"
               isLoading={isLoadingTags}
+              components={{
+                MultiValueRemove: CustomMultiValueRemove,
+              }}
               styles={{
                 control: (base, state) => ({
                   ...base,
@@ -173,18 +204,15 @@ const AddTagsModal = ({
                   fontSize: '14px',
                   fontStyle: 'normal',
                   fontWeight: 400,
-                  lineHeight: '20px',
                   paddingLeft: 0, // remove default padding
                 }),
                 multiValueRemove: (base) => ({
                   ...base,
                   padding: '0px',
-                  borderRadius: '50%',
+                  borderRadius: '2px',
                   ':hover': {
                     backgroundColor: '#BFDBFE',
                   },
-                  height: '14px',
-                  width: '14px',
                 }),
                 clearIndicator: (base) => ({
                   ...base,
@@ -200,7 +228,11 @@ const AddTagsModal = ({
               variant="outline"
               className="ignore-button"
               onClick={onIgnoreTags}
-              disabled={isLoading.ignore || isLoading.apply}
+              disabled={
+                isLoading.ignore ||
+                isLoading.apply ||
+                selectedProspects.length === 0
+              }
               loading={isLoading.ignore}
             >
               Ignore
@@ -211,7 +243,10 @@ const AddTagsModal = ({
             className="action-button"
             onClick={onApplyTags}
             disabled={
-              selectedTags.length === 0 || isLoading.ignore || isLoading.apply
+              selectedTags.length === 0 ||
+              isLoading.ignore ||
+              isLoading.apply ||
+              selectedProspects.length === 0
             }
             loading={isLoading.apply}
           >

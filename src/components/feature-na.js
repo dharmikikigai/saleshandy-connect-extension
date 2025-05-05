@@ -1,5 +1,5 @@
 import React from 'react';
-import shConnect from '../assets/icons/shConnectLogo.svg';
+import saleshandyLogo from '../assets/icons/saleshandyLogo.svg';
 
 const handleClose = () => {
   chrome.runtime.sendMessage({
@@ -12,57 +12,59 @@ const NotAvailableFeature = () => (
     <div
       style={{
         background: 'linear-gradient(246deg, #DCE1FE 3.34%, #EFF2FE 87.55%)',
-        height: '100%',
-        width: '100%',
-        padding: '16px 0px',
+        height: '780px',
+        width: '332px',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <div
+        className="d-flex"
         style={{
-          display: 'flex',
-          flexDirection: 'column',
+          padding: '16px 16px 0px 16px',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '243px',
-          padding: '0px 0px 259px 0px',
+          width: '100%',
         }}
       >
-        <div
-          className="d-flex"
+        <img src={saleshandyLogo} alt="saleshandyLogo" />
+        <button
+          type="button"
           style={{
-            padding: '0px 16px',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%',
-            height: '16px',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '0px',
+            display: 'flex',
           }}
+          onClick={handleClose}
         >
-          <img src={shConnect} alt="shConnect" />
-          <button
-            type="button"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '0px',
-            }}
-            onClick={handleClose}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="17"
+            height="16"
+            viewBox="0 0 17 16"
+            fill="none"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="17"
-              height="16"
-              viewBox="0 0 17 16"
-              fill="none"
-            >
-              <path
-                // fill-rule="evenodd"
-                // clip-rule="evenodd"
-                d="M2.94727 7.9987C2.94727 7.63051 3.24574 7.33203 3.61393 7.33203H12.9473C13.3155 7.33203 13.6139 7.63051 13.6139 7.9987C13.6139 8.36689 13.3155 8.66536 12.9473 8.66536H3.61393C3.24574 8.66536 2.94727 8.36689 2.94727 7.9987Z"
-                fill="#6B7280"
-              />
-            </svg>
-          </button>
-        </div>
+            <path
+              // fill-rule="evenodd"
+              // clip-rule="evenodd"
+              d="M2.94727 7.9987C2.94727 7.63051 3.24574 7.33203 3.61393 7.33203H12.9473C13.3155 7.33203 13.6139 7.63051 13.6139 7.9987C13.6139 8.36689 13.3155 8.66536 12.9473 8.66536H3.61393C3.24574 8.66536 2.94727 8.36689 2.94727 7.9987Z"
+              fill="#6B7280"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+          flex: 1,
+        }}
+      >
         <div
           style={{
             width: '284px',

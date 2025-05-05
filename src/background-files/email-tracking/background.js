@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars */
-import io from '../gmail/socket.io';
+import ENV_CONFIG from '../../config/env/index';
 
 async function getAndSetAuthToken() {
   chrome.cookies.get(
-    { url: 'https://pyxis.lifeisgoodforlearner.com', name: 'token' },
+    { url: ENV_CONFIG.WEB_APP_URL, name: 'token' },
     (cookie) => {
       if (cookie) {
         chrome.storage.local.set({ authToken: cookie.value });
@@ -17,7 +17,7 @@ async function getAndSetAuthToken() {
 async function fetchAndSetActiveUrl() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currentTab = tabs[0];
-    if (currentTab) {
+    if (currentTab?.url) {
       chrome.storage.local.set({ activeAllUrl: currentTab.url });
       if (currentTab.url.includes('linkedin.com')) {
         chrome.storage.local.set({ activeUrl: currentTab.url });
@@ -38,49 +38,10 @@ async function onBeaconClickActivity(tab) {
     (cookie) => {
       if (cookie) {
         chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
-      } else {
-        console.log('User is not logged in');
       }
     },
   );
 }
-
-async function updateMailboxEmail(tabId) {
-  chrome.tabs.sendMessage(tabId, { method: 'updateMailboxEmail' });
-}
-
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  await fetchAndSetActiveUrl();
-  chrome.tabs.get(activeInfo.tabId, async (tab) => {
-    const currentUrl = tab.url;
-
-    if (tab.status === 'complete') {
-      await getAndSetAuthToken();
-
-      if (currentUrl.includes('linkedin.com')) {
-        chrome.cookies.get(
-          { url: 'https://www.linkedin.com', name: 'li_at' },
-          (cookie) => {
-            if (cookie) {
-              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
-              chrome.storage.local.get(['isModalClosed'], (req) => {
-                const isModalClosed = req?.isModalClosed;
-                if (isModalClosed === undefined || isModalClosed === false) {
-                  chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
-                }
-              });
-            } else {
-              console.log('User is not logged in');
-            }
-          },
-        );
-      }
-      if (currentUrl.includes('mail.google.com')) {
-        updateMailboxEmail(tab.id);
-      }
-    }
-  });
-});
 
 let lastUrl = '';
 
@@ -94,47 +55,137 @@ function cleanUrl(url) {
   return urlObj.toString();
 }
 
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  const currentUrl = tab.url;
-
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
   await fetchAndSetActiveUrl();
+  chrome.tabs.get(activeInfo.tabId, async (tab) => {
+    const currentUrl = tab?.url;
 
-  if (changeInfo.status === 'complete') {
-    await getAndSetAuthToken();
-
-    if (currentUrl.includes('linkedin.com')) {
-      chrome.cookies.get(
-        { url: 'https://www.linkedin.com', name: 'li_at' },
-        (cookie) => {
-          if (cookie) {
-            chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
-            chrome.storage.local.get(['isModalClosed'], (req) => {
-              const isModalClosed = req?.isModalClosed;
-              if (isModalClosed === undefined || isModalClosed === false) {
-                chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
-              }
-            });
-          } else {
-            console.log('User is not logged in');
-          }
-        },
-      );
+    if (!currentUrl) {
+      return;
     }
-    if (currentUrl.includes('mail.google.com')) {
-      updateMailboxEmail(tab.id);
-    }
-  }
 
-  if (currentUrl.includes('linkedin.com') && changeInfo.status === 'complete') {
-    const cleanedUrl = cleanUrl(currentUrl);
+    if (tab.status === 'complete') {
+      await getAndSetAuthToken();
 
-    // Only log if the cleaned URL is different from the last one
-    if (cleanedUrl !== lastUrl) {
-      lastUrl = cleanedUrl; // Update last URL with cleaned URL
-      chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
-      chrome.storage.local.remove(['personInfo', 'bulkInfo']);
+      if (currentUrl.includes('linkedin.com')) {
+        chrome.cookies.get(
+          { url: 'https://www.linkedin.com', name: 'li_at' },
+          (cookie) => {
+            if (cookie) {
+              chrome.storage.local.get(['isModalClosed'], (req) => {
+                const isModalClosed = req?.isModalClosed;
+                if (isModalClosed === undefined || isModalClosed === false) {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+                } else {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDiv-0ff' });
+                }
+              });
+
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+            }
+          },
+        );
+      }
     }
-  }
+
+    if (currentUrl.includes('linkedin.com') && tab.status === 'complete') {
+      const cleanedUrl = cleanUrl(currentUrl);
+
+      // Only log if the cleaned URL is different from the last one
+      if (cleanedUrl !== lastUrl) {
+        chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
+
+        lastUrl = cleanedUrl; // Update last URL with cleaned URL
+        if (
+          currentUrl.includes('linkedin.com/in/') ||
+          currentUrl.includes('linkedin.com/search/results/people/') ||
+          (currentUrl.includes('linkedin.com/company/') &&
+            currentUrl.includes('/people'))
+        ) {
+          chrome.storage.local.get(['personInfo'], (req) => {
+            const personInfo = req?.personInfo;
+
+            if (!cleanedUrl.includes(personInfo?.sourceId2)) {
+              chrome.storage.local.remove(['personInfo']);
+            }
+          });
+          chrome.storage.local.remove(['bulkInfo']);
+        }
+      }
+    }
+  });
+});
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+    const currentUrl = tabs[0]?.url;
+
+    if (!currentUrl) {
+      return;
+    }
+
+    await fetchAndSetActiveUrl();
+
+    if (changeInfo.status === 'complete') {
+      await getAndSetAuthToken();
+
+      if (currentUrl.includes('linkedin.com')) {
+        chrome.cookies.get(
+          { url: 'https://www.linkedin.com', name: 'li_at' },
+          (cookie) => {
+            if (cookie) {
+              chrome.storage.local.get(['isModalClosed'], (req) => {
+                const isModalClosed = req?.isModalClosed;
+                if (isModalClosed === undefined || isModalClosed === false) {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDiv' });
+                } else {
+                  chrome.tabs.sendMessage(tab.id, { method: 'createDiv-0ff' });
+                }
+              });
+
+              chrome.tabs.sendMessage(tab.id, { method: 'injectBeacon' });
+            }
+          },
+        );
+      }
+    }
+
+    if (
+      currentUrl.includes('linkedin.com') &&
+      changeInfo.status === 'complete'
+    ) {
+      const cleanedUrl = cleanUrl(currentUrl);
+
+      if (
+        cleanedUrl === lastUrl &&
+        cleanedUrl.includes('linkedin.com/company/')
+      ) {
+        chrome.storage.local.remove(['bulkInfo']);
+      }
+
+      if (cleanedUrl !== lastUrl) {
+        // Only log if the cleaned URL is different from the last one
+        lastUrl = cleanedUrl; // Update last URL with cleaned URL
+        chrome.tabs.sendMessage(tab.id, { method: 'reloadIframe' });
+
+        if (
+          currentUrl.includes('linkedin.com/in/') ||
+          currentUrl.includes('linkedin.com/search/results/people/') ||
+          (currentUrl.includes('linkedin.com/company/') &&
+            currentUrl.includes('/people'))
+        ) {
+          chrome.storage.local.get(['personInfo'], (req) => {
+            const personInfo = req?.personInfo;
+
+            if (!currentUrl.includes(personInfo?.sourceId2)) {
+              chrome.storage.local.remove(['personInfo']);
+            }
+          });
+          chrome.storage.local.remove(['bulkInfo']);
+        }
+      }
+    }
+  });
 });
 
 async function openLinkedinOnInstall() {
@@ -152,201 +203,6 @@ async function openLinkedinOnInstall() {
     },
   );
 }
-
-const SOCKET_DISCONNECT_REASONS = {
-  PING_TIMEOUT: 'ping timeout',
-  TRANSPORT_CLOSE: 'transport close',
-  FORCED_CLOSE: 'forced close',
-  TRANSPORT_ERROR: 'transport error',
-  IO_SERVER_DISCONNECT: 'io server disconnect',
-  IO_CLIENT_DISCONNECT: 'io client disconnect',
-};
-
-let objSocket;
-const sourceId = {
-  SALESHANDY_CONNECT: 5,
-};
-let sDisconnectReason = '';
-let allConnectedUsers = [];
-let allNotConnectedUsers = [];
-let socketAuthToken;
-
-chrome.storage.local.get(['socketAuthToken'], (req) => {
-  socketAuthToken = req.socketAuthToken || '';
-});
-
-let allConnectedUserslocalStorage = [];
-chrome.storage.local.get(['allConnectedUsers'], (req) => {
-  allConnectedUserslocalStorage = req.allConnectedUsers
-    ? req.allConnectedUser
-    : [];
-});
-
-function getNotificationButtons(encUserId) {
-  const notificationButtons = [];
-  if (encUserId) {
-    notificationButtons.push({
-      title: 'Block all notifications',
-      iconUrl: '../../assets/icons/block.png',
-    });
-  }
-  return notificationButtons;
-}
-
-function displayNotification(data) {
-  let ctr = new Date();
-  const { title, message } = data;
-  let { encUserId } = data;
-  const notificationButtons = getNotificationButtons(encUserId);
-  const notificationObj = {
-    type: 'basic',
-    title,
-    message,
-    iconUrl: '../../assets/icons/48_48.png',
-  };
-
-  if (notificationButtons.length > 0) {
-    notificationObj.buttons = notificationButtons;
-  }
-  encUserId = encUserId || 'initUserId';
-
-  chrome.notifications.create(`${encUserId}-${ctr}`, notificationObj);
-  ctr++;
-}
-
-function receiveNotificationData() {
-  objSocket.off('pushData');
-  objSocket.on('pushData', (data) => {
-    displayNotification(JSON.parse(data));
-  });
-}
-
-function addUserToSocket(userId) {
-  const dataToSend = {
-    arrUserId: userId,
-    socketAuthToken,
-    sourceId: sourceId.SALESHANDY_CONNECT,
-  };
-  objSocket.emit('eventRegisterUsers', JSON.stringify(dataToSend));
-  objSocket.off('eventRegisterUsersAck');
-  objSocket.on('eventRegisterUsersAck', (data) => {
-    const parsedData = JSON.parse(data);
-    const { arrUsersAdded } = parsedData;
-
-    if (arrUsersAdded.length) {
-      if (allConnectedUsers.indexOf(arrUsersAdded[0]) === -1) {
-        allConnectedUsers.push(arrUsersAdded[0]);
-        chrome.storage.local.set({ allConnectedUsers });
-      }
-      receiveNotificationData();
-    }
-  });
-}
-
-function addRemainingUser() {
-  allNotConnectedUsers.forEach((u) => addUserToSocket(u));
-}
-
-function createSocketConnection() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['socketAuthToken'], (req) => {
-      socketAuthToken = req.socketAuthToken || '';
-    });
-
-    objSocket = io('https://appsocket.saleshandy.com', {
-      query: `socketAuthToken=${socketAuthToken}`,
-      jsonp: false,
-    });
-
-    if (Object.keys(objSocket).length === 0) {
-      console.log('Socket Not Connected.');
-    } else {
-      console.log('Socket Already Connected.');
-      objSocket.off('eventHandshake');
-      objSocket.on('eventHandshake', (data) => {
-        socketAuthToken = JSON.parse(data).socketAuthToken;
-        chrome.storage.local.set({ socketAuthToken });
-        objSocket.query = `socketAuthToken=${socketAuthToken}`;
-        objSocket.io.opts.query = `socketAuthToken=${socketAuthToken}`;
-        objSocket.io.engine.query.socketAuthToken = socketAuthToken;
-        resolve(true);
-      });
-      objSocket.off('disconnect');
-      objSocket.on('disconnect', (disconnectReason) => {
-        allNotConnectedUsers = allConnectedUsers;
-        allConnectedUsers = [];
-        sDisconnectReason = disconnectReason;
-        console.log(`Socket disconnected due to: ${disconnectReason}`);
-      });
-      objSocket.off('reconnect');
-      objSocket.on('reconnect', () => {
-        if (
-          sDisconnectReason === SOCKET_DISCONNECT_REASONS.TRANSPORT_CLOSE ||
-          sDisconnectReason === SOCKET_DISCONNECT_REASONS.PING_TIMEOUT ||
-          sDisconnectReason === SOCKET_DISCONNECT_REASONS.TRANSPORT_ERROR
-        ) {
-          addRemainingUser();
-          sDisconnectReason = '';
-        }
-      });
-    }
-  });
-}
-
-function initBrowserNotificationWatch(userId) {
-  if (!objSocket || !objSocket.connected) {
-    createSocketConnection().then(() => {
-      addUserToSocket(userId);
-    });
-  }
-  if (objSocket.connected) {
-    addUserToSocket(userId);
-  }
-}
-
-function disconnectSocket() {
-  if (objSocket && objSocket.connected) {
-    objSocket.disconnect();
-    allConnectedUsers = [];
-    chrome.storage.local.set({ allConnectedUsers });
-  }
-}
-
-function removeUserFromSocket(userId) {
-  if (!objSocket || !objSocket.connected) return;
-
-  const dataToSend = {
-    arrUserId: userId,
-    socketAuthToken,
-    sourceId: sourceId.SALESHANDY_CONNECT,
-  };
-
-  objSocket.emit('eventRemoveUsersFromSocket', JSON.stringify(dataToSend));
-  objSocket.off('eventRemoveUsersFromSocketAck');
-  objSocket.on('eventRemoveUsersFromSocketAck', (data) => {
-    const { arrUsersRemoved } = JSON.parse(data);
-
-    allConnectedUsers = allConnectedUsers.filter(
-      (u) => u !== arrUsersRemoved[0],
-    );
-    chrome.storage.local.set({ allConnectedUsers });
-
-    if (!allConnectedUsers.length) {
-      disconnectSocket();
-    }
-  });
-}
-
-chrome.notifications.onButtonClicked.addListener((notificationId, btnIdx) => {
-  const userIDToRemove = notificationId.substring(
-    0,
-    notificationId.indexOf('-'),
-  );
-  chrome.notifications.clear(notificationId);
-  if (btnIdx === 0) {
-    removeUserFromSocket(userIDToRemove);
-  }
-});
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message.method === 'openNewPage') {
@@ -366,33 +222,9 @@ chrome.runtime.onMessage.addListener((message) => {
       chrome.tabs.sendMessage(tabId, { method: 'reloadIframe' });
     });
   }
-
-  if (message.method === 'socketIo') {
-    const { data } = message;
-    if (data) {
-      const { userId, startNotify } = data;
-
-      if (startNotify === true) {
-        initBrowserNotificationWatch(userId);
-      } else if (startNotify === false) {
-        removeUserFromSocket(userId);
-      }
-    }
-
-    return true;
-  }
 });
 
-if (allConnectedUserslocalStorage && allConnectedUserslocalStorage.length) {
-  allConnectedUsers = allConnectedUserslocalStorage.filter(
-    (value, index, self) => self.indexOf(value) === index,
-  );
-  allConnectedUsers.forEach((userID) => {
-    initBrowserNotificationWatch(userID);
-  });
-}
-
-function gmailReloadAfterUpdate() {
+function linkedInReloadAfterUpdate() {
   chrome.windows.getAll(
     {
       populate: true,
@@ -408,12 +240,10 @@ function gmailReloadAfterUpdate() {
         let currentTab;
         for (; j < t; j++) {
           currentTab = currentWindow.tabs[j];
-          if (currentTab.url && currentTab.url.includes('mail.google.com')) {
-            chrome.tabs.reload(currentTab.id);
-          }
-
-          if (currentTab.url && currentTab.url.includes('linkedin.com')) {
-            chrome.tabs.reload(currentTab.id);
+          if (currentTab?.url) {
+            if (currentTab.url.includes('linkedin.com')) {
+              chrome.tabs.reload(currentTab.id);
+            }
           }
         }
       }
@@ -423,16 +253,30 @@ function gmailReloadAfterUpdate() {
 
 chrome.runtime.onInstalled.addListener((details) => {
   openLinkedinOnInstall();
-  if (details.reason === 'install') {
-    displayNotification({
-      title: 'Hey there !',
-      message:
-        'This is a sample notification.\nYou will receive all the activity notifications here.',
-    });
-  }
-  gmailReloadAfterUpdate();
+  linkedInReloadAfterUpdate();
 });
 
 chrome.runtime.setUninstallURL(
   'https://docs.google.com/forms/d/e/1FAIpQLScQKIzS-dmruh9lu0KkgnnV6-__rdaSMDafzqdEIsb7AXdC8w/viewform',
 );
+
+chrome.cookies.onChanged.addListener((changeInfo) => {
+  const c = changeInfo.cookie;
+  if (
+    c.domain === ENV_CONFIG.WEB_DOMAIN &&
+    c.name === 'token' &&
+    !changeInfo.removed
+  ) {
+    chrome.storage.local.get(['authToken'], (req) => {
+      const authenticationToken = req?.authToken;
+
+      if (
+        authenticationToken === undefined ||
+        authenticationToken === null ||
+        authenticationToken === ''
+      ) {
+        linkedInReloadAfterUpdate();
+      }
+    });
+  }
+});
