@@ -26,7 +26,8 @@
   "permissions": ["storage", "webRequest", "tabs", "activeTab", "cookies"],
   "host_permissions": [
     "https://*.linkedin.com/*",
-    "https://my.saleshandy.com/*"
+    "https://my.saleshandy.com/*",
+    "https://leo-edge.saleshandy.com/*"
   ],
   "web_accessible_resources": [
     {
