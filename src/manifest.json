@@ -41,7 +41,8 @@
         "assets/images/circle.svg",
         "assets/images/header.svg",
         "assets/images/circle.svg",
-        "assets/images/header.svg"
+        "assets/images/header.svg",
+        "assets/icons/16.png"
       ],
       "matches": ["<all_urls>"]
     }
