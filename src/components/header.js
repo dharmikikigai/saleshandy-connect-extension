@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { profilePageState } from './state';
 import Main from './main';
-import saleshandyConnect from '../assets/icons/shConnectLogo.svg';
+import saleshandyLogo from '../assets/icons/saleshandyLogo.svg';
 import diamond from '../assets/icons/diamond.svg';
 import verticalDots from '../assets/icons/dotsVertical.svg';
 import minus from '../assets/icons/minus.svg';
@@ -69,9 +69,7 @@ const Header = () => {
 
   return (
     <>
-      {showProfilePage ? (
-        <Main />
-      ) : (
+      {showProfilePage ? null : (
         <>
           <div
             className="d-flex"
@@ -95,7 +93,7 @@ const Header = () => {
               }}
             >
               <div>
-                <img src={saleshandyConnect} alt="saleshandyConnect" />
+                <img src={saleshandyLogo} alt="saleshandyLogo" />
               </div>
 
               <div

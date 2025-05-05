@@ -66,10 +66,12 @@ const CustomButton = ({
   );
 };
 
-const BULK_ACTION_TIMEOUT = 10000;
+const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
+const MAX_PROSPECT_CACHE_SIZE = 100;
+const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
-const ProspectList = ({ pageType, userMetaData }) => {
+const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
   const [isProspectsLoading, setIsProspectsLoading] = useState(false);
   const [localProspects, setLocalProspects] = useState(new Set());
   const [prospects, setProspects] = useState([]);
@@ -155,32 +157,84 @@ const ProspectList = ({ pageType, userMetaData }) => {
   // Add a ref to track the latest localProspects state
   const localProspectsRef = useRef(new Set());
   const prospectsRef = useRef([]);
+  const selectedProspectsRef = useRef([]);
+
+  // Add ref to track processed request
+  const processedRequestRef = useRef(null);
 
   // Update the ref whenever localProspects changes
   useEffect(() => {
     localProspectsRef.current = localProspects;
     prospectsRef.current = prospects;
-  }, [localProspects, prospects]);
+    selectedProspectsRef.current = selectedProspects;
+  }, [localProspects, prospects, selectedProspects]);
+
+  // Helper function to check if two people arrays are the same
+  const arePeopleArraysSame = (arr1, arr2) => {
+    if (!arr1 || !arr2) return false;
+    if (arr1.length !== arr2.length) return false;
+
+    // Create a map of source_id_2 to person for the first array
+    const map1 = new Map(arr1.map((person) => [person.source_id_2, person]));
+
+    // Check if all items in second array match the first
+    return arr2.every((person) => {
+      const match = map1.get(person.source_id_2);
+      return match && JSON.stringify(match) === JSON.stringify(person);
+    });
+  };
 
   const fetchProspects = async () => {
     try {
-      chrome.storage.local.get(['bulkInfo'], async (result) => {
-        try {
-          const bulkInfo = result?.bulkInfo?.people;
-          if (!bulkInfo) return;
+      const sessionData = JSON.parse(sessionStorage.getItem('bulkInfo'));
+      if (!sessionData) return;
 
-          // Use the ref to get the latest state of localProspects
-          const currentLocalProspects = localProspectsRef.current;
-          const currentProspects = prospectsRef.current;
+      const bulkInfo = sessionData?.people;
+      if (!bulkInfo) return;
 
-          // Filter out prospects that we've already fetched
-          const prospectsToFetch = bulkInfo.filter(
-            (item) => !currentLocalProspects.has(item.source_id_2),
-          );
+      try {
+        // Use the ref to get the latest state of localProspects
+        const currentLocalProspects = localProspectsRef.current;
+        const currentProspects = prospectsRef.current;
+        const currentSelectedProspects = selectedProspectsRef.current;
 
-          if (prospectsToFetch.length > 0) {
-            setIsProspectsLoading(true);
-            const newLinkedinUrls = prospectsToFetch.map(
+        // Get cached prospects from session storage
+        const cachedProspects =
+          JSON.parse(sessionStorage.getItem('prospect_result')) || {};
+
+        // Filter out prospects that we've already fetched
+        const prospectsToFetch =
+          pageType === 'continuous'
+            ? bulkInfo.filter(
+                (item) => !currentLocalProspects.has(item.source_id_2),
+              )
+            : bulkInfo;
+
+        if (prospectsToFetch.length > 0) {
+          setIsProspectsLoading(true);
+
+          // Separate prospects into cached and uncached
+          const uncachedProspects = [];
+          const cachedResults = [];
+
+          prospectsToFetch.forEach((item) => {
+            if (
+              cachedProspects[item.source_id_2]?.profile &&
+              !cachedProspects[item.source_id_2]?.profile?.isRevealing &&
+              cachedProspects[item.source_id_2]?.timestamp >
+                Date.now() - PROSPECT_CACHE_EXPIRATION
+            ) {
+              cachedResults.push(cachedProspects[item.source_id_2]?.profile);
+            } else {
+              uncachedProspects.push(item);
+            }
+          });
+
+          let apiResponse = null;
+
+          // Only make API call if there are uncached prospects
+          if (uncachedProspects.length > 0) {
+            const newLinkedinUrls = uncachedProspects.map(
               (item) => `https://www.linkedin.com/in/${item.source_id_2}`,
             );
 
@@ -190,100 +244,147 @@ const ProspectList = ({ pageType, userMetaData }) => {
               link: newLinkedinUrls,
             };
 
-            const response = await prospectsInstance.getProspects(payload);
-            if (response?.payload?.profiles) {
-              // Create a new Set with all existing prospects plus the new ones
-              const updatedLocalProspects = new Set(currentLocalProspects);
+            apiResponse = await prospectsInstance.getProspects(payload);
+          }
 
-              // Add the newly fetched prospect IDs to the Set
-              prospectsToFetch.forEach((item) => {
-                updatedLocalProspects.add(item.source_id_2);
-              });
-              let newProspects = [];
-              // Get the current prospects from state
-              if (pageType === 'continuous') {
-                newProspects = [...currentProspects];
+          // Combine cached and new results
+          const allProfiles = [
+            ...cachedResults,
+            ...(apiResponse?.payload?.profiles || []),
+          ];
+          if (allProfiles.length > 0) {
+            // Create a new Set with all existing prospects plus the new ones
+            const updatedLocalProspects = new Set(currentLocalProspects);
+
+            // Add the newly fetched prospect IDs to the Set
+            prospectsToFetch.forEach((item) => {
+              updatedLocalProspects.add(item.source_id_2);
+            });
+            let newProspects = [];
+            let newSelectableProspects = [];
+            // Get the current prospects from state
+            if (pageType === 'continuous') {
+              newProspects = [...currentProspects];
+              newSelectableProspects = [...currentSelectedProspects];
+            }
+
+            // Create a map of existing prospects by linkedin_url for quick lookup
+            const existingProspectsMap = new Map();
+            newProspects.forEach((prospect) => {
+              if (prospect.linkedin_url) {
+                existingProspectsMap.set(prospect.linkedin_url, prospect);
               }
+            });
 
-              // Create a map of existing prospects by linkedin_url for quick lookup
-              const existingProspectsMap = new Map();
-              newProspects.forEach((prospect) => {
-                if (prospect.linkedin_url) {
-                  existingProspectsMap.set(prospect.linkedin_url, prospect);
-                }
-              });
-
-              // Process new prospects and merge with existing ones
-              response.payload.profiles.forEach((profile) => {
-                // Find matching local storage data
-                const localData = bulkInfo.find(
-                  (item) =>
-                    `https://www.linkedin.com/in/${item.source_id_2}` ===
-                    profile.linkedin_url,
-                );
-
-                // Merge API response with local storage data
-                const mergedProspect = {
-                  ...profile,
-                  description: localData?.description || profile.description,
-                  logo: localData?.logo || profile.logo,
-                  linkedin_url: localData?.linkedin_url || profile.linkedin_url,
-                };
-
-                // Update the map with the merged prospect
-                existingProspectsMap.set(profile.linkedin_url, mergedProspect);
-              });
-
-              // add the prospect that are not present in the response
-              prospectsToFetch.forEach((item) => {
-                if (
-                  !existingProspectsMap.has(
-                    `https://www.linkedin.com/in/${item.source_id_2}`,
-                  )
-                ) {
-                  const notPresentProspect = {
-                    ...item,
-                    linkedin_url: `https://www.linkedin.com/in/${item.source_id_2}`,
-                  };
-                  existingProspectsMap.set(
-                    `https://www.linkedin.com/in/${item.source_id_2}`,
-                    notPresentProspect,
-                  );
-                }
-              });
-
-              // Convert the map back to an array
-              const updatedProspects = Array.from(
-                existingProspectsMap.values(),
+            // Process new prospects and merge with existing ones
+            allProfiles.forEach((profile) => {
+              // Find matching local storage data
+              const localData = bulkInfo.find(
+                (item) =>
+                  `https://www.linkedin.com/in/${item.source_id_2}` ===
+                  profile.linkedin_url,
               );
 
-              // Update prospects state and storage
-              setProspects(updatedProspects);
-              setLocalProspects(updatedLocalProspects);
-            }
+              // Merge API response with local storage data
+              const mergedProspect = {
+                ...profile,
+                description: localData?.description || profile.description,
+                logo: localData?.logo || profile.logo,
+                linkedin_url: localData?.linkedin_url || profile.linkedin_url,
+              };
 
-            if (response?.type === 'rate-limit') {
-              setIsRateLimitReached(true);
+              // Update the map with the merged prospect
+              existingProspectsMap.set(profile.linkedin_url, mergedProspect);
+
+              // add the prospect to the new selectable prospects
+              if (
+                profile.id &&
+                !profile.isRevealing &&
+                (!profile.isRevealed ||
+                  (profile.isRevealed && !profile.isCreditRefunded))
+              ) {
+                newSelectableProspects.push(profile.id);
+              }
+            });
+
+            // add the prospect that are not present in the response
+            const notFoundProspects = {};
+            prospectsToFetch.forEach((item) => {
+              if (
+                !existingProspectsMap.has(
+                  `https://www.linkedin.com/in/${item.source_id_2}`,
+                )
+              ) {
+                const notPresentProspect = {
+                  ...item,
+                  linkedin_url: `https://www.linkedin.com/in/${item.source_id_2}`,
+                };
+                existingProspectsMap.set(
+                  `https://www.linkedin.com/in/${item.source_id_2}`,
+                  notPresentProspect,
+                );
+                notFoundProspects[item.source_id_2] = {
+                  profile: notPresentProspect,
+                  timestamp: Date.now(),
+                };
+              }
+            });
+
+            // Cache the new results
+            let updatedCache = {};
+            if (
+              Object.keys(cachedProspects).length >= MAX_PROSPECT_CACHE_SIZE
+            ) {
+              updatedCache = { ...notFoundProspects };
+            } else {
+              updatedCache = { ...cachedProspects, ...notFoundProspects };
             }
-            if (response?.error) {
-              setToasterData({
-                header: 'Error',
-                body:
-                  response?.message ||
-                  (response?.messages &&
-                    response?.messages?.length > 0 &&
-                    response?.messages[0]),
-                type: 'danger',
+            if (apiResponse?.payload?.profiles) {
+              apiResponse.payload.profiles.forEach((profile) => {
+                const sourceId = profile.linkedin_url?.split('/in/')[1];
+                if (sourceId) {
+                  updatedCache[sourceId] = {
+                    profile,
+                    timestamp: Date.now(),
+                  };
+                }
               });
-              setShowToaster(true);
             }
-            setIsProspectsLoading(false);
+            sessionStorage.setItem(
+              'prospect_result',
+              JSON.stringify(updatedCache),
+            );
+
+            // Convert the map back to an array
+            const updatedProspects = Array.from(existingProspectsMap.values());
+
+            // Update prospects state and storage
+            setProspects(updatedProspects);
+            setLocalProspects(updatedLocalProspects);
+            setSelectedProspects(newSelectableProspects);
           }
-        } catch (error) {
-          console.error('Error in fetchProspects callback:', error);
+
+          if (apiResponse?.type === 'rate-limit') {
+            setIsRateLimitReached(true);
+          }
+          if (apiResponse?.error) {
+            setToasterData({
+              header: 'Error',
+              body:
+                apiResponse?.message ||
+                (apiResponse?.messages &&
+                  apiResponse?.messages?.length > 0 &&
+                  apiResponse?.messages[0]),
+              type: 'danger',
+            });
+            setShowToaster(true);
+          }
           setIsProspectsLoading(false);
         }
-      });
+      } catch (error) {
+        console.error('Error in fetchProspects callback:', error);
+        setIsProspectsLoading(false);
+      }
     } catch (error) {
       console.error('Error in fetchProspects:', error);
     }
@@ -366,8 +467,30 @@ const ProspectList = ({ pageType, userMetaData }) => {
               ...Object.fromEntries(payload?.leadIds?.map((id) => [id, true])),
             };
             if (shouldPoll) {
+              pollingAttemptsRef.current = 0;
               setRevealingProspects(newRevealingProspects);
               setIsPollingEnabled(true);
+              // update the cached prospects
+              const cachedProspects = JSON.parse(
+                sessionStorage.getItem('prospect_result'),
+              );
+              payload?.leadIds?.forEach((id) => {
+                const revealingProspect = prospects.find((p) => p.id === id);
+                const sourceId = revealingProspect?.linkedin_url?.split(
+                  '/in/',
+                )[1];
+                if (sourceId) {
+                  revealingProspect.isRevealing = true;
+                  cachedProspects[sourceId] = {
+                    profile: revealingProspect,
+                    timestamp: Date.now(),
+                  };
+                }
+              });
+              sessionStorage.setItem(
+                'prospect_result',
+                JSON.stringify(cachedProspects),
+              );
             } else {
               setIsPollingEnabled(false);
             }
@@ -585,6 +708,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
   };
 
+  // eslint-disable-next-line no-shadow
   const handleAddToSequence = async (data) => {
     try {
       setRevealProspectLoading({
@@ -718,12 +842,11 @@ const ProspectList = ({ pageType, userMetaData }) => {
         const remainingProspects = Object.keys(
           updatedRevealingProspects,
         ).filter((id) => updatedRevealingProspects[id]);
-        if (remainingProspects.length > 0) {
-          setRevealingProspects(updatedRevealingProspects);
-          setProspects(updatedProspects);
-        } else {
+        if (remainingProspects.length === 0) {
           setIsPollingEnabled(false);
         }
+        setRevealingProspects(updatedRevealingProspects);
+        setProspects(updatedProspects);
         setToasterData({
           header: response?.payload?.title || 'Leads Revealed Successfully',
           body: response?.payload?.message,
@@ -739,6 +862,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
   const refreshProspects = async () => {
     try {
       const linkedinUrls = [];
+      const cachedProspects = JSON.parse(
+        sessionStorage.getItem('prospect_result'),
+      );
       Object.keys(revealingProspects).forEach((id) => {
         // Convert id to number for comparison if prospects have numeric IDs
         const prospect = prospects.find(
@@ -755,21 +881,47 @@ const ProspectList = ({ pageType, userMetaData }) => {
           link: linkedinUrls,
         };
         const response = await prospectsInstance.getProspects(payload);
-        setRevealingProspects({});
-        const updatedProspects = [...prospects];
-        response.payload.profiles.forEach((profile) => {
-          const prospectIndex = updatedProspects.findIndex(
-            (p) => p.id === profile.id,
+        if (response && response.payload && response.payload.profiles) {
+          setRevealingProspects({});
+          const updatedProspects = [...prospects];
+          response?.payload?.profiles?.forEach((profile) => {
+            const prospectIndex = updatedProspects.findIndex(
+              (p) => p.id === profile.id,
+            );
+            if (prospectIndex !== -1) {
+              updatedProspects[prospectIndex] = {
+                ...profile,
+                description: updatedProspects[prospectIndex]?.description,
+                logo: updatedProspects[prospectIndex]?.logo,
+              };
+            }
+            const sourceId = profile?.linkedin_url?.split('/in/')[1];
+            if (sourceId) {
+              cachedProspects[sourceId] = {
+                profile,
+                timestamp: Date.now(),
+              };
+            }
+          });
+          sessionStorage.setItem(
+            'prospect_result',
+            JSON.stringify(cachedProspects),
           );
-          if (prospectIndex !== -1) {
-            updatedProspects[prospectIndex] = {
-              ...profile,
-              description: updatedProspects[prospectIndex]?.description,
-              logo: updatedProspects[prospectIndex]?.logo,
-            };
-          }
-        });
-        setProspects(updatedProspects);
+          setProspects(updatedProspects);
+        }
+
+        if (response?.error) {
+          setToasterData({
+            header: 'Error',
+            body:
+              response?.message ||
+              (response?.messages &&
+                response?.messages?.length > 0 &&
+                response?.messages[0]),
+            type: 'danger',
+          });
+          setShowToaster(true);
+        }
       }
     } catch (error) {
       console.error('Error in refreshProspects:', error);
@@ -980,33 +1132,76 @@ const ProspectList = ({ pageType, userMetaData }) => {
 
   useEffect(() => {
     try {
-      fetchProspects();
       getSavedLeads();
     } catch (error) {
       console.error('Error in initial useEffect:', error);
     }
   }, []);
 
-  // Add effect to listen for local storage changes
   useEffect(() => {
-    try {
-      const handleStorageChange = (changes) => {
-        if (changes.bulkInfo) {
-          fetchProspects();
+    const handleUpdateProspectList = async (request) => {
+      const isModalClosed = await chrome.storage.local.get(['isModalClosed']);
+      if (request?.method === 'set-bulkInfo' && !isModalClosed?.isModalClosed) {
+        // Check if this request has already been processed
+        if (
+          processedRequestRef.current &&
+          arePeopleArraysSame(
+            processedRequestRef.current?.peopleInfo?.people,
+            request?.peopleInfo?.people,
+          )
+        ) {
+          return;
         }
-      };
 
-      // Add listener for storage changes
-      chrome.storage.onChanged.addListener(handleStorageChange);
+        const requestUrl = request?.peopleInfo?.oldurl;
+        const localUrl = JSON.parse(sessionStorage.getItem('bulkInfo'))?.oldurl;
+        if (
+          requestUrl &&
+          requestUrl.includes('linkedin.com/company/') &&
+          requestUrl.includes('/people') &&
+          requestUrl === localUrl
+        ) {
+          const existingPeople = JSON.parse(sessionStorage.getItem('bulkInfo'))
+            ?.people;
+          const newPeople = request?.peopleInfo?.people;
+          const combinedPeople = [...existingPeople, ...newPeople];
+          const uniquePeople = combinedPeople.filter(
+            (person, index, self) =>
+              index ===
+              self.findIndex((t) => t.source_id_2 === person.source_id_2),
+          );
+          sessionStorage.setItem(
+            'bulkInfo',
+            JSON.stringify({
+              oldurl: requestUrl,
+              people: uniquePeople,
+            }),
+          );
+        } else {
+          sessionStorage.setItem(
+            'bulkInfo',
+            JSON.stringify(request?.peopleInfo),
+          );
+        }
+        fetchProspects();
+        // Store the processed request
+        processedRequestRef.current = request;
+      }
+    };
 
-      // Clean up listener on component unmount
-      return () => {
-        chrome.storage.onChanged.removeListener(handleStorageChange);
-      };
-    } catch (error) {
-      console.error('Error in storage change useEffect:', error);
-    }
+    chrome.runtime.onMessage.addListener(handleUpdateProspectList);
+
+    return () =>
+      chrome.runtime.onMessage.removeListener(handleUpdateProspectList);
   }, []);
+
+  // Add effect to handle force update
+  useEffect(() => {
+    if (prospectListForceUpdate) {
+      console.log('prospectListForceUpdate', prospectListForceUpdate);
+      fetchProspects();
+    }
+  }, [prospectListForceUpdate]);
 
   // Add effect to handle body scroll lock
   useEffect(() => {
@@ -1074,6 +1269,22 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
   }, [isPollingEnabled, revealingProspects]);
 
+  // Add effect to listen for modal close
+  useEffect(() => {
+    const handleModalClose = (changes) => {
+      if (changes.isModalClosed?.newValue === true) {
+        pollingAttemptsRef.current = 0;
+        setIsPollingEnabled(false);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleModalClose);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleModalClose);
+    };
+  }, []);
+
   const metaCall = async () => {
     const metaData = (await mailboxInstance.getMetaData())?.payload;
 
@@ -1089,7 +1300,6 @@ const ProspectList = ({ pageType, userMetaData }) => {
         // Only refresh prospects when polling is actually stopped
         refreshProspects();
         setIsFirstPollRequest(true);
-        pollingAttemptsRef.current = 0;
         metaCall();
         clearFilters();
       }
@@ -1097,6 +1307,22 @@ const ProspectList = ({ pageType, userMetaData }) => {
       console.error('Error in polling completion useEffect:', error);
     }
   }, [isPollingEnabled]);
+
+  useEffect(() => {
+    if (prospects.length > 0) {
+      const isRevealingProspects = prospects
+        .filter((prospect) => prospect.isRevealing)
+        ?.map((prospect) => [prospect.id, true]);
+      if (
+        isRevealingProspects.length > 0 &&
+        !isPollingEnabled &&
+        pollingAttemptsRef.current === 0
+      ) {
+        setRevealingProspects(Object.fromEntries(isRevealingProspects));
+        setIsPollingEnabled(true);
+      }
+    }
+  }, [prospects]);
 
   const toggleProspectSelection = (prospectId) => {
     if (activeTab === 'saved' && savedAllSelected) {
@@ -1183,26 +1409,10 @@ const ProspectList = ({ pageType, userMetaData }) => {
           prospect.sequences.length > 0 ||
           prospect.tags.length > 0))
     ) {
-      return (
-        <div
-          className={`prospect-item-expand-icon ${
-            !prospect.id ? 'disabled' : 'cursor-pointer'
-          }`}
-          onClick={() =>
-            setExpendedProspect(
-              expendedProspect === prospect?.id ? null : prospect?.id,
-            )
-          }
-        >
-          <img
-            src={expendedProspect === prospect?.id ? chevronUp : chevronDown}
-            alt="chevron-down"
-          />
-        </div>
-      );
+      return true;
     }
 
-    return null;
+    return false;
   };
 
   const getProspectDescription = (prospect) => {
@@ -1232,7 +1442,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
     }
     if (prospect?.isRevealed && prospect?.emails?.length > 0) {
       return (
-        <div className="prospect-description-revealed">
+        <div className="prospect-description-revealed cursor-pointer">
           <img src={mail} alt="email" />
           <span
             className="prospect-description-revealed-email"
@@ -1271,7 +1481,9 @@ const ProspectList = ({ pageType, userMetaData }) => {
       .every(
         (prospect) =>
           (type === 'email' && prospect.isRevealed) ||
-          (type === 'emailphone' && prospect.isRevealed && !prospect.reReveal),
+          (type === 'emailphone' &&
+            prospect.isRevealed &&
+            !(prospect.reReveal && prospect?.teaser?.phones?.length > 0)),
       );
     const shouldDisable =
       selectedProspects.length === 0 ||
@@ -1615,7 +1827,20 @@ const ProspectList = ({ pageType, userMetaData }) => {
                               !prospect.id || prospect.isRevealed
                                 ? 'prospect-item-details-unavailable'
                                 : ''
+                            } ${
+                              prospect.id &&
+                              getExpandIcon(prospect) &&
+                              'cursor-pointer'
                             }`}
+                            {...(prospect.id &&
+                              getExpandIcon(prospect) && {
+                                onClick: () =>
+                                  setExpendedProspect(
+                                    expendedProspect === prospect?.id
+                                      ? null
+                                      : prospect?.id,
+                                  ),
+                              })}
                           >
                             <div className="prospect-name">
                               <span
@@ -1633,7 +1858,30 @@ const ProspectList = ({ pageType, userMetaData }) => {
                                     />
                                   )}
                               </span>
-                              {getExpandIcon(prospect)}
+                              {getExpandIcon(prospect) && (
+                                <div
+                                  className={`prospect-item-expand-icon ${
+                                    !prospect.id ? 'disabled' : 'cursor-pointer'
+                                  }`}
+                                  {...(prospect.id && {
+                                    onClick: () =>
+                                      setExpendedProspect(
+                                        expendedProspect === prospect?.id
+                                          ? null
+                                          : prospect?.id,
+                                      ),
+                                  })}
+                                >
+                                  <img
+                                    src={
+                                      expendedProspect === prospect?.id
+                                        ? chevronUp
+                                        : chevronDown
+                                    }
+                                    alt="chevron-down"
+                                  />
+                                </div>
+                              )}
                             </div>
                             {getProspectDescription(prospect)}
                           </div>
@@ -1646,7 +1894,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
                             ? prospect?.emails?.length > 0 &&
                               prospect?.emails?.slice(1).map((e, i) => (
                                 <div
-                                  className="prospect-item-expanded-email"
+                                  className="prospect-item-expanded-email cursor-pointer"
                                   key={i}
                                 >
                                   <img src={mail} alt="email" />
@@ -1701,7 +1949,7 @@ const ProspectList = ({ pageType, userMetaData }) => {
                             ? prospect?.phones?.length > 0 &&
                               prospect?.phones?.map((phone) => (
                                 <div
-                                  className="prospect-item-expanded-phone"
+                                  className="prospect-item-expanded-phone cursor-pointer"
                                   key={phone.number}
                                 >
                                   <img src={phoneSignal} alt="phone-signal" />

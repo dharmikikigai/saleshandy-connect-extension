@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import Login from './login';
@@ -5,7 +6,11 @@ import Profile from './profile';
 import CommonSearch from './common-search';
 import CommonSearchPeople from './common-search-people';
 import NotAvailableFeature from './feature-na';
-import { profilePageState } from './state';
+import {
+  loginState,
+  profilePageState,
+  redirectFromProfilePageState,
+} from './state';
 import mailboxInstance from '../config/server/tracker/mailbox';
 import SingleProfile from './single-profile';
 import ProspectList from './prospect-list/prospect-list';
@@ -43,6 +48,10 @@ const Main = () => {
   const [showProfilePageState, setShowProfilePageState] = useRecoilState(
     profilePageState,
   );
+  const [redirectFromProfilePage, setRedirectFromProfilePage] = useRecoilState(
+    redirectFromProfilePageState,
+  );
+  const [redirectFromLogin, setRedirectFromLogin] = useRecoilState(loginState);
   const [userMetaData, setUserMetaData] = useState(null);
   const [currentView, setCurrentView] = useState(VIEW_TYPES.LOADING);
   const [isMetaDataLoaded, setIsMetaDataLoaded] = useState(false);
@@ -53,6 +62,15 @@ const Main = () => {
     header: '',
     body: '',
     type: 'danger',
+  });
+  const [shouldUpdatePersonInfo, setShouldUpdatePersonInfo] = useState(false);
+  const [prospectListForceUpdate, setProspectListForceUpdate] = useState(false);
+
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request?.method === 'set-personInfo') {
+      sessionStorage.setItem('personInfo', JSON.stringify(request?.person));
+      setShouldUpdatePersonInfo(true);
+    }
   });
 
   const getMetaData = async () => {
@@ -105,9 +123,8 @@ const Main = () => {
       const authenticationToken = result1?.authToken;
 
       let checkFurther = true;
-
-      setShowProfilePage(showProfilePageState);
-      setShowProfilePageState(false);
+      // setShowProfilePage(showProfilePageState);
+      // setShowProfilePageState(false);
 
       chrome.storage.local.get(['logoutTriggered'], (result) => {
         const logoutTriggered = result?.logoutTriggered;
@@ -192,28 +209,35 @@ const Main = () => {
     });
   };
 
-  const removeUnwantedIds = () => {
-    const ids = [
-      'common-screen-id',
-      'common-search-id',
-      'prospect-list-container',
-      'single-profile-container',
-      'no-result-container',
-      'no-prospect-container',
-      'rate-limit-container',
-    ];
-
-    for (const id of ids) {
-      const element = document.getElementById(id);
-      if (element) {
-        element.style.display = 'none';
-      }
+  useEffect(() => {
+    if (redirectFromLogin) {
+      authCheck();
+      setRedirectFromLogin(false);
     }
-  };
+  }, [redirectFromLogin]);
 
   useEffect(() => {
-    authCheck();
-    pageCheck();
+    setShowProfilePage(showProfilePageState);
+  }, [showProfilePageState]);
+
+  useEffect(() => {
+    if (redirectFromProfilePage) {
+      setShowProfilePageState(false);
+      setRedirectFromProfilePage(false);
+      setProspectListForceUpdate(true);
+      authCheck();
+    }
+  }, [redirectFromProfilePage]);
+
+  useEffect(() => {
+    chrome.storage.local.get(['isModalClosed'], (result) => {
+      const isModalClosed = result?.isModalClosed;
+
+      if (!isModalClosed || isModalClosed === 'false') {
+        authCheck();
+        pageCheck();
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -224,7 +248,7 @@ const Main = () => {
         setCurrentView(VIEW_TYPES.PROFILE);
       } else if (isFeatureAvailable) {
         setCurrentView(VIEW_TYPES.FEATURE_NA);
-      } else if (isSingleViewActive) {
+      } else if (isSingleViewActive && !showProfilePage) {
         setCurrentView(VIEW_TYPES.SINGLE_PROFILE);
       } else if (isBulkPagViewActive || isBulkViewActive) {
         setCurrentView(VIEW_TYPES.PROSPECT_LIST);
@@ -247,9 +271,7 @@ const Main = () => {
     isCommonPeopleScreenActive,
     isCommonSearchScreenActive,
   ]);
-
   const renderContent = () => {
-    removeUnwantedIds();
     switch (currentView) {
       case VIEW_TYPES.LOADING:
         return <SingleProfileSkeleton />;
@@ -260,12 +282,18 @@ const Main = () => {
       case VIEW_TYPES.FEATURE_NA:
         return <NotAvailableFeature />;
       case VIEW_TYPES.SINGLE_PROFILE:
-        return <SingleProfile userMetaData={userMetaData} />;
+        return (
+          <SingleProfile
+            userMetaData={userMetaData}
+            shouldUpdatePersonInfo={shouldUpdatePersonInfo}
+          />
+        );
       case VIEW_TYPES.PROSPECT_LIST:
         return (
           <ProspectList
             pageType={isBulkPagViewActive ? 'pagination' : 'continuous'}
             userMetaData={userMetaData}
+            prospectListForceUpdate={prospectListForceUpdate}
           />
         );
       case VIEW_TYPES.COMMON_SEARCH_PEOPLE:

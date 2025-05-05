@@ -20,10 +20,12 @@ import phoneSignal from '../assets/icons/phoneSignal.svg';
 import alertCircle from '../assets/icons/alertCircle.svg';
 import RateLimitReached from './rate-limit-reached';
 
-const BULK_ACTION_TIMEOUT = 10000;
+const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
+const MAX_PROSPECT_CACHE_SIZE = 100;
+const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
 
-const SingleProfile = ({ userMetaData }) => {
+const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
   // useState
   const [isViewEmailPhoneHover, setIsViewEmailPhoneHover] = useState(false);
 
@@ -47,6 +49,7 @@ const SingleProfile = ({ userMetaData }) => {
   const [isPollingEnabled, setIsPollingEnabled] = useState(false);
   const pollingAttemptsRef = useRef(0);
   const [isLoading, setIsLoading] = useState(false);
+  const lastProcessedPersonIdRef = useRef(null);
 
   const [tagOptions, setTagOptions] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -66,56 +69,256 @@ const SingleProfile = ({ userMetaData }) => {
   const [isRateLimitReached, setIsRateLimitReached] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const sequencesProcessedRef = useRef(false);
+  const abortControllerRef = useRef(null);
+  const apiInProgressRef = useRef(false);
 
   const leadFinderCredits = userMetaData?.leadFinderCredits;
 
-  const fetchProspect = async () => {
+  const fetchProspect = async (linkedinUrlParam, forceRefresh = false) => {
     try {
-      chrome.storage.local.get(['personInfo'], async (result) => {
-        const localData = result.personInfo;
-        setLocalPersonInfo(localData);
-        if (localData && localData.sourceId2) {
-          const linkedinUrl = `https://www.linkedin.com/in/${localData.sourceId2}`;
-          setIsLoading(true);
+      // Cancel any in-progress requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
 
-          const payload = {
-            start: 1,
-            take: 1,
-            link: [linkedinUrl],
-          };
+      // Create a new abort controller for this request
+      abortControllerRef.current = new AbortController();
 
-          const response = await prospectsInstance.getProspects(payload);
+      const localData = JSON.parse(sessionStorage.getItem('personInfo'));
 
-          if (response) {
-            if (response?.payload?.profiles?.length > 0) {
-              setProspect({
-                ...response?.payload?.profiles[0],
-                headline: localData.headline,
-                locality: localData.locality,
-                logo: localData.logo,
-              });
+      // Skip processing if we don't have valid data or it doesn't match what we're expecting
+      if (
+        !localData ||
+        !localData.sourceId2 ||
+        (lastProcessedPersonIdRef.current !== null &&
+          lastProcessedPersonIdRef.current !== localData.sourceId2)
+      ) {
+        return;
+      }
 
-              if (response?.payload?.profiles[0]?.tags?.length > 0) {
-                setSelectedTags(
-                  response?.payload?.profiles[0]?.tags?.map((tag) => ({
-                    value: tag.id,
-                    label: tag.name,
-                    data: tag,
-                  })),
-                );
-              }
-            } else {
-              setProspect({});
-            }
-            if (response?.type === 'rate-limit') {
-              setIsRateLimitReached(true);
-            }
-          }
-          setIsLoading(false);
+      apiInProgressRef.current = true;
+      setLocalPersonInfo(localData);
+      setIsLoading(true);
+
+      // Update the last processed person ID
+      lastProcessedPersonIdRef.current = localData.sourceId2;
+
+      const linkedinUrl =
+        linkedinUrlParam ||
+        `https://www.linkedin.com/in/${localData.sourceId2}`;
+
+      // Check if we have cached data for this profile
+      const prospectResultStr = sessionStorage.getItem('prospect_result');
+      let prospectResult = {};
+      if (prospectResultStr) {
+        try {
+          prospectResult = JSON.parse(prospectResultStr);
+        } catch (e) {
+          console.error('Error parsing prospect_result:', e);
+          prospectResult = {};
         }
+      }
+
+      // Check if cached data exists and has isRevealing flag set to true
+      const cachedData = prospectResult[localData.sourceId2];
+      const isProspectRevealing = cachedData?.profile?.isRevealing;
+      const isExpired =
+        cachedData?.timestamp < Date.now() - PROSPECT_CACHE_EXPIRATION;
+
+      // Only use cache if forceRefresh is false and not currently revealing
+      if (!forceRefresh && cachedData && !isExpired && !isProspectRevealing) {
+        try {
+          setProspect({
+            ...cachedData.profile,
+            headline: localData.headline,
+            locality: localData.locality,
+            logo: localData.logo,
+          });
+
+          if (cachedData.profile?.tags?.length > 0) {
+            setSelectedTags(
+              cachedData.profile?.tags?.map((tag) => ({
+                value: tag.id,
+                label: tag.name,
+                data: tag,
+              })),
+            );
+          }
+
+          apiInProgressRef.current = false;
+          setIsLoading(false);
+
+          // If cached data exists and is used, return early to avoid API call
+          return;
+        } catch (e) {
+          console.error('Error using cached prospect data:', e);
+          // Continue with API call if cache parsing fails
+        }
+      }
+
+      const payload = {
+        start: 1,
+        take: 1,
+        link: [linkedinUrl],
+      };
+
+      const { signal } = abortControllerRef.current;
+
+      // Add a small delay to allow for rapid navigation without firing API calls
+      await new Promise((resolve) => {
+        setTimeout(resolve, 300);
       });
+
+      // Check if we've been aborted during the delay
+      if (signal.aborted) {
+        return;
+      }
+
+      // Check once more if the profile ID still matches
+      const currentDataStr = sessionStorage.getItem('personInfo');
+      let currentSourceId2 = null;
+      if (currentDataStr) {
+        try {
+          const parsedData = JSON.parse(currentDataStr);
+          currentSourceId2 = parsedData?.sourceId2;
+        } catch (e) {
+          console.error('Error parsing currentData:', e);
+        }
+      }
+      if (!currentSourceId2 || currentSourceId2 !== localData.sourceId2) {
+        apiInProgressRef.current = false;
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await prospectsInstance.getProspects(payload);
+
+      // Final check to ensure we're still showing the right profile
+      const finalDataStr = sessionStorage.getItem('personInfo');
+      let finalSourceId2 = null;
+      if (finalDataStr) {
+        try {
+          const parsedData = JSON.parse(finalDataStr);
+          finalSourceId2 = parsedData?.sourceId2;
+        } catch (e) {
+          console.error('Error parsing finalCheck:', e);
+        }
+      }
+      if (
+        !finalSourceId2 ||
+        finalSourceId2 !== localData.sourceId2 ||
+        signal.aborted
+      ) {
+        apiInProgressRef.current = false;
+        setIsLoading(false);
+        return;
+      }
+
+      if (response) {
+        if (response?.payload?.profiles?.length > 0) {
+          const profileData = response?.payload?.profiles[0];
+
+          // Store the fetched data in session storage
+          try {
+            // Get existing prospect results
+            const existingResultStr = sessionStorage.getItem('prospect_result');
+            let updatedProspectResult = {};
+            if (existingResultStr) {
+              try {
+                updatedProspectResult = JSON.parse(existingResultStr);
+              } catch (e) {
+                console.error('Error parsing existing prospect_result:', e);
+                updatedProspectResult = {};
+              }
+            }
+
+            // Add or update the current prospect
+            if (
+              Object.keys(updatedProspectResult).length >=
+              MAX_PROSPECT_CACHE_SIZE
+            ) {
+              updatedProspectResult = {};
+            }
+            updatedProspectResult[localData.sourceId2] = {
+              profile: profileData,
+              timestamp: Date.now(),
+            };
+
+            // Save back to session storage
+            sessionStorage.setItem(
+              'prospect_result',
+              JSON.stringify(updatedProspectResult),
+            );
+          } catch (e) {
+            console.error('Error caching prospect data:', e);
+          }
+
+          setProspect({
+            ...profileData,
+            headline: localData.headline,
+            locality: localData.locality,
+            logo: localData.logo,
+          });
+
+          if (profileData?.tags?.length > 0) {
+            setSelectedTags(
+              profileData?.tags?.map((tag) => ({
+                value: tag.id,
+                label: tag.name,
+                data: tag,
+              })),
+            );
+          }
+        } else {
+          // Store the fetched data in session storage
+          try {
+            // Get existing prospect results
+            const existingResultStr = sessionStorage.getItem('prospect_result');
+            let updatedProspectResult = {};
+            if (existingResultStr) {
+              try {
+                updatedProspectResult = JSON.parse(existingResultStr);
+              } catch (e) {
+                console.error('Error parsing existing prospect_result:', e);
+                updatedProspectResult = {};
+              }
+            }
+
+            if (
+              Object.keys(updatedProspectResult).length >=
+              MAX_PROSPECT_CACHE_SIZE
+            ) {
+              updatedProspectResult = {};
+            }
+
+            // Add or update the current prospect with empty data
+            updatedProspectResult[localData.sourceId2] = {
+              profile: {},
+              timestamp: Date.now(),
+            };
+
+            // Save back to session storage
+            sessionStorage.setItem(
+              'prospect_result',
+              JSON.stringify(updatedProspectResult),
+            );
+          } catch (e) {
+            console.error('Error caching prospect data:', e);
+          }
+          setProspect({});
+        }
+        if (response?.type === 'rate-limit') {
+          setIsRateLimitReached(true);
+        }
+      }
+      apiInProgressRef.current = false;
+      setIsLoading(false);
     } catch (err) {
-      console.error('Error fetching prospect:', err);
+      // Don't show errors for aborted requests
+      if (err.name !== 'AbortError') {
+        console.error('Error fetching prospect:', err);
+      }
+      apiInProgressRef.current = false;
       setIsLoading(false);
       setProspect({});
     }
@@ -139,11 +342,50 @@ const SingleProfile = ({ userMetaData }) => {
           console.log('warning', message);
         } else {
           if (shouldPoll) {
-            setIsPollingEnabled(true);
-          } else {
-            fetchProspect(prospect.linkedin_url);
-            setIsRevealing(false);
             pollingAttemptsRef.current = 0;
+            setIsPollingEnabled(true);
+            // Update the prospect in session storage with isRevealing flag
+            try {
+              const existingResultStr = sessionStorage.getItem(
+                'prospect_result',
+              );
+              let updatedProspectResult = {};
+              if (existingResultStr) {
+                try {
+                  updatedProspectResult = JSON.parse(existingResultStr);
+                } catch (e) {
+                  console.error('Error parsing existing prospect_result:', e);
+                  updatedProspectResult = {};
+                }
+              }
+
+              const localData = JSON.parse(
+                sessionStorage.getItem('personInfo'),
+              );
+              if (
+                localData &&
+                localData.sourceId2 &&
+                updatedProspectResult[localData.sourceId2]
+              ) {
+                // Update the profile with isRevealing flag
+                updatedProspectResult[
+                  localData.sourceId2
+                ].profile.isRevealing = true;
+                // Save back to session storage
+                sessionStorage.setItem(
+                  'prospect_result',
+                  JSON.stringify(updatedProspectResult),
+                );
+              }
+            } catch (e) {
+              console.error(
+                'Error updating prospect data in session storage:',
+                e,
+              );
+            }
+          } else {
+            fetchProspect(prospect.linkedin_url, true); // Force refresh after reveal
+            setIsRevealing(false);
           }
           setToasterData({
             header: title || 'Lead reveal initiated',
@@ -337,6 +579,7 @@ const SingleProfile = ({ userMetaData }) => {
     }
   };
 
+  // eslint-disable-next-line no-shadow
   const handleAddToSequence = async (data) => {
     try {
       let payload = {};
@@ -374,6 +617,7 @@ const SingleProfile = ({ userMetaData }) => {
           console.log('warning', message);
         } else {
           if (shouldPoll) {
+            pollingAttemptsRef.current = 0;
             setIsPollingEnabled(true);
           }
           setToasterData({
@@ -560,10 +804,10 @@ const SingleProfile = ({ userMetaData }) => {
   };
 
   useEffect(() => {
-    fetchProspect();
-    fetchTags();
-    fetchSequences();
-  }, []);
+    if (shouldUpdatePersonInfo) {
+      fetchProspect();
+    }
+  }, [shouldUpdatePersonInfo]);
 
   useEffect(() => {
     if (userMetaData?.user?.isAgencyficationActive) {
@@ -615,27 +859,15 @@ const SingleProfile = ({ userMetaData }) => {
 
       sequencesProcessedRef.current = true;
     }
-  }, [prospect]);
-
-  useEffect(() => {
-    try {
-      const handleStorageChange = (changes) => {
-        if (changes.personInfo) {
-          fetchProspect();
-        }
-      };
-
-      // Add listener for storage changes
-      chrome.storage.onChanged.addListener(handleStorageChange);
-
-      // Clean up listener on component unmount
-      return () => {
-        chrome.storage.onChanged.removeListener(handleStorageChange);
-      };
-    } catch (error) {
-      console.error('Error in storage change useEffect:', error);
+    if (prospect?.isRevealing) {
+      const currentRevealType = prospect?.isRevealed ? 'emailphone' : 'email';
+      setRevealType(currentRevealType);
+      setIsRevealing(true);
+      if (!isPollingEnabled && pollingAttemptsRef.current === 0) {
+        setIsPollingEnabled(true);
+      }
     }
-  }, []);
+  }, [prospect]);
 
   useEffect(() => {
     if (selectedSequence) {
@@ -686,6 +918,22 @@ const SingleProfile = ({ userMetaData }) => {
     };
   }, [isPollingEnabled]);
 
+  // Add effect to listen for modal close
+  useEffect(() => {
+    const handleModalClose = (changes) => {
+      if (changes.isModalClosed?.newValue === true) {
+        pollingAttemptsRef.current = 0;
+        setIsPollingEnabled(false);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleModalClose);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleModalClose);
+    };
+  }, []);
+
   const metaCall = async () => {
     const metaData = (await mailboxInstance.getMetaData())?.payload;
 
@@ -697,23 +945,39 @@ const SingleProfile = ({ userMetaData }) => {
   useEffect(() => {
     if (!isPollingEnabled && pollingAttemptsRef.current > 0) {
       // Only refresh prospects when polling is actually stopped
-      fetchProspect(prospect.linkedin_url);
+      fetchProspect(prospect.linkedin_url, true); // Force refresh after polling completes
       setIsRevealing(false);
-      pollingAttemptsRef.current = 0;
       metaCall();
     }
   }, [isPollingEnabled]);
+
+  useEffect(() => {
+    fetchTags();
+    fetchSequences();
+  }, []);
 
   if (isRateLimitReached) {
     return <RateLimitReached />;
   }
 
-  if (isLoading || !localPersonInfo?.sourceId2) {
+  // Show skeleton loader during initial load or transitions
+  if (isLoading) {
     return <SingleProfileSkeleton />;
   }
 
-  if (localPersonInfo?.sourceId2 && !prospect?.id) {
+  // Only show NoResult when we're sure there's no data
+  if (
+    localPersonInfo?.sourceId2 &&
+    !prospect?.id &&
+    !isLoading &&
+    !apiInProgressRef.current
+  ) {
     return <NoResult />;
+  }
+
+  // Only render the profile when we have valid data
+  if (!localPersonInfo?.sourceId2 || !prospect?.id) {
+    return <SingleProfileSkeleton />;
   }
 
   return (
@@ -740,6 +1004,7 @@ const SingleProfile = ({ userMetaData }) => {
                 display: 'flex',
                 flexDirection: 'column',
                 marginTop: '16px',
+                marginRight: '-5px',
               }}
             >
               <div
@@ -811,13 +1076,19 @@ const SingleProfile = ({ userMetaData }) => {
                     gap: '8px',
                   }}
                 >
-                  {/* User Designation */}
+                  {/* User Description */}
                   <div
                     style={{
                       color: '#6b7280',
                       fontSize: '14px',
                       fontWeight: '400',
-                      lineHeight: '16px',
+                      lineHeight: '20px',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxHeight: '60px',
                     }}
                   >
                     {singleProfile?.headline && (
@@ -1234,7 +1505,10 @@ const SingleProfile = ({ userMetaData }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '16px',
-                    padding: '0px 16px',
+                    margin: '0px 16px',
+                    maxHeight: '328px',
+                    overflowY: 'scroll',
+                    overflowX: 'hidden',
                   }}
                 >
                   {/* Emails */}
@@ -1329,20 +1603,16 @@ const SingleProfile = ({ userMetaData }) => {
                         <span className="prospect-email-unavailable-text">
                           Email unavailable
                         </span>
-                        <div className="tooltip-container">
-                          <img src={alertCircle} alt="alert" />
-                          {!singleProfile.id ? (
-                            <div className="custom-tooltip tooltip-bottom">
-                              Email is not available
-                            </div>
-                          ) : (
-                            <div className="custom-tooltip tooltip-bottom">
-                              Email is not available your
-                              <br />
-                              credit is refunded
-                            </div>
-                          )}
-                        </div>
+                        <img
+                          src={alertCircle}
+                          alt="alert"
+                          data-tooltip-id="email-unavailable-tooltip"
+                          data-tooltip-content={
+                            !prospect.id
+                              ? 'Email is not available'
+                              : 'Email is not available your credit is refunded'
+                          }
+                        />
                       </div>
                     )}
 
@@ -1424,7 +1694,7 @@ const SingleProfile = ({ userMetaData }) => {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 width: '100%',
-                                height: '20px',
+                                height: phoneIndex === 0 ? '22px' : '20px',
                               }}
                             >
                               <div
@@ -1684,6 +1954,12 @@ const SingleProfile = ({ userMetaData }) => {
               <br />
               lead reveal is in progress
             </>
+          ) : prospect?.isRevealed && prospect?.teaser?.phones?.length === 0 ? (
+            <>
+              Lead does not have any
+              <br />
+              phone number
+            </>
           ) : (
             '2 Credits Required'
           )
@@ -1732,7 +2008,7 @@ const SingleProfile = ({ userMetaData }) => {
           backgroundColor: '#1F2937',
           padding: '8px',
           display: 'flex',
-          maxWidth: '190px',
+          maxWidth: '220px',
           textWrap: 'wrap',
           wordBreak: 'break-word',
           overflowWrap: 'break-word',
@@ -1755,6 +2031,25 @@ const SingleProfile = ({ userMetaData }) => {
           }}
         />
       )}
+      <ReactTooltip
+        id="email-unavailable-tooltip"
+        place="bottom"
+        opacity="1"
+        style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          lineHeight: '16px',
+          textAlign: 'center',
+          borderRadius: '4px',
+          backgroundColor: '#1F2937',
+          padding: '8px',
+          display: 'flex',
+          maxWidth: '167px',
+          textWrap: 'wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
+      />
     </>
   );
 };

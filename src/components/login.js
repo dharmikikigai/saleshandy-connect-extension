@@ -1,7 +1,10 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import { Button, Card, Container } from 'react-bootstrap';
+import { useRecoilState } from 'recoil';
+import { loginState } from './state';
 import Main from './main';
-import saleshandyConnect from '../assets/icons/shConnectLogo.svg';
+import saleshandyLogo from '../assets/icons/saleshandyLogo.svg';
 import minus from '../assets/icons/minus.svg';
 import ENV_CONFIG from '../config/env';
 
@@ -13,6 +16,7 @@ const handleClose = () => {
 
 const Login = () => {
   const [showMainPage, setShowMainPage] = useState(false);
+  const [isLogin, setIsLogin] = useRecoilState(loginState);
 
   const handleClick = () => {
     chrome.storage.local.set({ logoutTriggered: 'false' });
@@ -26,6 +30,7 @@ const Login = () => {
         authenticationToken !== ''
       ) {
         setShowMainPage(true);
+        setIsLogin(true);
       } else {
         chrome.runtime.sendMessage({
           method: 'openNewPage',
@@ -37,9 +42,7 @@ const Login = () => {
 
   return (
     <>
-      {showMainPage ? (
-        <Main />
-      ) : (
+      {showMainPage ? null : (
         <>
           <div
             id="login-id"
@@ -60,7 +63,7 @@ const Login = () => {
                 alignItems: 'center',
               }}
             >
-              <img src={saleshandyConnect} alt="saleshandyConnect" />
+              <img src={saleshandyLogo} alt="saleshandyLogo" />
               <div
                 style={{
                   display: 'flex',

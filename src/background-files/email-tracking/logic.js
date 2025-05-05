@@ -228,7 +228,6 @@ function currentCompany(comp, tabId) {
           }
 
           const company = getCompanyInfo(resp);
-          chrome.storage.local.set({ companyLink: company.url });
 
           if (company && company.name && company.source_id) {
             person.currentCompanyInfo = company;
@@ -991,29 +990,9 @@ function getPeopleGraph(source) {
   }
 }
 
-function mergeUniqueBy(arr1, arr2, key = 'source_id_2') {
-  const seen = new Map();
-
-  // Push both arrays in order; the first hit for a key is kept.
-  [...arr1, ...arr2].forEach((obj) => {
-    if (!seen.has(obj[key])) {
-      seen.set(obj[key], obj);
-    }
-    // If you prefer “last one wins”, swap the two lines above for:
-    // seen.set(obj[key], obj);
-  });
-
-  return [...seen.values()];
-}
-
 function BGActionDo(tab, tabId) {
   if (tab.url.indexOf('/in/') !== -1) {
     chrome.storage.local.get(['csrfToken'], (request) => {
-      let currentUrlTab;
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        currentUrlTab = tabs[0].url;
-      });
-
       if (request.csrfToken) {
         const sourceId2 = findDescrP(tab.url, /in\/(.+?)(\/|$)/i);
         const apiUrl = `https://www.linkedin.com/voyager/api/identity/dash/profiles?q=memberIdentity&memberIdentity=${sourceId2}&decorationId=com.linkedin.voyager.dash.deco.identity.profile.FullProfileWithEntities-91`;
@@ -1022,7 +1001,6 @@ function BGActionDo(tab, tabId) {
           { method: 'getPersonData', tk: request.csrfToken, url: apiUrl },
           (response) => {
             if (!chrome.runtime.lastError) {
-              chrome.storage.local.set({ newData: true }, () => {});
               if (response && response.data) {
                 person = getUserInfo(JSON.parse(response.data));
               }
@@ -1031,24 +1009,27 @@ function BGActionDo(tab, tabId) {
                 if (person.name) {
                   if (person.current && person.current.length > 0) {
                     if (person.current[0].source_id === undefined) {
-                      if (currentUrlTab.includes(person?.sourceId2)) {
-                        chrome.storage.local.set({ personInfo: person });
-                      }
+                      chrome.tabs.sendMessage(tab.id, {
+                        method: 'set-personInfo',
+                        person,
+                      });
                     } else {
                       currentCompany(person.current[0], tabId);
                       retriveContactdata(sourceId2, tabId);
 
-                      if (currentUrlTab.includes(person?.sourceId2)) {
-                        chrome.storage.local.set({ personInfo: person });
-                      }
+                      chrome.tabs.sendMessage(tab.id, {
+                        method: 'set-personInfo',
+                        person,
+                      });
                     }
-                  } else if (currentUrlTab.includes(person?.sourceId2)) {
-                    chrome.storage.local.set({ personInfo: person });
+                  } else {
+                    chrome.tabs.sendMessage(tab.id, {
+                      method: 'set-personInfo',
+                      person,
+                    });
                   }
                 }
               }
-            } else {
-              chrome.storage.local.set({ newData: false }, () => {});
             }
           },
         );
@@ -1120,7 +1101,13 @@ function BGActionDo(tab, tabId) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
-                  chrome.storage.local.set({ bulkInfo: peopleInfo }, () => {});
+
+                  chrome.tabs.sendMessage(tab.id, {
+                    method: 'set-bulkInfo',
+                    peopleInfo,
+                  });
+                } else {
+                  chrome.tabs.reload(tabId);
                 }
               }
             },
@@ -1190,37 +1177,23 @@ function BGActionDo(tab, tabId) {
                 } else {
                   people = undefined;
                 }
+                if (oldestUrl !== tab.url) {
+                  chrome.tabs.reload(tabId);
+                  oldestUrl = tab.url;
+                  return;
+                }
+
                 if (people && people.length > 0) {
                   const peopleInfo = {};
                   peopleInfo.oldurl = tab.url;
                   peopleInfo.people = people;
 
-                  chrome.storage.local.get(['bulkInfo'], (request1) => {
-                    if (request1?.bulkInfo?.oldurl === tab.url) {
-                      peopleInfo.people = mergeUniqueBy(
-                        request1.bulkInfo.people,
-                        peopleInfo.people,
-                      );
-                      chrome.storage.local.set(
-                        {
-                          bulkInfo: peopleInfo,
-                        },
-                        () => {},
-                      );
-                    } else {
-                      chrome.storage.local.set(
-                        { bulkInfo: peopleInfo },
-                        () => {},
-                      );
-                    }
+                  chrome.tabs.sendMessage(tab.id, {
+                    method: 'set-bulkInfo',
+                    peopleInfo,
                   });
                 } else {
                   chrome.tabs.reload(tabId);
-                }
-
-                if (oldestUrl !== tab.url) {
-                  chrome.tabs.reload(tabId);
-                  oldestUrl = tab.url;
                 }
               }
             },
@@ -1233,22 +1206,18 @@ function BGActionDo(tab, tabId) {
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
-    if (tab.status === 'complete' && tab.url.includes('linkedin.com')) {
-      BGActionDo(tab, activeInfo.tabId);
+    if (tab?.url) {
+      if (tab.status === 'complete' && tab.url.includes('linkedin.com')) {
+        BGActionDo(tab, activeInfo.tabId);
+      }
     }
   });
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete') {
-    currentTabUrl = tab.url;
+    currentTabUrl = tab?.url;
 
-    // if (
-    //   currentTabUrl.includes('linkedin.com/company/') &&
-    //   currentTabUrl.includes('/people')
-    // ) {
-    //   chrome.tabs.reload(tabId);
-    // }
     if (currentTabUrl.includes('linkedin.com')) {
       BGActionDo(tab, tabId);
     }
@@ -1357,7 +1326,6 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
                     const activeTab = tabs[0];
 
                     BGActionDo(activeTab, activeTab.id);
-                    // You can access the tab details like activeTab.id, activeTab.url, activeTab.title, etc.
                   }
                 },
               );

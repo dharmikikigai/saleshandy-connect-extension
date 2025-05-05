@@ -228,7 +228,11 @@ const AddTagsModal = ({
               variant="outline"
               className="ignore-button"
               onClick={onIgnoreTags}
-              disabled={isLoading.ignore || isLoading.apply}
+              disabled={
+                isLoading.ignore ||
+                isLoading.apply ||
+                selectedProspects.length === 0
+              }
               loading={isLoading.ignore}
             >
               Ignore
@@ -239,7 +243,10 @@ const AddTagsModal = ({
             className="action-button"
             onClick={onApplyTags}
             disabled={
-              selectedTags.length === 0 || isLoading.ignore || isLoading.apply
+              selectedTags.length === 0 ||
+              isLoading.ignore ||
+              isLoading.apply ||
+              selectedProspects.length === 0
             }
             loading={isLoading.apply}
           >

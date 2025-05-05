@@ -1,15 +1,34 @@
+/* eslint-disable no-use-before-define */
 const FLOATING_WINDOW_ID = 'saleshandy-iframe';
+const BEACON_ID = 'saleshandy-beacon';
 
 function reloadIframe() {
   const iframe = document.getElementById(FLOATING_WINDOW_ID);
   if (iframe) {
-    iframe.src = chrome.runtime.getURL('frame.html');
+    setTimeout(() => {
+      iframe.src = chrome.runtime.getURL('frame.html');
+    }, 100);
   }
 }
 
-function injectFloatingWindow() {
+function injectFloatingWindow(display = 'flex') {
+  const beaconModal = document.getElementById(BEACON_ID);
+
+  if (beaconModal && display === 'flex') {
+    beaconModal.remove();
+  }
+
+  if (display === 'flex') {
+    chrome.storage.local.set({ isModalClosed: false });
+  } else if (display === 'none') {
+    chrome.storage.local.set({ isModalClosed: true });
+  }
+
   const existingModal = document.getElementById(FLOATING_WINDOW_ID);
+
   if (existingModal) {
+    existingModal.style.display = display;
+    injectBeaconOnLinkedInUrl();
     return;
   }
 
@@ -26,24 +45,27 @@ function injectFloatingWindow() {
   modalDiv.style.borderRadius = '10px';
   modalDiv.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
   modalDiv.style.zIndex = '99999999999999999999999999999999999999';
-  modalDiv.style.display = 'flex';
+  modalDiv.style.display = display;
   modalDiv.style.flexDirection = 'column';
   modalDiv.style.alignItems = 'center';
   modalDiv.style.justifyContent = 'flex-start';
   modalDiv.allow = 'clipboard-write';
 
   document.body.appendChild(modalDiv);
-  chrome.storage.local.set({ isModalClosed: false });
+
+  injectBeaconOnLinkedInUrl();
 }
 
 function injectBeaconOnLinkedInUrl() {
-  const existingModal = document.getElementById('saleshandy-beacon');
-  if (existingModal) {
+  const existingModal = document.getElementById(BEACON_ID);
+  const iframeModal = document.getElementById(FLOATING_WINDOW_ID);
+
+  if (existingModal || iframeModal?.style?.display === 'flex') {
     return;
   }
 
   const beacon = document.createElement('div');
-  beacon.id = 'saleshandy-beacon';
+  beacon.id = BEACON_ID;
   beacon.style.position = 'fixed';
   beacon.style.top = '50%';
   beacon.style.right = '1px';
@@ -53,7 +75,7 @@ function injectBeaconOnLinkedInUrl() {
   beacon.style.backgroundSize = 'cover';
   beacon.style.cursor = 'pointer';
   beacon.style.borderRadius = '7px 0 0 7px';
-  beacon.style.zIndex = '9888888';
+  beacon.style.zIndex = '99999999999999999999999999999999999999';
   beacon.style.transition = 'all 0.3s ease'; // Add transition for smooth hover effect
   beacon.style.userSelect = 'none'; // Disable text selection
 
@@ -149,10 +171,19 @@ function injectBeaconOnLinkedInUrl() {
 
   // Handle clicks on the beacon to trigger the floating window
   document.body.addEventListener('click', (event) => {
-    if (event.target && event.target.id === 'saleshandy-beacon') {
+    if (event.target && event.target.id === BEACON_ID) {
       const element = document.getElementById(FLOATING_WINDOW_ID);
+      const existingBeacon = document.getElementById(BEACON_ID);
 
       if (element) {
+        element.style.display = 'flex';
+        chrome.storage.local.set({ isModalClosed: false });
+
+        reloadIframe();
+
+        if (existingBeacon) {
+          existingBeacon.remove();
+        }
         return;
       }
 
@@ -164,7 +195,7 @@ function injectBeaconOnLinkedInUrl() {
 function openIframe() {
   if (!document.getElementById('saleshandy-welcome-video')) {
     const iframe = document.createElement('iframe');
-    iframe.src = 'https://www.youtube.com/embed/m55aDMo6nTA';
+    iframe.src = 'https://www.youtube.com/embed/_bpZWMKkTIg';
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
@@ -211,19 +242,8 @@ function closeDiv() {
 
   if (element) {
     chrome.storage.local.set({ isModalClosed: true });
-    // Apply inline CSS for transition
-    element.style.transition = 'transform 0.5s ease-out';
-
-    // Start position: set the initial transform
-    element.style.transform = 'translate(0, 0)'; // Starts from current position
-
-    // Move the element to the right corner
-    element.style.transform = 'translate(100vw, -100vh)'; // Move it out to the top-right corner
-
-    // Wait for the transition to complete before removing the element
-    setTimeout(() => {
-      element.remove();
-    }, 500); // Timeout should match the duration of the CSS transition (500ms)
+    element.style.display = 'none';
+    injectBeaconOnLinkedInUrl();
   }
 }
 
@@ -231,6 +251,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.method === 'createDiv') {
     injectFloatingWindow();
     sendResponse({ status: 'success', message: 'Div Modal created' });
+  }
+
+  if (request.method === 'createDiv-0ff') {
+    injectFloatingWindow('none');
+    sendResponse({ status: 'success', message: 'Off Div Modal  created' });
   }
 
   if (request.method === 'injectBeacon') {
