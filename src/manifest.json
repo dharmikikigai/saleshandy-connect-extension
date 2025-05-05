@@ -5,15 +5,15 @@
   "manifest_version": 3,
   "homepage_url": "https://saleshandy.com",
   "action": {
-    "default_icon": "assets/icons/sh-logo.png",
+    "default_icon": "assets/icons/16.png",
     "default_popup": "index.html"
   },
   "icons": {
-    "16": "assets/icons/16_16.png",
-    "32": "assets/icons/32_32.png",
-    "48": "assets/icons/48_48.png",
-    "64": "assets/icons/64_64.png",
-    "128": "assets/icons/128_128.png"
+    "16": "assets/icons/16.png",
+    "32": "assets/icons/32.png",
+    "48": "assets/icons/48.png",
+    "64": "assets/icons/64.png",
+    "128": "assets/icons/128.png"
   },
   "background": { "service_worker": "worker_wrapper.js" },
   "content_scripts": [
@@ -23,15 +23,11 @@
       "run_at": "document_end"
     }
   ],
-  "permissions": [
-    "storage",
-    "webRequest",
-    "tabs",
-    "scripting",
-    "activeTab",
-    "cookies"
+  "permissions": ["storage", "webRequest", "tabs", "activeTab", "cookies"],
+  "host_permissions": [
+    "https://*.linkedin.com/*",
+    "https://my.saleshandy.com/*"
   ],
-  "host_permissions": ["<all_urls>"],
   "web_accessible_resources": [
     {
       "resources": [
