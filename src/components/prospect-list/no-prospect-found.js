@@ -5,8 +5,7 @@ const NoProspectFound = () => (
     className="no-prospect-container"
     style={{
       width: '100%',
-      height: '689px',
-      padding: '0px 0px 91px 0px',
+      height: 'calc(100vh - 91px)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

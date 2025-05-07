@@ -111,7 +111,7 @@ const Profile = () => {
             {/* Profile Section */}
             <div
               style={{
-                maxHeight: '731px',
+                maxHeight: 'calc(100vh - 49px)',
                 overflowY: 'scroll',
                 overflowX: 'hidden',
               }}
