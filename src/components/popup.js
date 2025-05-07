@@ -320,7 +320,11 @@ const Popup = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '8px 16px',
+                cursor: 'pointer',
               }}
+              onClick={() =>
+                handleClick(`${ENV_CONFIG.WEB_APP_URL}/leads#people`)
+              }
             >
               {/* First SVG */}
               <div
@@ -360,14 +364,7 @@ const Popup = () => {
               </div>
 
               {/* View Lead Finder link svg */}
-              <div
-                onClick={() =>
-                  handleClick(`${ENV_CONFIG.WEB_APP_URL}/leads#people`)
-                }
-                style={{
-                  cursor: 'pointer',
-                }}
-              >
+              <div>
                 <svg
                   width="17"
                   height="17"
@@ -406,7 +403,9 @@ const Popup = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '8px 16px',
+                cursor: 'pointer',
               }}
+              onClick={() => handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospects`)}
             >
               {/* First SVG */}
               <div
@@ -457,14 +456,7 @@ const Popup = () => {
                 </div>
               </div>
               {/* View Prospects link svg */}
-              <div
-                onClick={() =>
-                  handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospects`)
-                }
-                style={{
-                  cursor: 'pointer',
-                }}
-              >
+              <div>
                 <svg
                   width="17"
                   height="17"
@@ -503,7 +495,9 @@ const Popup = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '8px 16px',
+                cursor: 'pointer',
               }}
+              onClick={() => handleClick(`${ENV_CONFIG.WEB_APP_URL}/sequence`)}
             >
               {/* First SVG */}
               <div
@@ -542,14 +536,7 @@ const Popup = () => {
                 </div>
               </div>
               {/* Sequence link svg */}
-              <div
-                onClick={() =>
-                  handleClick(`${ENV_CONFIG.WEB_APP_URL}/sequence`)
-                }
-                style={{
-                  cursor: 'pointer',
-                }}
-              >
+              <div>
                 <svg
                   width="17"
                   height="17"

@@ -1107,7 +1107,10 @@ function BGActionDo(tab, tabId) {
                     peopleInfo,
                   });
                 } else {
-                  chrome.tabs.reload(tabId);
+                  chrome.tabs.sendMessage(tab.id, {
+                    method: 'set-bulkInfo',
+                    peopleInfo: [],
+                  });
                 }
               }
             },

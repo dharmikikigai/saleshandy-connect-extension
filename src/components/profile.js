@@ -348,7 +348,11 @@ const Profile = () => {
                       display: 'flex',
                       justifyContent: 'space-between',
                       padding: '8px 16px',
+                      cursor: 'pointer',
                     }}
+                    onClick={() =>
+                      handleClick(`${ENV_CONFIG.WEB_APP_URL}/leads#people`)
+                    }
                   >
                     <div
                       style={{
@@ -389,9 +393,6 @@ const Profile = () => {
                       </div>
                     </div>
                     <div
-                      onClick={() =>
-                        handleClick(`${ENV_CONFIG.WEB_APP_URL}/leads#people`)
-                      }
                       style={{
                         cursor: 'pointer',
                         display: 'flex',
@@ -432,7 +433,11 @@ const Profile = () => {
                       display: 'flex',
                       justifyContent: 'space-between',
                       padding: '8px 16px',
+                      cursor: 'pointer',
                     }}
+                    onClick={() =>
+                      handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospects`)
+                    }
                   >
                     <div
                       style={{
@@ -485,9 +490,6 @@ const Profile = () => {
                       </div>
                     </div>
                     <div
-                      onClick={() =>
-                        handleClick(`${ENV_CONFIG.WEB_APP_URL}/prospects`)
-                      }
                       style={{
                         cursor: 'pointer',
                         display: 'flex',
@@ -528,7 +530,11 @@ const Profile = () => {
                       display: 'flex',
                       justifyContent: 'space-between',
                       padding: '8px 16px',
+                      cursor: 'pointer',
                     }}
+                    onClick={() =>
+                      handleClick(`${ENV_CONFIG.WEB_APP_URL}/sequence`)
+                    }
                   >
                     <div
                       style={{
@@ -569,9 +575,6 @@ const Profile = () => {
                       </div>
                     </div>
                     <div
-                      onClick={() =>
-                        handleClick(`${ENV_CONFIG.WEB_APP_URL}/sequence`)
-                      }
                       style={{
                         cursor: 'pointer',
                         display: 'flex',

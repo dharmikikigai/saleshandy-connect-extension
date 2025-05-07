@@ -138,6 +138,7 @@ const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
   const [applyFiltersLoading, setApplyFiltersLoading] = useState(false);
   const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [isRateLimitReached, setIsRateLimitReached] = useState(false);
+  const [noProspectFound, setNoProspectFound] = useState(false);
 
   const [showToaster, setShowToaster] = useState(false);
   const [toasterData, setToasterData] = useState({
@@ -190,7 +191,11 @@ const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
       if (!sessionData) return;
 
       const bulkInfo = sessionData?.people;
-      if (!bulkInfo) return;
+      if (!bulkInfo) {
+        setNoProspectFound(true);
+        setProspects([]);
+        return;
+      }
 
       try {
         // Use the ref to get the latest state of localProspects
@@ -1701,7 +1706,7 @@ const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
             />
           )}
           {visibleProspects.length === 0 ? (
-            isFilterApplied ? (
+            isFilterApplied || noProspectFound ? (
               <>
                 {getProspectListTabs()}
                 <NoProspectFound />
