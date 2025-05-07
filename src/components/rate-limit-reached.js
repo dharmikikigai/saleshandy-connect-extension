@@ -8,8 +8,7 @@ const RateLimitReached = () => (
       className="rate-limit-container"
       style={{
         width: '100%',
-        height: '732px',
-        padding: '0px 0px 48px 0px',
+        height: 'calc(100vh - 48px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

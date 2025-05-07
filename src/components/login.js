@@ -49,7 +49,7 @@ const Login = () => {
             style={{
               background:
                 'var(--blue-gra, linear-gradient(246deg, #DCE1FE 3.34%, #EFF2FE 87.55%))',
-              height: '780px',
+              height: '100vh',
               width: '332px',
               display: 'flex',
               flexDirection: 'column',

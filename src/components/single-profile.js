@@ -1506,7 +1506,7 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
                     flexDirection: 'column',
                     gap: '16px',
                     margin: '0px 16px',
-                    maxHeight: '328px',
+                    maxHeight: '265px',
                     overflowY: 'scroll',
                     overflowX: 'hidden',
                   }}
