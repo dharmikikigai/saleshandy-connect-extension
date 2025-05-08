@@ -24,6 +24,8 @@ import copy from '../../assets/icons/copy.svg';
 import filter from '../../assets/icons/filter.svg';
 import filterBlue from '../../assets/icons/filter-blue.svg';
 import cross from '../../assets/icons/cross.svg';
+import circleCheckGreen from '../../assets/icons/circleCheckGreen.svg';
+import alertTriangle from '../../assets/icons/alertTriangle.svg';
 import NogenderAvatar from '../no-gender-avatar';
 
 import SkeletonLoading from '../skeleton-loading/skeleton-loading';
@@ -70,6 +72,20 @@ const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
 const MAX_PROSPECT_CACHE_SIZE = 100;
 const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
+
+const emailStatus = {
+  A: circleCheckGreen,
+  B: alertCircle,
+  'A-': circleCheckGreen,
+  F: alertTriangle,
+};
+
+const emailStatusTooltip = {
+  A: 'Verified',
+  B: 'Risky',
+  'A-': 'Verified',
+  F: 'Bad',
+};
 
 const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
   const [isProspectsLoading, setIsProspectsLoading] = useState(false);
@@ -1420,6 +1436,20 @@ const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
     return false;
   };
 
+  const getEmailStatus = (e) => {
+    if (e?.grade) {
+      return (
+        <img
+          data-tooltip-id="email-unavailable-tooltip"
+          data-tooltip-content={emailStatusTooltip[e?.grade] || 'Unverified'}
+          src={emailStatus[e?.grade] || circleCheck}
+          alt="check-circle"
+        />
+      );
+    }
+    return <img src={circleCheck} alt="not-verified" />;
+  };
+
   const getProspectDescription = (prospect) => {
     if (!prospect.id || (prospect.isRevealed && prospect.isCreditRefunded)) {
       return (
@@ -1462,7 +1492,7 @@ const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
               ? `${prospect?.emails[0]?.email?.slice(0, 18)}..`
               : prospect?.emails[0]?.email}
           </span>
-          <img src={circleCheck} alt="circle-check" />
+          {getEmailStatus(prospect?.emails[0])}
           <div
             className="copy-icon"
             onClick={() => copyToClipboard(prospect?.emails[0]?.email)}
@@ -1916,7 +1946,7 @@ const ProspectList = ({ pageType, userMetaData, prospectListForceUpdate }) => {
                                       ? `${e?.email?.slice(0, 18)}..`
                                       : e?.email}
                                   </span>
-                                  <img src={circleCheck} alt="circle-check" />
+                                  {getEmailStatus(e)}
                                   <div
                                     className="copy-icon"
                                     onClick={() => copyToClipboard(e.email)}
