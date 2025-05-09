@@ -18,12 +18,28 @@ import circleCheck from '../assets/icons/circleCheck.svg';
 import copy from '../assets/icons/copy.svg';
 import phoneSignal from '../assets/icons/phoneSignal.svg';
 import alertCircle from '../assets/icons/alertCircle.svg';
+import circleCheckGreen from '../assets/icons/circleCheckGreen.svg';
+import alertTriangle from '../assets/icons/alertTriangle.svg';
 import RateLimitReached from './rate-limit-reached';
 
 const BULK_ACTION_TIMEOUT = 1000 * 7; // 7 seconds
 const MAX_POLLING_LIMIT = 20;
 const MAX_PROSPECT_CACHE_SIZE = 100;
 const PROSPECT_CACHE_EXPIRATION = 1000 * 60 * 60 * 2; // 2 hours
+
+const emailStatus = {
+  A: circleCheckGreen,
+  B: alertCircle,
+  'A-': circleCheckGreen,
+  F: alertTriangle,
+};
+
+const emailStatusTooltip = {
+  A: 'Verified',
+  B: 'Risky',
+  'A-': 'Verified',
+  F: 'Bad',
+};
 
 const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
   // useState
@@ -956,6 +972,22 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
     fetchSequences();
   }, []);
 
+  const getEmailStatus = (email) => {
+    if (email?.grade) {
+      return (
+        <img
+          data-tooltip-id="email-unavailable-tooltip"
+          data-tooltip-content={
+            emailStatusTooltip[email?.grade] || 'Unverified'
+          }
+          src={emailStatus[email?.grade] || circleCheck}
+          alt="check-circle"
+        />
+      );
+    }
+    return <img src={circleCheck} alt="not-verified" />;
+  };
+
   if (isRateLimitReached) {
     return <RateLimitReached />;
   }
@@ -1550,7 +1582,8 @@ const SingleProfile = ({ userMetaData, shouldUpdatePersonInfo = false }) => {
                               </span>
                             </span>
                           </span>
-                          <img src={circleCheck} alt="check-circle" />
+                          {getEmailStatus(email)}
+
                           <div
                             className="copy-icon"
                             style={{
